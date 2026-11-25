@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-26 08:08:32",
+  "generated_at": "2026-11-26 08:09:56",
   "targets_hash": "198f3fa8f630b46d28aa23d1bba3194b216c79f4ca39920d47757a6f5efd6f89",
   "nodes": [
     {
@@ -210,7 +210,7 @@
       "id": "L_0015",
       "goal": null,
       "tier": "T3",
-      "status": "open",
+      "status": "checked",
       "exhausted": false,
       "depth": 2,
       "both_sides": false,
@@ -221,7 +221,7 @@
         "decompose": 4,
         "refute": 5
       },
-      "closed_by": null
+      "closed_by": "remote"
     },
     {
       "id": "L_0016",
@@ -293,7 +293,7 @@
         "L_0015",
         "L_0016"
       ],
-      "status": "live"
+      "status": "done"
     },
     {
       "id": "R_0004",
@@ -432,6 +432,18 @@
       "node": "L_0014",
       "path": "Proofs/L_0014.lean",
       "sha256": "832450e511217da05fb558091b18bc59e281c49d91d499319c6d0496ce69d56e",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "module": "Proofs.L_0015",
+      "kind": "proof",
+      "node": "L_0015",
+      "path": "Proofs/L_0015.lean",
+      "sha256": "184b4dfd15d52f3677d14507f097fb463e52e190e23a28a93197edffcd30f6e1",
       "axioms": [
         "Classical.choice",
         "Quot.sound",

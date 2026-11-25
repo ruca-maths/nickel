@@ -1,9 +1,9 @@
 <!-- このファイルは core/status_gen.py が自動生成します。手で編集しないこと。 -->
 # 研究状況: 任意の M3 空間は M1 空間か？
 
-- 生成時刻: 2026-11-26 08:08:32
+- 生成時刻: 2026-11-26 08:09:56
 - Targets 承認ハッシュ: `198f3fa8f630b46d…`（承認者: Ruca-maths）
-- 本日の支出: $11.43（上限なし）
+- 本日の支出: $12.14（上限なし）
 - 受理済みファイルの整合性: OK
 
 ## 目標
@@ -25,7 +25,7 @@
 | L_0010 | 1 | ✅ | M3 空間は stratification を持つ（Borges/Ceder の標準的な方向）。σ-cushioned pair-base 𝓟 = ⋃ 𝓟_n  |
 | L_0011 | 1 | ✅ | stratifiable（正則 T1）空間は σ-closure-preserving な quasi-base を持つ（Gruenhage 1976 'Str |
 | L_0014 | 2 | ✅ | stratification から単調減少な stratifiable g-関数を作る。T1 なので {x} は閉。g n x = ⋂_{k ≤ n} G k  |
-| L_0015 | 2 | ⬜ | 核心部（Junnila 1978 'Neighbornets' による stratifiable ⇒ M2 の証明の中心）：stratifiable な正則空間 |
+| L_0015 | 2 | ✅ | 核心部（Junnila 1978 'Neighbornets' による stratifiable ⇒ M2 の証明の中心）：stratifiable な正則空間 |
 | L_0016 | 2 | ✅ | 推移的 neighbornet の列から σ-closure-preserving quasi-base を作る（易しい）。𝓑' n = {(⋃_{y∈A} V |
 | L_0017 | 3 | ⬜ | 単調 g-関数から stratification を作る（易）。G n H := ⋃_{y∈H} g n y とおく。開集合の和なので開、y ∈ g n y か |
 | L_0018 | 3 | ⬜ | σ-CP quasi-base から推移的 neighbornet の列を作る（易〜中）。𝓑 = ⋃ 𝓑' n（各 𝓑' n は CP）とし、𝓒 n := cl |
@@ -45,7 +45,7 @@ graph TD
   L_0010["L_0010 ✅"]
   L_0011["L_0011 ✅"]
   L_0014["L_0014 ✅"]
-  L_0015["L_0015 ⬜"]
+  L_0015["L_0015 ✅"]
   L_0016["L_0016 ✅"]
   L_0017["L_0017 ⬜"]
   L_0018["L_0018 ⬜"]
@@ -57,6 +57,9 @@ graph TD
   L_0015 -->|R_0004| L_0017
   L_0015 -->|R_0004| L_0018
 ```
+
+## 実行中のリース
+- prover-1: prove L_0017（残り 1716 秒）
 
 ## Red Team 監査報告（未レビュー。人間が確認すること）
 - `memory/audits/20261126-051609-redteam-1.md`
