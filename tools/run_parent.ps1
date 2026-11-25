@@ -1,5 +1,6 @@
-# 親機オーケストレータの常駐用ラッパー。異常終了したら 5 分後に起動し直す。
-# 止めるときはリポジトリ直下に STOP ファイルを作る（このラッパーも止まる）。
+# Keeps the parent orchestrator running. Restarts it 5 minutes after an abnormal exit.
+# To stop: create a file named STOP at the repository root (this wrapper stops too).
+# ASCII only on purpose: Windows PowerShell 5.1 reads BOM-less UTF-8 scripts as the ANSI code page.
 $ErrorActionPreference = "Continue"
 Set-Location (Join-Path $PSScriptRoot "..")
 $env:PYTHONIOENCODING = "utf-8"
@@ -8,9 +9,9 @@ $py = if ($env:RESEARCH_PYTHON) { $env:RESEARCH_PYTHON } else { "python" }
 New-Item -ItemType Directory -Force state\logs | Out-Null
 while (-not (Test-Path STOP)) {
     & $py -u core/orchestrator.py --forever 2>&1 | Tee-Object -FilePath state\logs\orchestrator.log -Append
-    if ($LASTEXITCODE -eq 3) { Write-Host "二重起動のため終了します"; break }
+    if ($LASTEXITCODE -eq 3) { Write-Host "Another orchestrator is running in this clone. Exiting."; break }
     if (Test-Path STOP) { break }
-    Write-Host "オーケストレータが終了しました（rc=$LASTEXITCODE）。5 分後に再起動します"
+    Write-Host "Orchestrator exited (rc=$LASTEXITCODE). Restarting in 5 minutes."
     Start-Sleep -Seconds 300
 }
-Write-Host "STOP ファイルがあるので停止しました: $(Get-Content STOP -Raw)"
+if (Test-Path STOP) { Write-Host ("Stopped because STOP exists: " + (Get-Content STOP -Raw)) }
