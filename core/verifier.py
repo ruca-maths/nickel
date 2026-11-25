@@ -58,7 +58,10 @@ def tree_hash(root: Path, rel_dirs: list[str]) -> str:
     h = hashlib.sha256()
     for d in rel_dirs:
         base = root / d
-        files = [base] if base.is_file() else sorted(p for p in base.rglob("*") if p.is_file())
+        files = [base] if base.is_file() else sorted(
+            (p for p in base.rglob("*") if p.is_file()),
+            key=lambda p: p.relative_to(root).as_posix().lower(),
+        )
         for p in files:
             rel = p.relative_to(root).as_posix()
             data = p.read_bytes().replace(b"\r\n", b"\n")
