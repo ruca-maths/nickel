@@ -1,0 +1,99 @@
+# GitHub 連携モード用 CI
+#  - protect : 保護パスの検査と Track 判定（PR 本文・コメントは読まない）
+#  - verify  : Track A（Proofs/ への新規 .lean 追加のみ）を Lean で検証
+#  - automerge: Track A が全件合格なら自動マージを予約
+#  - stale   : 放置された PR の掃除（毎日）
+name: verify
+
+on:
+  pull_request:
+  schedule:
+    - cron: "0 18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  protect:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      track: ${{ steps.classify.outputs.track }}
+      files: ${{ steps.classify.outputs.files }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: classify
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HUMAN_APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'human-approved') }}
+        run: |
+          set -euo pipefail
+          git diff --name-status "origin/${BASE_REF}...HEAD" > changes.txt
+          cat changes.txt
+          track=A
+          files=""
+          protected='^(Targets/|Targets\.lean$|Specs/|Proofs/|core/|prompts/|tools/|tests/|\.github/|status/|STATUS\.md$|config\.yaml$|lakefile\.toml$|lean-toolchain$|lake-manifest\.json$)'
+          while IFS=$'\t' read -r st path rest; do
+            if [[ "$st" == "A" && "$path" =~ ^Proofs/(L|N|R)_[0-9]{4}\.lean$ ]]; then
+              files="$files $path"
+            else
+              track=B
+              if [[ "$path" =~ $protected || "${rest:-}" =~ $protected ]]; then
+                if [[ "$HUMAN_APPROVED" != "true" ]]; then
+                  echo "::error::保護パスの変更: $st $path ${rest:-}（人間の 'human-approved' ラベルが必要）"
+                  exit 1
+                fi
+              fi
+            fi
+          done < changes.txt
+          echo "track=$track" >> "$GITHUB_OUTPUT"
+          echo "files=$files" >> "$GITHUB_OUTPUT"
+          echo "Track: $track / files:$files"
+
+  verify:
+    needs: protect
+    if: needs.protect.outputs.track == 'A'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install elan
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - uses: actions/cache@v4
+        with:
+          path: .lake
+          key: lake-${{ hashFiles('lean-toolchain', 'lake-manifest.json') }}
+      - name: Mathlib cache
+        run: lake exe cache get
+      - name: Build locked modules
+        run: lake build Targets
+      - name: Verify added proofs
+        run: python3 core/ci_verify.py ${{ needs.protect.outputs.files }}
+
+  automerge:
+    needs: [protect, verify]
+    if: needs.protect.outputs.track == 'A' && needs.verify.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --squash "$PR"
+
+  stale:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          days-before-issue-stale: -1
+          days-before-pr-stale: 7
+          days-before-pr-close: 3
+          stale-pr-message: "7日間更新がないため stale にしました。3日後に自動クローズします。"

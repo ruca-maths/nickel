@@ -1,0 +1,390 @@
+{
+  "generated_at": "2026-11-26 05:28:35",
+  "targets_hash": "198f3fa8f630b46d28aa23d1bba3194b216c79f4ca39920d47757a6f5efd6f89",
+  "nodes": [
+    {
+      "id": "L_0001",
+      "goal": "T1a",
+      "tier": "T1",
+      "status": "checked",
+      "exhausted": false,
+      "depth": 0,
+      "both_sides": false,
+      "stmt": "MSpace.Goals.T1a_closurePreserving_of_locallyFinite",
+      "informal": "局所有限族は closure-preserving",
+      "attempts": {
+        "prove": 0,
+        "decompose": 0,
+        "refute": 0
+      },
+      "closed_by": "prover-1"
+    },
+    {
+      "id": "L_0002",
+      "goal": "T1b",
+      "tier": "T1",
+      "status": "checked",
+      "exhausted": false,
+      "depth": 0,
+      "both_sides": false,
+      "stmt": "MSpace.Goals.T1b_M1_imp_M2",
+      "informal": "M1 ⇒ M2",
+      "attempts": {
+        "prove": 0,
+        "decompose": 0,
+        "refute": 0
+      },
+      "closed_by": "prover-1"
+    },
+    {
+      "id": "L_0003",
+      "goal": "T1c",
+      "tier": "T1",
+      "status": "checked",
+      "exhausted": false,
+      "depth": 0,
+      "both_sides": false,
+      "stmt": "MSpace.Goals.T1c_M2_imp_M3",
+      "informal": "M2 ⇒ M3",
+      "attempts": {
+        "prove": 0,
+        "decompose": 0,
+        "refute": 0
+      },
+      "closed_by": "prover-2"
+    },
+    {
+      "id": "L_0004",
+      "goal": "T2a",
+      "tier": "T2",
+      "status": "checked",
+      "exhausted": false,
+      "depth": 0,
+      "both_sides": false,
+      "stmt": "MSpace.Goals.T2a_M3_iff_stratifiable",
+      "informal": "M3 ⇔ stratifiable",
+      "attempts": {
+        "prove": 0,
+        "decompose": 0,
+        "refute": 0
+      },
+      "closed_by": "prover-1"
+    },
+    {
+      "id": "L_0005",
+      "goal": "T2b",
+      "tier": "T2",
+      "status": "open",
+      "exhausted": false,
+      "depth": 0,
+      "both_sides": false,
+      "stmt": "MSpace.Goals.T2b_stratifiable_paracompact",
+      "informal": "stratifiable ⇒ パラコンパクト",
+      "attempts": {
+        "prove": 4,
+        "decompose": 0,
+        "refute": 0
+      },
+      "closed_by": null
+    },
+    {
+      "id": "L_0006",
+      "goal": "T2c",
+      "tier": "T2",
+      "status": "checked",
+      "exhausted": false,
+      "depth": 0,
+      "both_sides": false,
+      "stmt": "MSpace.Goals.T2c_stratifiable_perfectlyNormal",
+      "informal": "stratifiable ⇒ 完全正規",
+      "attempts": {
+        "prove": 0,
+        "decompose": 0,
+        "refute": 0
+      },
+      "closed_by": "prover-2"
+    },
+    {
+      "id": "L_0007",
+      "goal": "T2d",
+      "tier": "T2",
+      "status": "checked",
+      "exhausted": false,
+      "depth": 0,
+      "both_sides": false,
+      "stmt": "MSpace.Goals.T2d_metrizable_M1",
+      "informal": "距離化可能 ⇒ M1",
+      "attempts": {
+        "prove": 0,
+        "decompose": 0,
+        "refute": 0
+      },
+      "closed_by": "prover-2"
+    },
+    {
+      "id": "L_0008",
+      "goal": "T3",
+      "tier": "T3",
+      "status": "open",
+      "exhausted": false,
+      "depth": 0,
+      "both_sides": false,
+      "stmt": "MSpace.Goals.T3_M3_imp_M2",
+      "informal": "M3 ⇒ M2",
+      "attempts": {
+        "prove": 0,
+        "decompose": 0,
+        "refute": 0
+      },
+      "closed_by": null
+    },
+    {
+      "id": "L_0009",
+      "goal": "Tinf",
+      "tier": "Tinf",
+      "status": "open",
+      "exhausted": false,
+      "depth": 0,
+      "both_sides": true,
+      "stmt": "MSpace.Goals.Tinf_M3_imp_M1",
+      "informal": "任意の M3 空間は M1 か",
+      "attempts": {
+        "prove": 0,
+        "decompose": 4,
+        "refute": 4
+      },
+      "closed_by": null
+    },
+    {
+      "id": "L_0010",
+      "goal": null,
+      "tier": "T3",
+      "status": "checked",
+      "exhausted": false,
+      "depth": 1,
+      "both_sides": false,
+      "stmt": "∀ (X : Type) [TopologicalSpace X], IsM3 X → ∃ G : ℕ → Set X → Set X, IsStratification G",
+      "informal": "M3 空間は stratification を持つ（Borges/Ceder の標準的な方向）。σ-cushioned pair-base 𝓟 = ⋃ 𝓟_n に対し、G n H = (closure(⋃{p.1 : p ∈ 𝓟_0 ∪ … ∪ 𝓟_n, p.2 ∩ H = ∅}))ᶜ とおく。cushioned 性（有限和も cushioned）から各 G n H は H を含む開集合、単調性は定義から明らか。⋂ closure(G n H) = H：x ∉ H なら x ∈ p.1 ⊆ p.2 ⊆ Hᶜ となる p ∈ 𝓟_m を取ると、n ≥ m で G n H ∩ p.1 = ∅、p.1 は開なので x ∉ closure(G n H)。n < m でも包含は成立するので ⋂ は H に一致。",
+      "attempts": {
+        "prove": 0,
+        "decompose": 0,
+        "refute": 0
+      },
+      "closed_by": "prover-2"
+    },
+    {
+      "id": "L_0011",
+      "goal": null,
+      "tier": "T3",
+      "status": "open",
+      "exhausted": false,
+      "depth": 1,
+      "both_sides": false,
+      "stmt": "∀ (X : Type) [TopologicalSpace X], T3Space X → (∃ G : ℕ → Set X → Set X, IsStratification G) → ∃ 𝓑 : Set (Set X), IsQuasiBase 𝓑 ∧ SigmaClosurePreserving 𝓑",
+      "informal": "stratifiable（正則 T1）空間は σ-closure-preserving な quasi-base を持つ（Gruenhage 1976 'Stratifiable spaces are M2' / Junnila 1978）。本ノードの核心部。さらに分解が必要。",
+      "attempts": {
+        "prove": 2,
+        "decompose": 0,
+        "refute": 0
+      },
+      "closed_by": null
+    }
+  ],
+  "reductions": [
+    {
+      "id": "R_0001",
+      "parent": "L_0008",
+      "children": [
+        "L_0010",
+        "L_0011"
+      ],
+      "status": "live"
+    }
+  ],
+  "artifacts": [
+    {
+      "module": "Proofs.L_0001",
+      "kind": "proof",
+      "node": "L_0001",
+      "path": "Proofs/L_0001.lean",
+      "sha256": "f909d73af5122feeba02b02b11ae80e6e7269881e21ba79a226831a54c924d04",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "module": "Proofs.L_0002",
+      "kind": "proof",
+      "node": "L_0002",
+      "path": "Proofs/L_0002.lean",
+      "sha256": "1968ccba370f4c0fcb9e4a82f7a00de623b66861046ba5886fb9c79af65d1794",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "module": "Proofs.L_0003",
+      "kind": "proof",
+      "node": "L_0003",
+      "path": "Proofs/L_0003.lean",
+      "sha256": "d783c511a263c24ea64bbe2c70e6d406c63bb57dea44222e94d6677db74668a6",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "module": "Proofs.L_0004",
+      "kind": "proof",
+      "node": "L_0004",
+      "path": "Proofs/L_0004.lean",
+      "sha256": "39d2990742a68f2698637037519e9584870f780fdfb680f3d80a0ef4ff6db688",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "module": "Proofs.L_0006",
+      "kind": "proof",
+      "node": "L_0006",
+      "path": "Proofs/L_0006.lean",
+      "sha256": "39266b4e931261083e71fc123ae6ce947d624ff8c1d9c66ae0ddb6e3a043af24",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "module": "Proofs.L_0007",
+      "kind": "proof",
+      "node": "L_0007",
+      "path": "Proofs/L_0007.lean",
+      "sha256": "3d6da80993239b7110635924df451115485bffc464b33e34908827ec6fcedeb5",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "module": "Proofs.L_0010",
+      "kind": "proof",
+      "node": "L_0010",
+      "path": "Proofs/L_0010.lean",
+      "sha256": "794f5bad01047c31012d4a7675fa4263327586ea11e03ab007440bc5ff98004f",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "module": "Proofs.R_0001",
+      "kind": "reduction",
+      "node": "L_0008",
+      "path": "Proofs/R_0001.lean",
+      "sha256": "51faa0bfac7d35424d2954123433faad606d7d346c6f347fc315dff6ee362b11",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "module": "Specs.L_0001",
+      "kind": "spec",
+      "node": "L_0001",
+      "path": "Specs/L_0001.lean",
+      "sha256": "4238ae904a1e8d37e26841afcf7dff8c9f9b8aded10a16e62d003d0a3198892e",
+      "axioms": []
+    },
+    {
+      "module": "Specs.L_0002",
+      "kind": "spec",
+      "node": "L_0002",
+      "path": "Specs/L_0002.lean",
+      "sha256": "5a0ace7c0c6f0367669c4b2b551889441521c5cbd88a6b7fac5af60f6ec62097",
+      "axioms": []
+    },
+    {
+      "module": "Specs.L_0003",
+      "kind": "spec",
+      "node": "L_0003",
+      "path": "Specs/L_0003.lean",
+      "sha256": "f2d909e55d33e3a57eb74474d775d09ce207e1e0d53a731fa78301c3e6f4e966",
+      "axioms": []
+    },
+    {
+      "module": "Specs.L_0004",
+      "kind": "spec",
+      "node": "L_0004",
+      "path": "Specs/L_0004.lean",
+      "sha256": "e45692d415e1b32d034eb19eb17457d1583573aa309e5aaf5b8a733f26b87b8a",
+      "axioms": []
+    },
+    {
+      "module": "Specs.L_0005",
+      "kind": "spec",
+      "node": "L_0005",
+      "path": "Specs/L_0005.lean",
+      "sha256": "4daa9f0e1eb485af36d481ac0f11cd85690a291cea77590e09a0c554eca99a08",
+      "axioms": []
+    },
+    {
+      "module": "Specs.L_0006",
+      "kind": "spec",
+      "node": "L_0006",
+      "path": "Specs/L_0006.lean",
+      "sha256": "a8298cdedfb126f0093dda7ba22cbbe663b90dc4d67ae587e59124a3467e23e6",
+      "axioms": []
+    },
+    {
+      "module": "Specs.L_0007",
+      "kind": "spec",
+      "node": "L_0007",
+      "path": "Specs/L_0007.lean",
+      "sha256": "e0d3fe0326f18a0320931a4b144d6bacf90869f85e4a543959d91a80b932916d",
+      "axioms": []
+    },
+    {
+      "module": "Specs.L_0008",
+      "kind": "spec",
+      "node": "L_0008",
+      "path": "Specs/L_0008.lean",
+      "sha256": "b8a70f9edddd037f2550a94d9457231f0bcd7417f5ab669821ecf80b63438c81",
+      "axioms": []
+    },
+    {
+      "module": "Specs.L_0009",
+      "kind": "spec",
+      "node": "L_0009",
+      "path": "Specs/L_0009.lean",
+      "sha256": "9de022a1a7cb62b32ac4f70d727aa5ebc9f228c7db7959a8dcca6617082a3f23",
+      "axioms": []
+    },
+    {
+      "module": "Specs.L_0010",
+      "kind": "spec",
+      "node": "L_0010",
+      "path": "Specs/L_0010.lean",
+      "sha256": "8fbab1dddb006e3490fce0673b54b8401b1312c7103bf7ca215ccabbcaf5d363",
+      "axioms": []
+    },
+    {
+      "module": "Specs.L_0011",
+      "kind": "spec",
+      "node": "L_0011",
+      "path": "Specs/L_0011.lean",
+      "sha256": "5da903a1fa9687e863bcd05e3f86337e68213f47451451ad3c31fd1800024614",
+      "axioms": []
+    }
+  ]
+}

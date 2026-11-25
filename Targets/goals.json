@@ -1,0 +1,14 @@
+{
+  "_comment": "ロック領域。根ノードの一覧。lean は Targets/Goals.lean の定数名。both_sides=true なら否定も証明対象として登録する。",
+  "goals": [
+    {"key": "T1a", "tier": "T1", "lean": "MSpace.Goals.T1a_closurePreserving_of_locallyFinite", "title": "局所有限族は closure-preserving"},
+    {"key": "T1b", "tier": "T1", "lean": "MSpace.Goals.T1b_M1_imp_M2", "title": "M1 ⇒ M2"},
+    {"key": "T1c", "tier": "T1", "lean": "MSpace.Goals.T1c_M2_imp_M3", "title": "M2 ⇒ M3"},
+    {"key": "T2a", "tier": "T2", "lean": "MSpace.Goals.T2a_M3_iff_stratifiable", "title": "M3 ⇔ stratifiable"},
+    {"key": "T2b", "tier": "T2", "lean": "MSpace.Goals.T2b_stratifiable_paracompact", "title": "stratifiable ⇒ パラコンパクト"},
+    {"key": "T2c", "tier": "T2", "lean": "MSpace.Goals.T2c_stratifiable_perfectlyNormal", "title": "stratifiable ⇒ 完全正規"},
+    {"key": "T2d", "tier": "T2", "lean": "MSpace.Goals.T2d_metrizable_M1", "title": "距離化可能 ⇒ M1"},
+    {"key": "T3",  "tier": "T3", "lean": "MSpace.Goals.T3_M3_imp_M2", "title": "M3 ⇒ M2"},
+    {"key": "Tinf", "tier": "Tinf", "lean": "MSpace.Goals.Tinf_M3_imp_M1", "title": "任意の M3 空間は M1 か", "both_sides": true}
+  ]
+}

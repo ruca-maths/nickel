@@ -1,0 +1,6 @@
+{"goals": [
+  {"key": "G1", "tier": "T1", "lean": "Toy.Goals.G1", "title": "n + 0 = n"},
+  {"key": "G2", "tier": "T2", "lean": "Toy.Goals.G2", "title": "Double"},
+  {"key": "G3", "tier": "T3", "lean": "Toy.Goals.G3", "title": "conjunction"},
+  {"key": "G4", "tier": "Tinf", "lean": "Toy.Goals.G4", "title": "false statement", "both_sides": true}
+]}

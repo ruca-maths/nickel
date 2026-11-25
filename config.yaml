@@ -1,0 +1,85 @@
+# 自律マルチAI数学研究システム 設定
+# 研究テーマ: 任意の M3 空間は M1 空間か？（Ceder 1961）
+
+project:
+  lean_root: "."            # lakefile.toml のあるディレクトリ（リポジトリ直下）
+  db_path: "state/research.db"
+  failures_log: "memory/failures.jsonl"
+  audits_dir: "memory/audits"
+  work_dir: "work"          # エージェントごとの作業領域 work/<agent_id>/
+
+lean:
+  lake: "lake"
+  # Spec ファイル（補題の命題）が import するモジュール
+  spec_imports: [Targets]
+  spec_opens: [MSpace, Set, Topology]
+  # 証明ファイルが import してよい接頭辞（Proofs.* は Checked のものだけ別途許可）
+  allowed_import_prefixes: [Mathlib, Targets, Specs]
+  # Mathlib 全体の import は禁止（メモリ 7.4GB では1回の検査に約10分かかったため）
+  forbidden_imports: [Mathlib]
+  allowed_axioms: [propext, Classical.choice, Quot.sound]
+  build_timeout_sec: 900
+  check_timeout_sec: 600
+  max_heartbeats_cap: 1000000
+  build_slots: 1            # 同時ビルド上限（メモリ対策。16GB 以上なら 2 も可）
+
+limits:
+  max_attempts_per_task: 5          # 1補題×1種別あたりの最大試行回数
+  decompose_after_failures: 2       # 直接証明がこの回数失敗したら Architect に分解を依頼
+  refute_after_failures: 2          # 同じく Red Team に反証を依頼
+  max_nodes: 200                    # 補題グラフのノード総数上限
+  max_depth: 6                      # 分解の深さ上限
+  max_reductions_per_node: 3        # 1ノードあたりの帰着（OR 分岐）上限
+  max_children_per_reduction: 6     # 1帰着あたりの子補題（AND）上限
+  lease_ttl_sec: 1800
+  max_checks_per_lease: 30          # 1リース中に desk check を呼べる回数
+
+budget:
+  daily_usd: 10.0
+  session_reserve_usd: 0.8          # 1セッション開始前に残っていなければならない予算
+  tier_daily_usd:                   # 段階ごとの1日上限（未指定の段階は全体上限のみ）
+    Tinf: 3.0
+
+circuit_breaker:
+  max_consecutive_failures: 4       # ロール単位で連続失敗したら一時停止
+  cooldown_sec: 1800
+  max_infra_errors: 3               # 検証器/ランナーの基盤エラーが続いたら全停止
+
+runner:
+  # エージェント1セッションの起動コマンド。プロンプトは標準入力で渡す。
+  # {model} {max_turns} {agent_id} が置換される。他社 CLI に差し替えることも可能。
+  cmd: ["claude", "-p", "--output-format", "json", "--model", "{model}", "--max-turns", "{max_turns}", "--allowedTools", "Read", "Grep", "Glob", "Write(work/{agent_id}/**)", "Edit(work/{agent_id}/**)", "Bash(bash tools/research.sh *)"]
+  cost_field: total_cost_usd        # JSON 出力中のコスト欄
+  session_timeout_sec: 3600
+  idle_sleep_sec: 60
+
+retriever:
+  backend: simple                   # simple / command（LeanDojo-v2 等の外部前提検索器）
+  command: null                     # 例: ["python", "tools/leandojo_retrieve.py"]（stdin: {"query","k"} → stdout: JSON 配列）
+
+git:
+  mode: github                      # local（単一 PC）/ github（別 PC の子機と GitHub で連携）
+  autocommit: true                  # true にすると受理のたびに Specs/Proofs/STATUS.md を自動コミット
+  remote: origin
+  base_branch: main                 # 親機が状態を push し、PR のマージ先になるブランチ
+  sync_interval_sec: 600            # 親機オーケストレータが desk sync を行う間隔（mode: github のとき）
+  claim_ttl_sec: 7200               # 子機の確保（claim/* ブランチ）の有効期限
+  child_db_path: state/remote.db    # 子機のミラー DB
+
+agents:
+  - id: architect-1
+    role: architect
+    model: claude-opus-5-5
+    max_turns: 40
+  - id: prover-1
+    role: prover
+    model: claude-opus-5-5
+    max_turns: 60
+  - id: prover-2
+    role: prover
+    model: claude-opus-5-5
+    max_turns: 60
+  - id: redteam-1
+    role: redteam
+    model: claude-opus-5-5
+    max_turns: 40

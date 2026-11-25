@@ -1,0 +1,7 @@
+.lake/
+state/
+work/
+Check/
+__pycache__/
+*.pyc
+STOP
