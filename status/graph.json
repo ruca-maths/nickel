@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-26 07:38:12",
+  "generated_at": "2026-11-26 07:41:13",
   "targets_hash": "198f3fa8f630b46d28aa23d1bba3194b216c79f4ca39920d47757a6f5efd6f89",
   "nodes": [
     {
@@ -81,9 +81,9 @@
       "stmt": "MSpace.Goals.T2b_stratifiable_paracompact",
       "informal": "stratifiable ⇒ パラコンパクト",
       "attempts": {
-        "prove": 5,
-        "decompose": 5,
-        "refute": 5
+        "prove": 4,
+        "decompose": 0,
+        "refute": 3
       },
       "closed_by": "remote"
     },
@@ -193,7 +193,7 @@
       "id": "L_0014",
       "goal": null,
       "tier": "T3",
-      "status": "open",
+      "status": "checked",
       "exhausted": false,
       "depth": 2,
       "both_sides": false,
@@ -204,7 +204,7 @@
         "decompose": 0,
         "refute": 0
       },
-      "closed_by": null
+      "closed_by": "prover-1"
     },
     {
       "id": "L_0015",
@@ -353,6 +353,18 @@
       "node": "L_0010",
       "path": "Proofs/L_0010.lean",
       "sha256": "794f5bad01047c31012d4a7675fa4263327586ea11e03ab007440bc5ff98004f",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "module": "Proofs.L_0014",
+      "kind": "proof",
+      "node": "L_0014",
+      "path": "Proofs/L_0014.lean",
+      "sha256": "832450e511217da05fb558091b18bc59e281c49d91d499319c6d0496ce69d56e",
       "axioms": [
         "Classical.choice",
         "Quot.sound",
