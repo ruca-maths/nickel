@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -23,6 +24,34 @@ if __package__ in (None, ""):
 
 from core.config import load_config, resolve
 from core.desk import Desk
+
+
+LIMIT_RE = re.compile(r"hit your .*limit|rate.?limit|usage limit|quota|overloaded|resource.?exhausted", re.I)
+RESET_RE = re.compile(r"resets\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?", re.I)
+
+
+def rate_limit_pause(res: dict | None, text: str, default: float = 900.0) -> float | None:
+    """利用上限・過負荷のエラーなら、再開までの待ち秒数を返す（そうでなければ None）。"""
+    status = (res or {}).get("api_error_status")
+    msg = str((res or {}).get("result", "")) if res else text[-2000:]
+    limited = status in (429, 529) or (bool((res or {}).get("is_error", res is None)) and LIMIT_RE.search(msg))
+    if not limited:
+        return None
+    m = RESET_RE.search(msg)
+    if not m:
+        return default
+    h, mi = int(m.group(1)), int(m.group(2) or 0)
+    ap = (m.group(3) or "").lower()
+    if ap == "pm" and h < 12:
+        h += 12
+    if ap == "am" and h == 12:
+        h = 0
+    now = time.time()
+    lt = time.localtime(now)
+    target = time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, h, mi, 0, 0, 0, -1))
+    if target <= now:
+        target += 86400
+    return target - now + 60  # リセット直後の混雑を避けて1分余裕を持たせる
 
 
 def last_json(text: str) -> dict | None:
@@ -60,6 +89,7 @@ class Orchestrator:
         self.max_infra = int(cb.get("max_infra_errors", 3))
         self.fails: dict[str, int] = {}
         self.paused_until: dict[str, float] = {}
+        self.all_paused_until = 0.0  # 利用上限に当たったら全エージェントを止める
         self.infra_errors = 0
         self.lock = threading.Lock()
         self.threads: dict[str, threading.Thread] = {}
@@ -143,6 +173,7 @@ class Orchestrator:
         stamp = time.strftime("%Y%m%d-%H%M%S")
         logf = self.logs_dir / f"{stamp}-{agent['id']}.log"
         infra = False
+        limited: float | None = None
         cost = 0.0
         try:
             p = subprocess.Popen(self.command(agent), cwd=str(self.root), env=env,
@@ -161,6 +192,7 @@ class Orchestrator:
                             encoding="utf-8")
             rcfg = self.runner_of(agent)
             res = last_json(out_s)
+            limited = rate_limit_pause(res, out_s + "\n" + err_s)
             field = rcfg.get("cost_field")
             if res is None and p.returncode != 0:
                 infra = True
@@ -177,6 +209,15 @@ class Orchestrator:
             stop_hb.set()
         d.db.add_spend(cost, agent["id"], node, tier)
         ls = d.db.lease(token)
+        if limited is not None:
+            # AI 側の利用上限: 補題の試行回数は消費せずにリースを返し、全体を止める
+            if ls is not None:
+                d._end_lease(ls)
+            d.db.event("rate_limited", agent["id"], {"node": node, "pause_sec": int(limited)})
+            with self.lock:
+                self.all_paused_until = max(self.all_paused_until, time.time() + limited)
+            self.log(f"[{agent['id']}] AI の利用上限に達しました。{int(limited // 60)} 分後まで全エージェントを止めます")
+            return
         if ls is not None:
             d._log_failure(ls, "no_submission", "セッションが提出・解放せずに終了")
             d._end_lease(ls)
@@ -228,7 +269,7 @@ class Orchestrator:
                 t = self.threads.get(aid)
                 if t and t.is_alive():
                     continue
-                if self.paused_until.get(role, 0) > time.time():
+                if self.paused_until.get(role, 0) > time.time() or self.all_paused_until > time.time():
                     continue
                 if max_sessions is not None and launched >= max_sessions:
                     continue

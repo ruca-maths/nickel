@@ -239,6 +239,24 @@ class TestSystem(unittest.TestCase):
         o = Orchestrator(self.cfg, log=lambda *a: None)
         self.assertIn("予算", o.run(once=True))
 
+    def test_15_rate_limit_does_not_consume_attempts(self):
+        import os
+        self.d.db.conn.execute("DELETE FROM spend")
+        # ここまでで全ノードが閉じているので、割り当て用の未解決ノードを1つ足す（Lean は使わない）
+        self.d.db.add_node(node_id="L_0099", origin="lemma", tier="T1", stmt="True", informal="test")
+        n_att = self.d.db.q1("SELECT COUNT(*) n FROM attempts")["n"]
+        os.environ["FAKE_LIMIT"] = "1"
+        try:
+            o = Orchestrator(self.cfg, log=lambda *a: None)
+            o.agents = [{"id": "prover-9", "role": "prover", "model": "x", "max_turns": 1}]
+            o.run(max_sessions=1)
+        finally:
+            del os.environ["FAKE_LIMIT"]
+        self.assertGreater(o.all_paused_until, time.time() + 60)
+        self.assertEqual(self.d.db.q1("SELECT COUNT(*) n FROM attempts")["n"], n_att)  # 試行回数は増えない
+        self.assertEqual(self.d.db.active_leases(), [])
+        self.assertEqual(o.infra_errors, 0)
+
     def test_14_post_accept_tamper_detected(self):
         self.assertEqual(self.d.v.audit_artifacts(), [])
         p = self.tmp / "Proofs" / "L_0001.lean"

@@ -12,6 +12,10 @@ DESK = Path(__file__).resolve().parent.parent / "core" / "desk.py"
 KNOWN = {"Toy.Goals.G1": "Toy.Goals.G1", "Toy.Goals.G2": "Toy.Goals.G2"}
 
 prompt = sys.stdin.buffer.read().decode("utf-8")
+if os.environ.get("FAKE_LIMIT"):  # 利用上限エラーを模擬（claude -p の出力形式）
+    print(json.dumps({"type": "result", "is_error": True, "api_error_status": 429, "total_cost_usd": 0,
+                      "result": "You've hit your 5-hour limit · resets 6:30am (Asia/Tokyo)"}))
+    sys.exit(1)
 task = json.loads(re.findall(r"```json\n(.*?)\n```", prompt, re.S)[-1])
 root = Path(os.environ["RESEARCH_CONFIG"]).resolve().parent
 if root.name == "state":  # 子機設定は state/remote_config.json
