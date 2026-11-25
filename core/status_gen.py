@@ -43,7 +43,8 @@ def render_md(desk, g: dict) -> str:
     L.append(f"- 生成時刻: {g['generated_at']}")
     L.append(f"- Targets 承認ハッシュ: `{(g['targets_hash'] or '未承認')[:16]}…`"
              f"（承認者: {db.get_meta('targets_approved_by', '-')}）")
-    L.append(f"- 本日の支出: ${db.spent_today():.2f} / ${float((desk.cfg.get('budget') or {}).get('daily_usd', 0)):.2f}")
+    cap = (desk.cfg.get('budget') or {}).get('daily_usd')
+    L.append(f"- 本日の支出: ${db.spent_today():.2f}" + (f" / ${float(cap):.2f}" if cap is not None else "（上限なし）"))
     stop = desk.root / "STOP"
     if stop.exists():
         L.append(f"- **停止中**: {stop.read_text(encoding='utf-8').strip()}")

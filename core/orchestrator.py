@@ -140,7 +140,9 @@ class Orchestrator:
     # ---- 予算 ----------------------------------------------------------------
     def budget_left(self) -> float:
         b = self.cfg.get("budget") or {}
-        return float(b.get("daily_usd", 0)) - self.desk.db.spent_today()
+        if b.get("daily_usd") is None:
+            return float("inf")  # 予算上限なし
+        return float(b["daily_usd"]) - self.desk.db.spent_today()
 
     def can_launch(self) -> bool:
         b = self.cfg.get("budget") or {}

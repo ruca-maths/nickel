@@ -36,10 +36,9 @@ limits:
   prover_skip_tiers: [Tinf]         # この段階の目標は Prover に直接は配らない（未解決問題を直接証明させない）
 
 budget:
-  daily_usd: 10.0
-  session_reserve_usd: 0.8          # 1セッション開始前に残っていなければならない予算
-  tier_daily_usd:                   # 段階ごとの1日上限（未指定の段階は全体上限のみ）
-    Tinf: 3.0
+  daily_usd: null                   # null = 上限なし（支出は記録だけする）。数値にすると1日の上限になる
+  session_reserve_usd: 0.8          # 上限があるとき、1セッション開始前に残っていなければならない予算
+  tier_daily_usd: null              # 段階ごとの1日上限（例: 次の行に「    Tinf: 3.0」）。null なら上限なし
 
 circuit_breaker:
   max_consecutive_failures: 4       # ロール単位で連続失敗したら一時停止
