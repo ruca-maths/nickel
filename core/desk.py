@@ -439,8 +439,13 @@ class Desk:
 
         def integrate() -> None:
             g.fetch()
-            if not g.ok("merge", "--ff-only", g.base_ref()):
-                g.run("rebase", "--autostash", g.base_ref())
+            if g.ok("merge", "--ff-only", g.base_ref()):
+                return
+            # 状態ファイルが衝突したら親機（この DB）の内容を優先して統合する。rebase は途中で
+            # 止まるとリポジトリが中途半端な状態で残るので使わない
+            if not g.ok("merge", "--autostash", "--no-edit", "-X", "ours", g.base_ref()):
+                g.ok("merge", "--abort")
+                raise RuntimeError("origin の取り込みに失敗しました（手動で確認が必要）")
 
         commit_state("sync: 研究メモと状態を保存")  # 未コミットの変更があると rebase できないため先に保存
         integrate()

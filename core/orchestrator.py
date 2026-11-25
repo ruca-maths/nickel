@@ -103,9 +103,9 @@ def last_json(text: str) -> dict | None:
 
 
 class Orchestrator:
-    def __init__(self, cfg: dict | None = None, log=print):
+    def __init__(self, cfg: dict | None = None, log=None):
         self.cfg = cfg or load_config()
-        self.log = log
+        self.log = log or self._log
         self.desk = Desk(self.cfg)
         self.root = self.desk.root
         # remote: true のエージェントは子機（core/remote.py）専用なので親機では起動しない
@@ -126,6 +126,16 @@ class Orchestrator:
         self.last_sync = 0.0
         self.logs_dir = self.root / "state" / "logs"
         self.logs_dir.mkdir(parents=True, exist_ok=True)
+
+    def _log(self, msg: str) -> None:
+        """画面と state/logs/orchestrator.log（UTF-8）の両方に書く。"""
+        line = f"{time.strftime('%m/%d %H:%M:%S')} {msg}"
+        print(line, flush=True)
+        try:
+            with (self.root / "state" / "logs" / "orchestrator.log").open("a", encoding="utf-8") as f:
+                f.write(line + "\n")
+        except OSError:
+            pass
 
     # ---- 予算 ----------------------------------------------------------------
     def budget_left(self) -> float:
