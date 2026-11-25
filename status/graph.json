@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-26 07:43:47",
+  "generated_at": "2026-11-26 07:52:22",
   "targets_hash": "198f3fa8f630b46d28aa23d1bba3194b216c79f4ca39920d47757a6f5efd6f89",
   "nodes": [
     {
@@ -217,9 +217,9 @@
       "stmt": "∀ (X : Type) [TopologicalSpace X], T3Space X → (∃ g : ℕ → X → Set X, (∀ n x, IsOpen (g n x) ∧ x ∈ g n x) ∧ (∀ n x, g (n + 1) x ⊆ g n x) ∧ (∀ H : Set X, IsClosed H → ∀ x, x ∉ H → ∃ n, x ∉ closure (⋃ y ∈ H, g n y))) → ∃ V : ℕ → X → Set X, (∀ n x, V n x ∈ nhds x) ∧ (∀ n x y, y ∈ V n x → V n y ⊆ V n x) ∧ (∀ H : Set X, IsClosed H → ∀ x, x ∉ H → ∃ n, x ∉ closure (⋃ y ∈ H, V n y))",
       "informal": "核心部（Junnila 1978 'Neighbornets' による stratifiable ⇒ M2 の証明の中心）：stratifiable な正則空間は推移的 neighbornet の列 V_n（V n x は x の近傍で、y ∈ V n x ⇒ V n y ⊆ V n x）で、各閉集合 H について ⋂_n closure(V_n(H)) = H となるものを持つ。この命題は「閉集合からなる σ-closure-preserving quasi-base を持つ」と同値（逆向き：𝓑 = ⋃𝓑_n を閉 CP quasi-base として V n x = (⋃{B ∈ 𝓑_0 ∪…∪ 𝓑_n : x ∉ B})ᶜ とおけば推移的近傍になり、性質も満たす）ので、Gruenhage 1976 / Junnila 1978 の定理により真。V n x は開である必要はなく近傍でよい点に注意。さらなる分解が必要な可能性が高い。",
       "attempts": {
-        "prove": 2,
-        "decompose": 0,
-        "refute": 0
+        "prove": 5,
+        "decompose": 1,
+        "refute": 4
       },
       "closed_by": null
     },

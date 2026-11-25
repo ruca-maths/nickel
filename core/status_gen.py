@@ -95,11 +95,44 @@ def render_md(desk, g: dict) -> str:
     return "\n".join(L) + "\n"
 
 
+def build_site(desk, g: dict) -> dict:
+    """公開用の進捗ページ（index.html）が読むデータ。AI の文章は短く切って載せる。"""
+    import re
+
+    db = desk.db
+    uses = {}
+    for f in sorted((desk.root / "Proofs").glob("*.lean")):
+        src = f.read_text(encoding="utf-8")
+        uses[f.stem] = {"imports": re.findall(r"^import (Proofs\.\w+)", src, re.M), "lines": src.count("\n")}
+    nodes = [{k: n[k] for k in ("id", "goal", "tier", "status", "depth", "informal", "attempts", "closed_by",
+                                "exhausted")} | {"stmt": n["stmt"][:400]} for n in g["nodes"]]
+    accepted = [dict(r) for r in db.q("SELECT module,kind,node,agent,accepted_at,axioms FROM artifacts "
+                                      "WHERE kind!='spec' ORDER BY accepted_at")]
+    fails = []
+    if desk.failures_path.exists():
+        for line in desk.failures_path.read_text(encoding="utf-8").splitlines():
+            try:
+                r = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            fails.append({k: (str(r.get(k) or "")[:500]) for k in ("ts", "node", "task", "agent", "outcome", "reason")})
+    events = [dict(r) for r in db.q("SELECT kind,agent,detail,created_at FROM events WHERE kind IN "
+                                    "('checked','refuted','goal_closed','targets_approved') ORDER BY id")]
+    spend = [dict(r) for r in db.q("SELECT agent, ROUND(SUM(usd),3) usd, COUNT(*) n FROM spend GROUP BY agent")]
+    attempts = [dict(r) for r in db.q("SELECT agent,task,outcome,COUNT(*) n FROM attempts GROUP BY agent,task,outcome")]
+    running = [{"agent": r["agent"], "task": r["task"], "node": r["node"]} for r in db.active_leases()]
+    return {"generated_at": g["generated_at"], "targets_hash": g["targets_hash"], "nodes": nodes,
+            "reductions": g["reductions"], "uses": uses, "accepted": accepted, "failures": fails[-200:],
+            "events": events, "spend": spend, "sessions": sum(s["n"] for s in spend), "attempts": attempts,
+            "running": running, "spent_today": round(db.spent_today(), 2)}
+
+
 def generate(desk) -> None:
     g = build_graph(desk)
     out = desk.root / "status"
     out.mkdir(exist_ok=True)
     (out / "graph.json").write_text(json.dumps(g, ensure_ascii=False, indent=2), encoding="utf-8")
+    (out / "site.json").write_text(json.dumps(build_site(desk, g), ensure_ascii=False), encoding="utf-8")
     (desk.root / "STATUS.md").write_text(render_md(desk, g), encoding="utf-8")
 
 

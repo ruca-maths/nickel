@@ -278,6 +278,8 @@ class Orchestrator:
 
     # ---- メインループ --------------------------------------------------------
     def stop_reason(self) -> str | None:
+        if (self.root / "state" / "RESTART").exists():
+            return "restart"  # 作業中のセッションを待ってから終了し、ラッパーがすぐ起動し直す
         stop = self.root / "STOP"
         if stop.exists():
             return stop.read_text(encoding="utf-8").strip() or "STOP ファイル"
@@ -401,7 +403,13 @@ def main(argv: list[str] | None = None) -> int:
         return 3
     lock.write_text(str(os.getpid()), encoding="utf-8")
     try:
-        o.run(once=a.once, max_sessions=a.max_sessions, forever=a.forever)
+        reason = o.run(once=a.once, max_sessions=a.max_sessions, forever=a.forever)
+        if reason == "restart":
+            try:
+                (o.root / "state" / "RESTART").unlink()
+            except OSError:
+                pass
+            return 4
     finally:
         try:
             if lock.read_text(encoding="utf-8").strip() == str(os.getpid()):

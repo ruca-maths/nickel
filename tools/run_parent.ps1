@@ -1,5 +1,6 @@
 # Keeps the parent orchestrator running. Restarts it 5 minutes after an abnormal exit.
 # To stop: create a file named STOP at the repository root (this wrapper stops too).
+# To reload code: create state\RESTART (running sessions finish first, then it restarts at once).
 # ASCII only on purpose: Windows PowerShell 5.1 reads BOM-less UTF-8 scripts as the ANSI code page.
 $ErrorActionPreference = "Continue"
 Set-Location (Join-Path $PSScriptRoot "..")
@@ -12,6 +13,7 @@ while (-not (Test-Path STOP)) {
     # the orchestrator writes state\logs\orchestrator.log itself (UTF-8)
     & $py -u core/orchestrator.py --forever
     if ($LASTEXITCODE -eq 3) { Write-Host "Another orchestrator is running in this clone. Exiting."; break }
+    if ($LASTEXITCODE -eq 4) { Write-Host "Restart requested (state\RESTART). Restarting now."; continue }
     if (Test-Path STOP) { break }
     Write-Host "Orchestrator exited (rc=$LASTEXITCODE). Restarting in 5 minutes."
     Start-Sleep -Seconds 300

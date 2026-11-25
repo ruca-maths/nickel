@@ -5,3 +5,4 @@ Check/
 __pycache__/
 *.pyc
 STOP
+site/
