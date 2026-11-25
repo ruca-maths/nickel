@@ -121,7 +121,9 @@ class Desk:
             live = self.db.reductions_of(nid, ("live",))
             pf = self.db.count_attempts(nid, "prove")
             if role == "prover":
-                if pf < mx and not live:
+                # 本題など「直接証明させても無駄な段階」は Prover に配らない（分解役・反証役が担当）
+                skip = n["tier"] in (self.lim("prover_skip_tiers", None) or [])
+                if pf < mx and not live and not skip:
                     out.append(((tr, -n["depth"], pf, nid), "prove", nid))
             elif role == "architect":
                 df = self.db.count_attempts(nid, "decompose")
@@ -426,9 +428,22 @@ class Desk:
         """origin の基準ブランチを取り込み、新しい証明を受理し、状態を commit して push する。"""
         gcfg = self.cfg.get("git") or {}
         g = self.git()
-        g.fetch()
-        if not g.ok("merge", "--ff-only", g.base_ref()):
-            g.run("rebase", g.base_ref())
+        paths = ["Specs", "Proofs", "STATUS.md", "status", "memory"]
+
+        def commit_state(msg: str) -> None:
+            present = [p for p in paths if (self.root / p).exists()]
+            if present:
+                g.run("add", "-A", "--", *present)
+            if not g.ok("diff", "--cached", "--quiet"):
+                g.run("commit", "-q", "-m", msg)
+
+        def integrate() -> None:
+            g.fetch()
+            if not g.ok("merge", "--ff-only", g.base_ref()):
+                g.run("rebase", "--autostash", g.base_ref())
+
+        commit_state("sync: 研究メモと状態を保存")  # 未コミットの変更があると rebase できないため先に保存
+        integrate()
         results = {}
         known = {r["path"] for r in self.db.artifacts()}
         for f in sorted((self.root / "Proofs").glob("*.lean")):
@@ -436,18 +451,14 @@ class Desk:
             if rel not in known:
                 results[rel] = self.ingest(rel)
         self.regen()
-        paths = ["Specs", "Proofs", "STATUS.md", "status"]
-        g.run("add", "-A", "--", *paths)
-        if not g.ok("diff", "--cached", "--quiet"):
-            g.run("commit", "-q", "-m", f"sync: 状態更新（取り込み {sum(1 for r in results.values() if r.get('ok') and 'module' in r)} 件）")
+        commit_state(f"sync: 状態更新（取り込み {sum(1 for r in results.values() if r.get('ok') and 'module' in r)} 件）")
         pushed = False
         if push:
             for _ in range(3):
                 if g.ok("push", g.remote, f"HEAD:refs/heads/{g.base}"):
                     pushed = True
                     break
-                g.fetch()
-                g.run("rebase", g.base_ref())
+                integrate()
         # 確保の掃除: ノードが open でなくなったもの・期限切れのもの
         ttl = float(gcfg.get("claim_ttl_sec", 7200))
         removed = []
@@ -565,7 +576,7 @@ class Desk:
             return  # 子機: 追跡ファイル（STATUS.md 等）は書かない
         status_gen.generate(self)
         if commit_msg and (self.cfg.get("git") or {}).get("autocommit"):
-            paths = ["Specs", "Proofs", "STATUS.md", "status"]
+            paths = ["Specs", "Proofs", "STATUS.md", "status", "memory"]
             subprocess.run(["git", "add", "--", *paths], cwd=self.root, capture_output=True)
             subprocess.run(["git", "commit", "-q", "-m", commit_msg, "--", *paths],
                            cwd=self.root, capture_output=True)

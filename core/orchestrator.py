@@ -54,6 +54,34 @@ def rate_limit_pause(res: dict | None, text: str, default: float = 900.0) -> flo
     return target - now + 60  # リセット直後の混雑を避けて1分余裕を持たせる
 
 
+def pid_alive(pid: int) -> bool:
+    if os.name == "nt":
+        import ctypes
+
+        k = ctypes.windll.kernel32
+        h = k.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+        if not h:
+            return False
+        code = ctypes.c_ulong()
+        ok = k.GetExitCodeProcess(h, ctypes.byref(code))
+        k.CloseHandle(h)
+        return bool(ok) and code.value == 259  # STILL_ACTIVE
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
+def pid_in_lock(lock: Path) -> int | None:
+    """ロックファイルの PID が生きていればその PID、そうでなければ None。"""
+    try:
+        pid = int(lock.read_text(encoding="utf-8").strip())
+    except (OSError, ValueError):
+        return None
+    return pid if pid != os.getpid() and pid_alive(pid) else None
+
+
 def last_json(text: str) -> dict | None:
     """出力中の最後の JSON オブジェクトを取り出す。"""
     text = text.strip()
@@ -247,7 +275,16 @@ class Orchestrator:
             return f"基盤エラーが {self.infra_errors} 回発生"
         return None
 
-    def run(self, once: bool = False, max_sessions: int | None = None) -> str:
+    def wait(self, seconds: float) -> bool:
+        """STOP を見ながら待つ。STOP が現れたら False。"""
+        end = time.time() + seconds
+        while time.time() < end:
+            if self.stop_reason():
+                return False
+            time.sleep(min(60.0, max(0.0, end - time.time())))
+        return True
+
+    def run(self, once: bool = False, max_sessions: int | None = None, forever: bool = False) -> str:
         if not self.desk.db.get_meta("targets_hash"):
             return "Targets が未承認です。`python core/desk.py approve-targets --by <名前>` を先に実行してください"
         launched = 0
@@ -287,6 +324,14 @@ class Orchestrator:
             running = [t for t in self.threads.values() if t.is_alive()]
             if not running and not started:
                 if not self.can_launch():
+                    if forever:
+                        lt = time.localtime()
+                        midnight = time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday + 1, 0, 1, 0, 0, 0, -1))
+                        self.log(f"[orchestrator] 本日の予算上限に到達。{time.strftime('%m/%d %H:%M', time.localtime(midnight))} に再開します")
+                        if not self.wait(midnight - time.time()):
+                            reason = self.stop_reason()
+                            break
+                        continue
                     reason = f"本日の予算上限に到達（残り ${self.budget_left():.2f}）"
                     break
                 if once or (max_sessions is not None and launched >= max_sessions):
@@ -312,6 +357,8 @@ def main(argv: list[str] | None = None) -> int:
         pass
     ap = argparse.ArgumentParser()
     ap.add_argument("--once", action="store_true", help="割り当て可能なタスクが尽きたら終了")
+    ap.add_argument("--forever", action="store_true",
+                    help="予算上限に達しても終了せず、翌日 0:01 に再開する（STOP ファイルで停止）")
     ap.add_argument("--max-sessions", type=int)
     ap.add_argument("--print-prompt", metavar="AGENT_ID",
                     help="指定エージェントのプロンプトを表示するだけ（リースは即解放、試行回数に数えない）")
@@ -337,7 +384,20 @@ def main(argv: list[str] | None = None) -> int:
         print("$ " + " ".join(o.command(agent)))
         o.desk._end_lease(o.desk.db.lease(task["lease_token"]))
         return 0
-    o.run(once=a.once, max_sessions=a.max_sessions)
+    lock = o.root / "state" / "orchestrator.pid"
+    other = pid_in_lock(lock)
+    if other:
+        print(f"このクローンでは別のオーケストレータ（PID {other}）が動いています。二重起動はしません")
+        return 3
+    lock.write_text(str(os.getpid()), encoding="utf-8")
+    try:
+        o.run(once=a.once, max_sessions=a.max_sessions, forever=a.forever)
+    finally:
+        try:
+            if lock.read_text(encoding="utf-8").strip() == str(os.getpid()):
+                lock.unlink()
+        except OSError:
+            pass
     return 0
 
 

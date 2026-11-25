@@ -33,6 +33,7 @@ limits:
   max_children_per_reduction: 6     # 1帰着あたりの子補題（AND）上限
   lease_ttl_sec: 1800
   max_checks_per_lease: 30          # 1リース中に desk check を呼べる回数
+  prover_skip_tiers: [Tinf]         # この段階の目標は Prover に直接は配らない（未解決問題を直接証明させない）
 
 budget:
   daily_usd: 10.0
