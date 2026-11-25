@@ -81,9 +81,9 @@
       "stmt": "MSpace.Goals.T2b_stratifiable_paracompact",
       "informal": "stratifiable ⇒ パラコンパクト",
       "attempts": {
-        "prove": 4,
-        "decompose": 0,
-        "refute": 3
+        "prove": 5,
+        "decompose": 5,
+        "refute": 5
       },
       "closed_by": "remote"
     },
