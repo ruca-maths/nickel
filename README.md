@@ -71,6 +71,9 @@ python core/orchestrator.py              # mode: github なら sync_interval_sec
    python core/remote.py --agents prover-pc2 --max-sessions 1   # 試運転
    python core/remote.py --agents prover-pc2 --loop             # 常駐
    ```
+* 子機用エージェントには `remote: true` を付ける（親機のオーケストレータは起動しない）。
+  Claude 以外の AI は `runners:` に起動コマンドを書き、エージェントの `runner:` で選ぶ
+  （例: `runner: gemini`。コストを報告しない CLI は `cost_estimate_usd` で予算を数える）。
 * 子機の予算は子機の `state/remote.db` で別に数える（`budget.daily_usd` は PC ごとの上限になる）。
 * 子機での失敗メモは子機の `memory/failures.jsonl` に残るだけで、親機には届かない。
 * 子機の作業ツリーは毎回 `origin/main` に合わせ直すので、子機では追跡ファイルを編集しないこと。

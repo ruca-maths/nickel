@@ -53,6 +53,16 @@ runner:
   session_timeout_sec: 3600
   idle_sleep_sec: 60
 
+# エージェントごとに別の AI を使うためのランナー（agents の runner: で選ぶ。未指定は上の runner）
+runners:
+  gemini:
+    # Gemini CLI（npm install -g @google/gemini-cli）。プロンプトは標準入力で渡す。
+    # 子機で `gemini --help` を見てフラグを確認すること。--yolo はツールの確認を省くので、
+    # 子機は研究専用のアカウントか環境で動かすこと。
+    cmd: ["gemini", "--output-format", "json", "--yolo", "--model", "{model}"]
+    cost_field: null                # Gemini CLI はコストを出さないので下の見積もり額で予算を数える
+    cost_estimate_usd: 0.5
+
 retriever:
   backend: simple                   # simple / command（LeanDojo-v2 等の外部前提検索器）
   command: null                     # 例: ["python", "tools/leandojo_retrieve.py"]（stdin: {"query","k"} → stdout: JSON 配列）
@@ -83,7 +93,15 @@ agents:
     role: redteam
     model: claude-opus-5-5
     max_turns: 40
+  # ---- 子機（別 PC）で動かすエージェント。子機で python core/remote.py --agents <id> を実行 ----
   - id: prover-pc2
     role: prover
+    remote: true                    # 親機のオーケストレータでは起動しない
     model: claude-opus-5-5
+    max_turns: 60
+  - id: gemini-pc2
+    role: prover
+    remote: true
+    runner: gemini
+    model: null                     # 未指定なら Gemini CLI の既定モデル
     max_turns: 60
