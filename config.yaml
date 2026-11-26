@@ -120,3 +120,16 @@ agents:
     runner: leandojo
     model: null
     max_turns: 1
+  - id: prover-mac
+    role: prover
+    machine: Mac Studio
+    remote: true
+    model: claude-opus-5-5
+    max_turns: 60
+  - id: gemini-mac
+    role: prover
+    machine: Mac Studio
+    remote: true
+    runner: gemini
+    model: null
+    max_turns: 60
