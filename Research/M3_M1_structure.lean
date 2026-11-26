@@ -2598,4 +2598,285 @@ theorem Tinf_of_every_M3_point_hasCPOpenLocalBase
             exact hT.symm ▸ hS0.symm ▸ hS
         rw [hEq]; simp
 
+/-- Pointwise `σ`-closure-preserving open neighborhood base. -/
+def HasSigmaCPOpenLocalBase {X : Type} [TopologicalSpace X] (p : X) : Prop :=
+  ∃ 𝓥 : ℕ → Set (Set X),
+    (∀ n, ∀ V ∈ 𝓥 n, IsOpen V ∧ p ∈ V) ∧
+    (∀ n, MSpace.ClosurePreserving (𝓥 n)) ∧
+    (∀ U : Set X, IsOpen U → p ∈ U → ∃ n, ∃ V ∈ 𝓥 n, V ⊆ U)
+
+/-- Theorem 29: Any disjoint union `Σ i : ι, X i` of `M₃`-spaces is an `M₃`-space. -/
+theorem M3_sigma {ι : Type} (X : ι → Type) [∀ i, TopologicalSpace (X i)]
+    (hM3 : ∀ i, MSpace.IsM3 (X i)) :
+    MSpace.IsM3 (Σ i : ι, X i) := by
+  have hT3 : ∀ i, T3Space (X i) := fun i => (hM3 i).1
+  have hstrat : ∀ i, ∃ G : ℕ → Set (X i) → Set (X i), MSpace.IsStratification G := fun i =>
+    ((Proofs.L_0004.main (X i)).mp (hM3 i)).2
+  choose G hG using hstrat
+  let GS : ℕ → Set (Σ i : ι, X i) → Set (Σ i : ι, X i) := fun n H =>
+    ⋃ i : ι, Sigma.mk i '' G i n (Sigma.mk i ⁻¹' H)
+  refine (Proofs.L_0004.main (Σ i : ι, X i)).mpr ⟨inferInstance, GS, ?_, ?_, ?_, ?_⟩
+  · intro n H hH
+    exact isOpen_iUnion fun i =>
+      isOpenMap_sigmaMk _ ((hG i).1 n _ (hH.preimage continuous_sigmaMk))
+  · rintro n H hH ⟨i, x⟩ hixH
+    exact mem_iUnion.mpr ⟨i, x, (hG i).2.1 n _ (hH.preimage continuous_sigmaMk) hixH, rfl⟩
+  · intro H hH
+    apply Subset.antisymm
+    · rintro ⟨i, x⟩ hix
+      rw [mem_iInter] at hix
+      have hx_cl : x ∈ ⋂ n, closure (G i n (Sigma.mk i ⁻¹' H)) := by
+        rw [mem_iInter]
+        intro n
+        rw [mem_closure_iff]
+        intro O hO hxO
+        obtain ⟨z, hzO, hzU⟩ :=
+          mem_closure_iff.mp (hix n) (Sigma.mk i '' O) (isOpenMap_sigmaMk O hO) ⟨x, hxO, rfl⟩
+        obtain ⟨y, hyO, rfl⟩ := hzO
+        obtain ⟨j, w, hwG, hEq⟩ := mem_iUnion.mp hzU
+        cases hEq
+        exact ⟨y, hyO, hwG⟩
+      rw [(hG i).2.2.1 _ (hH.preimage continuous_sigmaMk)] at hx_cl
+      exact hx_cl
+    · rintro ⟨i, x⟩ hixH
+      rw [mem_iInter]
+      intro n
+      exact subset_closure (mem_iUnion.mpr
+        ⟨i, x, (hG i).2.1 n _ (hH.preimage continuous_sigmaMk) hixH, rfl⟩)
+  · intro n H K hH hK hHK z hz
+    obtain ⟨i, x, hxG, rfl⟩ := mem_iUnion.mp hz
+    exact mem_iUnion.mpr ⟨i, x, (hG i).2.2.2 n _ _
+      (hH.preimage continuous_sigmaMk) (hK.preimage continuous_sigmaMk) (preimage_mono hHK) hxG, rfl⟩
+
+/-- Helper: An `M₃`-space in which every closed subset has a `σ`-CP open outer base is `M₁`. -/
+theorem M3_is_M1_of_closed_sigmaCP_outer_base (X : Type) [TopologicalSpace X]
+    (hM3 : MSpace.IsM3 X)
+    (hscp : ∀ F : Set X, IsClosed F →
+      ∃ 𝓥 : ℕ → Set (Set X),
+        (∀ k, ∀ V ∈ 𝓥 k, IsOpen V ∧ F ⊆ V) ∧
+        (∀ k, MSpace.ClosurePreserving (𝓥 k)) ∧
+        (∀ U : Set X, IsOpen U → F ⊆ U → ∃ k, ∃ V ∈ 𝓥 k, V ⊆ U)) :
+    MSpace.IsM1 X := by
+  have : T3Space X := hM3.1
+  have hpara : ParacompactSpace X :=
+    Proofs.L_0005.main X ⟨inferInstance, Proofs.L_0010.main X hM3⟩
+  obtain ⟨𝓕, h𝓕_closed, h𝓕_disc, h𝓕_net⟩ := M3_is_sigma_space X hM3
+  have hexp : ∀ m : ℕ, ∃ O : ↥(𝓕 m) → Set X,
+      (∀ H : ↥(𝓕 m), IsOpen (O H) ∧ H.1 ⊆ O H) ∧
+      Pairwise (fun H₁ H₂ : ↥(𝓕 m) => Disjoint (closure (O H₁)) (closure (O H₂))) ∧
+      (∀ y : X, ∃ N : Set X, IsOpen N ∧ y ∈ N ∧
+        ∀ H₁ H₂ : ↥(𝓕 m), (N ∩ closure (O H₁)).Nonempty → (N ∩ closure (O H₂)).Nonempty → H₁ = H₂) := by
+    intro m
+    refine collectionwise_normal_of_paracompact_t3 X (fun H : ↥(𝓕 m) => H.1)
+      (fun H => h𝓕_closed m H.1 H.2) ?_
+    intro y
+    obtain ⟨U, hU_open, hyU, hU_uniq⟩ := h𝓕_disc m y
+    exact ⟨U, hU_open, hyU, fun H₁ H₂ h1 h2 => Subtype.ext (hU_uniq H₁.1 H₁.2 H₂.1 H₂.2 h1 h2)⟩
+  choose O hO_open hO_disj hO_disc using hexp
+  choose 𝓥 h𝓥_open h𝓥_cp h𝓥_base using fun F (hF : IsClosed F) => hscp F hF
+  let 𝓑' : ℕ → Set (Set X) := fun r =>
+    { V : Set X | ∃ H : ↥(𝓕 (Nat.unpair r).1),
+      V ∈ 𝓥 H.1 (h𝓕_closed _ H.1 H.2) (Nat.unpair r).2 ∧ V ⊆ O (Nat.unpair r).1 H }
+  refine ⟨inferInstance, ⋃ r, 𝓑' r, ?_, 𝓑', ?_, rfl⟩
+  · have hopen : ∀ V ∈ ⋃ r, 𝓑' r, IsOpen V := by
+      intro V hV
+      obtain ⟨r, H, hV𝓥, _⟩ := mem_iUnion.mp hV
+      exact (h𝓥_open H.1 (h𝓕_closed _ H.1 H.2) _ V hV𝓥).1
+    refine isTopologicalBasis_of_isOpen_of_nhds hopen ?_
+    intro x U hxU hU_open
+    obtain ⟨m, F, hFm, hxF, hFU⟩ := h𝓕_net x U hU_open hxU
+    let H : ↥(𝓕 m) := ⟨F, hFm⟩
+    have hUO_open : IsOpen (U ∩ O m H) := hU_open.inter (hO_open m H).1
+    have hF_sub : F ⊆ U ∩ O m H := subset_inter hFU (hO_open m H).2
+    obtain ⟨k, V, hV𝓥, hVsub⟩ := h𝓥_base F (h𝓕_closed m F hFm) (U ∩ O m H) hUO_open hF_sub
+    refine ⟨V, mem_iUnion.mpr ⟨Nat.pair m k, ?_⟩,
+      (h𝓥_open F (h𝓕_closed m F hFm) k V hV𝓥).2 hxF, hVsub.trans inter_subset_left⟩
+    dsimp only [𝓑']; rw [Nat.unpair_pair]
+    exact ⟨H, hV𝓥, hVsub.trans inter_subset_right⟩
+  · intro r 𝓖 h𝓖
+    apply Subset.antisymm
+    · intro y hy
+      set m := (Nat.unpair r).1
+      set k := (Nat.unpair r).2
+      obtain ⟨N, hN_open, hyN, hN_uniq⟩ := hO_disc m y
+      by_cases hhit : ∃ H : ↥(𝓕 m), (N ∩ closure (O m H)).Nonempty
+      · obtain ⟨H₀, hH₀⟩ := hhit
+        let 𝓖₀ : Set (Set X) :=
+          { V ∈ 𝓖 | V ∈ 𝓥 H₀.1 (h𝓕_closed m H₀.1 H₀.2) k ∧ V ⊆ O m H₀ }
+        have hsub : N ∩ ⋃₀ 𝓖 ⊆ ⋃₀ 𝓖₀ := by
+          rintro z ⟨hzN, V, hV𝓖, hzV⟩
+          obtain ⟨H, hV𝓥, hVO⟩ := h𝓖 hV𝓖
+          have hHeq : H = H₀ := hN_uniq H H₀ ⟨z, hzN, subset_closure (hVO hzV)⟩ hH₀
+          subst hHeq
+          exact ⟨V, ⟨hV𝓖, hV𝓥, hVO⟩, hzV⟩
+        have hy0 : y ∈ closure (⋃₀ 𝓖₀) :=
+          closure_mono hsub (hN_open.inter_closure ⟨hyN, hy⟩)
+        rw [h𝓥_cp H₀.1 (h𝓕_closed m H₀.1 H₀.2) k 𝓖₀ (fun _ h => h.2.1)] at hy0
+        obtain ⟨_, ⟨V, hV, rfl⟩, hyV⟩ := hy0
+        exact ⟨closure V, mem_image_of_mem _ hV.1, hyV⟩
+      · exfalso
+        obtain ⟨z, hzN, V, hV𝓖, hzV⟩ := mem_closure_iff.mp hy N hN_open hyN
+        obtain ⟨H, _, hVO⟩ := h𝓖 hV𝓖
+        exact hhit ⟨H, z, hzN, subset_closure (hVO hzV)⟩
+    · exact sUnion_subset (by rintro _ ⟨V, hV, rfl⟩; exact closure_mono (subset_sUnion_of_mem hV))
+
+/-- Theorem 30 (Unconditional Global-to-Pointwise Equivalence for `Tinf`):
+`MSpace.Goals.Tinf_M3_imp_M1` holds if and only if every point of every
+`M₃`-space admits a `σ`-closure-preserving open neighborhood base. -/
+theorem Tinf_iff_every_M3_point_hasSigmaCPOpenLocalBase :
+    MSpace.Goals.Tinf_M3_imp_M1 ↔
+      ∀ (X : Type) [TopologicalSpace X], MSpace.IsM3 X → ∀ x : X, HasSigmaCPOpenLocalBase x := by
+  classical
+  constructor
+  · intro hTinf X _ hM3 x
+    obtain ⟨_, 𝓑, h𝓑b, 𝓑', h𝓑'cp, h𝓑eq⟩ := hTinf X hM3
+    refine ⟨fun n => { B ∈ 𝓑' n | x ∈ B }, ?_, ?_, ?_⟩
+    · intro n B hB
+      exact ⟨h𝓑b.isOpen (h𝓑eq.symm ▸ mem_iUnion.mpr ⟨n, hB.1⟩), hB.2⟩
+    · intro n 𝓖 h𝓖
+      exact h𝓑'cp n 𝓖 (h𝓖.trans fun _ h => h.1)
+    · intro O hO hxO
+      obtain ⟨B, hB𝓑, hxB, hBO⟩ := h𝓑b.exists_subset_of_mem_open hxO hO
+      rw [h𝓑eq, mem_iUnion] at hB𝓑
+      obtain ⟨n, hBn⟩ := hB𝓑
+      exact ⟨n, B, ⟨hBn, hxB⟩, hBO⟩
+  · intro hpt X _ hM3
+    have : T3Space X := hM3.1
+    refine M3_is_M1_of_closed_sigmaCP_outer_base X hM3 fun F hF => ?_
+    by_cases hFne : F.Nonempty
+    · obtain ⟨x₀, hx₀F⟩ := hFne
+      let q : X → Collapse X F := collapseMap F
+      have hq_cont : Continuous q := continuous_coinduced_rng
+      have hq_surj : Function.Surjective q := by
+        rintro (⟨⟩ | ⟨x, hx⟩)
+        · exact ⟨x₀, by simp [q, collapseMap, hx₀F]⟩
+        · exact ⟨x, by simp [q, collapseMap, hx]⟩
+      have hT1_col : T1Space (Collapse X F) := by
+        refine ⟨fun y => ?_⟩
+        rw [← isOpen_compl_iff]
+        change IsOpen (q ⁻¹' ({y}ᶜ : Set (Collapse X F)))
+        rw [preimage_compl, isOpen_compl_iff]
+        cases y with
+        | none =>
+          have hEq : q ⁻¹' ({none} : Set (Collapse X F)) = F := by
+            ext x; simp only [mem_preimage, mem_singleton_iff, q, collapseMap]
+            by_cases h : x ∈ F <;> simp [h]
+          rw [hEq]; exact hF
+        | some p =>
+          have hEq : q ⁻¹' ({some p} : Set (Collapse X F)) = {p.1} := by
+            ext x; simp only [mem_preimage, mem_singleton_iff, q, collapseMap]
+            by_cases h : x ∈ F
+            · simp only [h, ↓reduceDIte, reduceCtorEq, false_iff]
+              intro hx; exact p.2 (hx ▸ h)
+            · simp only [h, ↓reduceDIte, Option.some.injEq, Subtype.ext_iff]
+          rw [hEq]; exact isClosed_singleton
+      have hq_closed : IsClosedMap q := by
+        intro C hC
+        rw [← isOpen_compl_iff]
+        change IsOpen (q ⁻¹' (q '' C)ᶜ)
+        rw [preimage_compl, isOpen_compl_iff]
+        by_cases hCF : (C ∩ F).Nonempty
+        · have hEq : q ⁻¹' (q '' C) = C ∪ F := by
+            ext x
+            constructor
+            · rintro ⟨w, hwC, hqw⟩
+              dsimp only [q, collapseMap] at hqw
+              by_cases hwF : w ∈ F <;> by_cases hxF : x ∈ F <;> simp [hwF, hxF] at hqw
+              · exact Or.inr hxF
+              · subst hqw; exact Or.inl hwC
+            · rintro (hxC | hxF)
+              · exact ⟨x, hxC, rfl⟩
+              · obtain ⟨w, hwC, hwF⟩ := hCF
+                exact ⟨w, hwC, by simp [q, collapseMap, hwF, hxF]⟩
+          rw [hEq]; exact hC.union hF
+        · have hEq : q ⁻¹' (q '' C) = C := by
+            ext x
+            constructor
+            · rintro ⟨w, hwC, hqw⟩
+              have hwF : w ∉ F := fun h => hCF ⟨w, hwC, h⟩
+              dsimp only [q, collapseMap] at hqw
+              by_cases hxF : x ∈ F <;> simp [hwF, hxF] at hqw
+              subst hqw; exact hwC
+            · intro hxC; exact ⟨x, hxC, rfl⟩
+          rw [hEq]; exact hC
+      have hM3_col : MSpace.IsM3 (Collapse X F) :=
+        M3_of_isClosedMap_surjective hM3 hq_cont hq_closed hq_surj
+      obtain ⟨𝓥, h𝓥_open, h𝓥_cp, h𝓥_base⟩ := hpt (Collapse X F) hM3_col none
+      refine ⟨fun k => (fun V => q ⁻¹' V) '' 𝓥 k, ?_, ?_, ?_⟩
+      · rintro k _ ⟨V, hV, rfl⟩
+        refine ⟨(h𝓥_open k V hV).1.preimage hq_cont, fun x hxF => ?_⟩
+        change q x ∈ V
+        simp only [q, collapseMap, hxF, ↓reduceDIte]
+        exact (h𝓥_open k V hV).2
+      · intro k 𝓖 h𝓖
+        apply Subset.antisymm
+        · intro z hz
+          by_cases hzF : z ∈ F
+          · rcases 𝓖.eq_empty_or_nonempty with rfl | ⟨S, hS𝓖⟩
+            · simp at hz
+            · obtain ⟨V, hV, rfl⟩ := h𝓖 hS𝓖
+              refine ⟨closure (q ⁻¹' V), mem_image_of_mem _ hS𝓖, subset_closure ?_⟩
+              change q z ∈ V
+              simp only [q, collapseMap, hzF, ↓reduceDIte]
+              exact (h𝓥_open k V hV).2
+          · let 𝓗 : Set (Set (Collapse X F)) := { V ∈ 𝓥 k | q ⁻¹' V ∈ 𝓖 }
+            have hsub : q '' ⋃₀ 𝓖 ⊆ ⋃₀ 𝓗 := by
+              rintro _ ⟨x, ⟨S, hS𝓖, hxS⟩, rfl⟩
+              obtain ⟨V, hV, rfl⟩ := h𝓖 hS𝓖
+              exact ⟨V, ⟨hV, hS𝓖⟩, hxS⟩
+            have hqz_cl : q z ∈ closure (⋃₀ 𝓗) :=
+              closure_mono hsub (image_closure_subset_closure_image hq_cont ⟨z, hz, rfl⟩)
+            rw [h𝓥_cp k 𝓗 (fun _ h => h.1)] at hqz_cl
+            obtain ⟨_, ⟨V, ⟨_, hV𝓖⟩, rfl⟩, hqzV⟩ := hqz_cl
+            refine ⟨closure (q ⁻¹' V), mem_image_of_mem _ hV𝓖, ?_⟩
+            rw [mem_closure_iff]
+            intro O hO hzO
+            let W : Set (Collapse X F) := q '' (O ∩ Fᶜ)
+            have hW_open : IsOpen W := by
+              change IsOpen (q ⁻¹' (q '' (O ∩ Fᶜ)))
+              have hEq : q ⁻¹' (q '' (O ∩ Fᶜ)) = O ∩ Fᶜ := by
+                ext x
+                constructor
+                · rintro ⟨w, ⟨hwO, hwF⟩, hqw⟩
+                  have hwF' : w ∉ F := hwF
+                  dsimp only [q, collapseMap] at hqw
+                  by_cases hxF : x ∈ F <;> simp [hwF', hxF] at hqw
+                  subst hqw; exact ⟨hwO, hwF⟩
+                · intro hx; exact ⟨x, hx, rfl⟩
+              rw [hEq]
+              exact hO.inter hF.isOpen_compl
+            have hqzW : q z ∈ W := ⟨z, ⟨hzO, hzF⟩, rfl⟩
+            obtain ⟨y, ⟨w, ⟨hwO, _⟩, rfl⟩, hyV⟩ := mem_closure_iff.mp hqzV W hW_open hqzW
+            exact ⟨w, hwO, hyV⟩
+        · exact sUnion_subset (by rintro _ ⟨S, hS, rfl⟩; exact closure_mono (subset_sUnion_of_mem hS))
+      · intro U hU hFU
+        have hV_open : IsOpen ((q '' Uᶜ)ᶜ) := (hq_closed Uᶜ hU.isClosed_compl).isOpen_compl
+        have hnone_mem : none ∈ (q '' Uᶜ)ᶜ := by
+          rintro ⟨w, hwU, hqw⟩
+          dsimp only [q, collapseMap] at hqw
+          by_cases hwF : w ∈ F <;> simp [hwF] at hqw
+          exact hwU (hFU hwF)
+        obtain ⟨k, V, hV, hVsub⟩ := h𝓥_base _ hV_open hnone_mem
+        refine ⟨k, q ⁻¹' V, ⟨V, hV, rfl⟩, fun x hxV => ?_⟩
+        by_contra hxU
+        exact hVsub hxV ⟨x, hxU, rfl⟩
+    · rw [Set.not_nonempty_iff_eq_empty] at hFne
+      subst hFne
+      refine ⟨fun _ => {∅}, ?_, ?_, ?_⟩
+      · rintro _ _ rfl; exact ⟨isOpen_empty, Subset.rfl⟩
+      · intro _ 𝓖 h𝓖
+        rcases 𝓖.eq_empty_or_nonempty with rfl | ⟨S, hS⟩
+        · simp
+        · have hEq : 𝓖 = {∅} := by
+            ext T
+            constructor
+            · intro hT; exact h𝓖 hT
+            · intro hT
+              rw [mem_singleton_iff] at hT
+              have hS0 := h𝓖 hS
+              rw [mem_singleton_iff] at hS0
+              exact hT.symm ▸ hS0.symm ▸ hS
+          rw [hEq]; simp
+      · intro U _ _; exact ⟨0, ∅, mem_singleton _, empty_subset U⟩
+
 end Research.M3M1
