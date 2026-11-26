@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0011`）に向けた **Lean 4 カーネル検証済みモジュール 15 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0011`）に向けた **Lean 4 カーネル検証済みモジュール 16 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -79,3 +79,7 @@
 - **`Wedge X x₀` / `wedge_isStratifiable`**: 任意濃度 $\iota$（可算・非可算を問わず）の基点付きウェッジ（一般化扇 $S_\omega, S_{\omega_1}, S_{\mathfrak{c}}$ を含む）が常に stratifiable であることを証明。
 - **`wedge_hasCPOuterBase_iff`**: `HasCPOuterBase (none : Wedge X x₀) ↔ ∀ i, HasCPOuterBase (x₀ i)`。
 - **`wedge_isM1_of_isM1_and_hasCPOuterBase`**: 各枝が $M_1$ で基点が CP 開外基を持てば、任意濃度のウェッジ全体が $M_1$（よって任意濃度の点列扇 $S_\kappa$ はすべて $M_1$）。
+
+## 15. [Stratifiable_Countable_Pi.lean](Stratifiable_Countable_Pi.lean)（Borges 1966・Ceder 1961 の可算積保存定理）
+- **`isStratifiable_prod` / `isStratifiable_countable_pi`**（Borges 1966）: 有限積および可算積 $\prod_{k \in \mathbb{N}} X_k$ が `MSpace.IsStratifiable` を保存することを単調 $g$-関数と `Proofs.L_0017` により証明。
+- **`isM1_prod` / `isM1_countable_pi`**（Ceder 1961）: 有限積および可算積 $\prod_{k \in \mathbb{N}} X_k$ が `MSpace.IsM1` を保存することを有限プレフィックス柱状族の帰納的 CP 性と `Denumerable (List ℕ)` により証明。
