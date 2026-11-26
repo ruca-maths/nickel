@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-27 01:38:15",
+  "generated_at": "2026-11-27 01:40:39",
   "targets_hash": "198f3fa8f630b46d28aa23d1bba3194b216c79f4ca39920d47757a6f5efd6f89",
   "nodes": [
     {
@@ -397,7 +397,7 @@
       "id": "L_0029",
       "goal": null,
       "tier": "Tinf",
-      "status": "open",
+      "status": "checked",
       "exhausted": false,
       "depth": 1,
       "both_sides": false,
@@ -408,7 +408,7 @@
         "decompose": 0,
         "refute": 0
       },
-      "closed_by": null
+      "closed_by": "prover-1"
     },
     {
       "id": "L_0030",
@@ -421,9 +421,9 @@
       "stmt": "∃ (Y : Type) (_ : TopologicalSpace Y), MSpace.IsStratifiable Y ∧ ∃ y : Y, ¬ Defs.D_0010.HasSigmaCPLocalBase y",
       "informal": "Chen–Wang (arXiv:1809.03763v2) の空間 (Y,τ) は stratifiable（Theorem 1.a）で、y ∈ H₀ は σ-CP 開局所基を持たない（命題 9.5 の σ 版）。σ 版への強化: 9.1–9.2 の鳩の巣（A の可算分割の一つは unbounded）に『V_α が属する層の番号』を可算パラメータとして一つ加え、同じ層 𝓑 n から V_α を取る unbounded な A₀ を得てから 9.2・9.5 の議論を A₀ 内で回す。",
       "attempts": {
-        "prove": 0,
+        "prove": 4,
         "decompose": 0,
-        "refute": 0
+        "refute": 2
       },
       "closed_by": null
     }
@@ -771,6 +771,18 @@
       "node": "L_0027",
       "path": "Proofs/L_0027.lean",
       "sha256": "7ee0e81fb1845284ab90dfe8e19e279af237bad6b404a7f73b0aaeef4ae81742",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
+      "module": "Proofs.L_0029",
+      "kind": "proof",
+      "node": "L_0029",
+      "path": "Proofs/L_0029.lean",
+      "sha256": "e610e53d04aa73cb82cd6043d46390020a0cf23fb8706d3bcfdeb9a1da57e399",
       "axioms": [
         "Classical.choice",
         "Quot.sound",
