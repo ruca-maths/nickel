@@ -579,4 +579,425 @@ theorem M3_is_M1_of_closed_cp_outer_base (X : Type) [TopologicalSpace X]
         exact hhit ⟨H, z, hzN, subset_closure (hVO hzV)⟩
     · exact sUnion_subset (by rintro _ ⟨V, hV, rfl⟩; exact closure_mono (subset_sUnion_of_mem hV))
 
+/-- Pointwise closure-preserving open neighborhood base (outer base). -/
+def HasCPOpenLocalBase {X : Type} [TopologicalSpace X] (p : X) : Prop :=
+  ∃ 𝓥 : Set (Set X),
+    (∀ V ∈ 𝓥, IsOpen V ∧ p ∈ V) ∧
+    (∀ U : Set X, IsOpen U → p ∈ U → ∃ V ∈ 𝓥, V ⊆ U) ∧
+    MSpace.ClosurePreserving 𝓥
+
+/-- Helper: Every `M₃`-space admits a monotone decreasing stratification. -/
+theorem exists_monotone_stratification (X : Type) [TopologicalSpace X] (hM3 : MSpace.IsM3 X) :
+    ∃ G : ℕ → Set X → Set X,
+      MSpace.IsStratification G ∧
+      ∀ n H, IsClosed H → G (n + 1) H ⊆ G n H := by
+  obtain ⟨G₀, hG₀_open, hG₀_sub, hG₀_inter, hG₀_mono⟩ := Proofs.L_0010.main X hM3
+  let G : ℕ → Set X → Set X := fun n H => ⋂ k ∈ Iic n, G₀ k H
+  refine ⟨G, ⟨?_, ?_, ?_, ?_⟩, ?_⟩
+  · intro n H hH
+    exact (finite_Iic n).isOpen_biInter fun k _ => hG₀_open k H hH
+  · intro n H hH
+    exact subset_iInter₂ fun k _ => hG₀_sub k H hH
+  · intro H hH
+    apply Subset.antisymm
+    · intro z hz
+      rw [← hG₀_inter H hH, mem_iInter]
+      rw [mem_iInter] at hz
+      intro n
+      have hsub : G n H ⊆ G₀ n H := iInter₂_subset n (mem_Iic.mpr le_rfl)
+      exact closure_mono hsub (hz n)
+    · intro z hz
+      rw [mem_iInter]
+      intro n
+      exact subset_closure (mem_iInter₂.mpr fun k _ => hG₀_sub k H hH hz)
+  · intro n H K hH hK hHK z hz
+    exact mem_iInter₂.mpr fun k hk => hG₀_mono k H K hH hK hHK (mem_iInter₂.mp hz k hk)
+  · intro n H _ z hz
+    exact mem_iInter₂.mpr fun k hk =>
+      mem_iInter₂.mp hz k (mem_Iic.mpr (Nat.le_succ_of_le (mem_Iic.mp hk)))
+
+/-- Theorem 6 (Ito's Expansion Lemma):
+In an `M₃`-space `X`, let `F ⊆ X` be any subset, `𝓚` a CP closed neighborhood base of `F`,
+and `E : ℕ → Set X` a sequence of closed discrete subsets of `X`
+such that every `p ∈ ⋃ k, E k` has a CP open neighborhood base and every `K ∈ 𝓚`
+satisfies `K ⊆ closure (interior K ∪ (K ∩ ⋃ k, E k))`.
+Then `F` admits a CP open neighborhood base. -/
+theorem closed_cp_outer_base_of_pointwise_cp_and_dense_trace
+    (X : Type) [TopologicalSpace X] (hM3 : MSpace.IsM3 X)
+    (F : Set X)
+    (𝓚 : Set (Set X))
+    (h𝓚_nhd : ∀ K ∈ 𝓚, IsClosed K ∧ F ⊆ interior K)
+    (h𝓚_base : ∀ U : Set X, IsOpen U → F ⊆ U → ∃ K ∈ 𝓚, K ⊆ U)
+    (h𝓚_cp : MSpace.ClosurePreserving 𝓚)
+    (E : ℕ → Set X)
+    (hE_disc : ∀ k, ∀ A ⊆ E k, IsClosed A)
+    (hE_cp : ∀ k, ∀ p ∈ E k, HasCPOpenLocalBase p)
+    (hK_trace : ∀ K ∈ 𝓚, K ⊆ closure (interior K ∪ (K ∩ ⋃ k, E k))) :
+    ∃ 𝓥 : Set (Set X),
+      (∀ V ∈ 𝓥, IsOpen V ∧ F ⊆ V) ∧
+      (∀ U : Set X, IsOpen U → F ⊆ U → ∃ V ∈ 𝓥, V ⊆ U) ∧
+      MSpace.ClosurePreserving 𝓥 := by
+  classical
+  have : T3Space X := hM3.1
+  have hpara : ParacompactSpace X :=
+    Proofs.L_0005.main X ⟨inferInstance, Proofs.L_0010.main X hM3⟩
+  obtain ⟨G, hG, hG_dec⟩ := exists_monotone_stratification X hM3
+  have hG_anti : ∀ {m n : ℕ} {H : Set X}, IsClosed H → m ≤ n → G n H ⊆ G m H := by
+    intro m n H hH hmn
+    induction hmn with
+    | refl => exact Subset.rfl
+    | step _ ih => exact (hG_dec _ H hH).trans ih
+  have hexp : ∀ k : ℕ, ∃ O : ↥(E k) → Set X,
+      (∀ p : ↥(E k), IsOpen (O p) ∧ (p : X) ∈ O p) ∧
+      Pairwise (fun p q : ↥(E k) => Disjoint (closure (O p)) (closure (O q))) ∧
+      (∀ y : X, ∃ N : Set X, IsOpen N ∧ y ∈ N ∧
+        ∀ p q : ↥(E k), (N ∩ closure (O p)).Nonempty → (N ∩ closure (O q)).Nonempty → p = q) := by
+    intro k
+    obtain ⟨O, hO1, hO2, hO3⟩ := collectionwise_normal_of_paracompact_t3 X
+      (fun p : ↥(E k) => ({(p : X)} : Set X)) (fun _ => isClosed_singleton) (by
+        intro y
+        by_cases hy : y ∈ E k
+        · refine ⟨(E k \ {y})ᶜ, (hE_disc k (E k \ {y}) sdiff_subset).isOpen_compl,
+            fun h => h.2 rfl, ?_⟩
+          intro p q ⟨w₁, hw₁, hw₁p⟩ ⟨w₂, hw₂, hw₂q⟩
+          rw [mem_singleton_iff] at hw₁p hw₂q
+          subst hw₁p; subst hw₂q
+          have hp : (p : X) = y := by by_contra hne; exact hw₁ ⟨p.2, hne⟩
+          have hq : (q : X) = y := by by_contra hne; exact hw₂ ⟨q.2, hne⟩
+          exact Subtype.ext (hp.trans hq.symm)
+        · refine ⟨(E k)ᶜ, (hE_disc k (E k) Subset.rfl).isOpen_compl, hy, ?_⟩
+          intro p _ ⟨w₁, hw₁, hw₁p⟩ _
+          rw [mem_singleton_iff] at hw₁p; subst hw₁p
+          exact (hw₁ p.2).elim)
+    exact ⟨O, fun p => ⟨(hO1 p).1, singleton_subset_iff.mp (hO1 p).2⟩, hO2, hO3⟩
+  choose O hO_open hO_disj hO_disc using hexp
+  have hcp_sub : ∀ (k : ℕ) (p : ↥(E k)), HasCPOpenLocalBase (p : X) :=
+    fun k p => hE_cp k p.1 p.2
+  choose 𝓤 h𝓤_open h𝓤_base h𝓤_cp using hcp_sub
+  let Pairs : Type := { P : Set X × Set X // P.1 ∈ 𝓚 ∧ IsOpen P.2 ∧ P.1 ⊆ P.2 }
+  have hpick : ∀ (P : Pairs) (k : ℕ) (p : ↥(E k)), (p : X) ∈ P.1.1 →
+      ∃ V ∈ 𝓤 k p, V ⊆ P.1.2 ∩ O k p ∩ G k P.1.1 := by
+    intro P k p hpK
+    have hK_cl : IsClosed P.1.1 := (h𝓚_nhd P.1.1 P.2.1).1
+    have hopen : IsOpen (P.1.2 ∩ O k p ∩ G k P.1.1) :=
+      (P.2.2.1.inter (hO_open k p).1).inter (hG.1 k P.1.1 hK_cl)
+    have hmem : (p : X) ∈ P.1.2 ∩ O k p ∩ G k P.1.1 :=
+      ⟨⟨P.2.2.2 hpK, (hO_open k p).2⟩, hG.2.1 k P.1.1 hK_cl hpK⟩
+    exact h𝓤_base k p _ hopen hmem
+  let V : Pairs → (k : ℕ) → (p : ↥(E k)) → Set X := fun P k p =>
+    if h : (p : X) ∈ P.1.1 then (hpick P k p h).choose else ∅
+  have hV_open : ∀ P k p, IsOpen (V P k p) := by
+    intro P k p
+    dsimp only [V]
+    split_ifs with h
+    · exact (h𝓤_open k p _ (hpick P k p h).choose_spec.1).1
+    · exact isOpen_empty
+  have hV_mem_𝓤 : ∀ (P : Pairs) (k : ℕ) (p : ↥(E k)) (h : (p : X) ∈ P.1.1), V P k p ∈ 𝓤 k p := by
+    intro P k p h
+    dsimp only [V]; split_ifs
+    exact (hpick P k p h).choose_spec.1
+  have hV_sub : ∀ (P : Pairs) (k : ℕ) (p : ↥(E k)) (h : (p : X) ∈ P.1.1),
+      V P k p ⊆ P.1.2 ∩ O k p ∩ G k P.1.1 := by
+    intro P k p h
+    dsimp only [V]; split_ifs
+    exact (hpick P k p h).choose_spec.2
+  have hV_has_p : ∀ (P : Pairs) (k : ℕ) (p : ↥(E k)) (h : (p : X) ∈ P.1.1),
+      (p : X) ∈ V P k p := by
+    intro P k p h
+    exact (h𝓤_open k p _ (hV_mem_𝓤 P k p h)).2
+  have hV_empty : ∀ (P : Pairs) (k : ℕ) (p : ↥(E k)), (p : X) ∉ P.1.1 → V P k p = ∅ := by
+    intro P k p h
+    dsimp only [V]; split_ifs; rfl
+  let W : Pairs → Set X := fun P =>
+    interior P.1.1 ∪ ⋃ k : ℕ, ⋃ p : ↥(E k), V P k p
+  have hW_open : ∀ P, IsOpen (W P) := fun P =>
+    isOpen_interior.union (isOpen_iUnion fun k => isOpen_iUnion fun p => hV_open P k p)
+  have hW_F : ∀ P, F ⊆ W P := fun P =>
+    (h𝓚_nhd P.1.1 P.2.1).2.trans subset_union_left
+  have hW_sub_U : ∀ P, W P ⊆ P.1.2 := by
+    intro P z hz
+    rcases hz with hz_int | hz_u
+    · exact P.2.2.2 (interior_subset hz_int)
+    · obtain ⟨k, hz_k⟩ := mem_iUnion.mp hz_u
+      obtain ⟨p, hz_p⟩ := mem_iUnion.mp hz_k
+      by_cases hp : (p : X) ∈ P.1.1
+      · exact (hV_sub P k p hp hz_p).1.1
+      · rw [hV_empty P k p hp] at hz_p; exact hz_p.elim
+  have hK_sub_clW : ∀ P, P.1.1 ⊆ closure (W P) := by
+    intro P
+    refine (hK_trace P.1.1 P.2.1).trans (closure_mono ?_)
+    intro z hz
+    rcases hz with hz_int | ⟨hzK, hzE⟩
+    · exact Or.inl hz_int
+    · obtain ⟨k, hzk⟩ := mem_iUnion.mp hzE
+      right
+      refine mem_iUnion.mpr ⟨k, mem_iUnion.mpr ⟨⟨z, hzk⟩, ?_⟩⟩
+      exact hV_has_p P k ⟨z, hzk⟩ hzK
+  refine ⟨Set.range W, ?_, ?_, ?_⟩
+  · rintro _ ⟨P, rfl⟩
+    exact ⟨hW_open P, hW_F P⟩
+  · intro U hU hFU
+    obtain ⟨K, hK𝓚, hKU⟩ := h𝓚_base U hU hFU
+    let P : Pairs := ⟨(K, U), hK𝓚, hU, hKU⟩
+    exact ⟨W P, ⟨P, rfl⟩, hW_sub_U P⟩
+  · intro 𝓖 h𝓖
+    apply Subset.antisymm
+    · intro y hy
+      let 𝓗 : Set Pairs := { P : Pairs | W P ∈ 𝓖 }
+      have hG_eq : ⋃₀ 𝓖 = ⋃ P ∈ 𝓗, W P := by
+        ext z
+        constructor
+        · rintro ⟨S, hS𝓖, hzS⟩
+          obtain ⟨P, rfl⟩ := h𝓖 hS𝓖
+          exact mem_iUnion₂.mpr ⟨P, hS𝓖, hzS⟩
+        · intro hz
+          obtain ⟨P, hP𝓗, hzP⟩ := mem_iUnion₂.mp hz
+          exact ⟨W P, hP𝓗, hzP⟩
+      rw [hG_eq] at hy
+      let H : Set X := ⋃ P ∈ 𝓗, P.1.1
+      have hH_closed : IsClosed H := by
+        let 𝓚₀ : Set (Set X) := (fun P : Pairs => P.1.1) '' 𝓗
+        have h𝓚₀_sub : 𝓚₀ ⊆ 𝓚 := by rintro _ ⟨P, _, rfl⟩; exact P.2.1
+        have hH_eq : H = ⋃₀ 𝓚₀ := by ext z; simp [H, 𝓚₀]
+        have himg : closure '' 𝓚₀ = 𝓚₀ := by
+          ext K
+          constructor
+          · rintro ⟨K', hK', rfl⟩
+            rw [(h𝓚_nhd K' (h𝓚₀_sub hK')).1.closure_eq]; exact hK'
+          · intro hK
+            exact ⟨K, hK, (h𝓚_nhd K (h𝓚₀_sub hK)).1.closure_eq⟩
+        rw [hH_eq, ← himg, ← h𝓚_cp 𝓚₀ h𝓚₀_sub]
+        exact isClosed_closure
+      by_cases hyH : y ∈ H
+      · obtain ⟨P, hP𝓗, hyP⟩ := mem_iUnion₂.mp hyH
+        exact ⟨closure (W P), mem_image_of_mem _ hP𝓗, hK_sub_clW P hyP⟩
+      · rw [← hG.2.2.1 H hH_closed, mem_iInter] at hyH
+        push Not at hyH
+        obtain ⟨N, hyN⟩ := hyH
+        have hsplit : (⋃ P ∈ 𝓗, W P) ⊆
+            H ∪ (⋃ k ∈ Iio N, ⋃ P ∈ 𝓗, ⋃ p : ↥(E k), V P k p) ∪ G N H := by
+          intro z hz
+          obtain ⟨P, hP𝓗, hzW⟩ := mem_iUnion₂.mp hz
+          rcases hzW with hz_int | hz_u
+          · exact Or.inl (Or.inl (mem_iUnion₂.mpr ⟨P, hP𝓗, interior_subset hz_int⟩))
+          · obtain ⟨k, hz_k⟩ := mem_iUnion.mp hz_u
+            obtain ⟨p, hz_p⟩ := mem_iUnion.mp hz_k
+            by_cases hlt : k < N
+            · exact Or.inl (Or.inr (mem_iUnion₂.mpr ⟨k, hlt,
+                mem_iUnion₂.mpr ⟨P, hP𝓗, mem_iUnion.mpr ⟨p, hz_p⟩⟩⟩))
+            · right
+              by_cases hp : (p : X) ∈ P.1.1
+              · have hzG : z ∈ G k P.1.1 := (hV_sub P k p hp hz_p).2
+                have hPH : P.1.1 ⊆ H := fun w hw => mem_iUnion₂.mpr ⟨P, hP𝓗, hw⟩
+                have h1 : G k P.1.1 ⊆ G k H :=
+                  hG.2.2.2 k P.1.1 H (h𝓚_nhd P.1.1 P.2.1).1 hH_closed hPH
+                exact hG_anti hH_closed (not_lt.mp hlt) (h1 hzG)
+              · rw [hV_empty P k p hp] at hz_p; exact hz_p.elim
+        have hy_u := closure_mono hsplit hy
+        rw [closure_union, closure_union] at hy_u
+        rcases hy_u with (hyH' | hy_low) | hy_high
+        · rw [hH_closed.closure_eq] at hyH'
+          exact (hyN (subset_closure (hG.2.1 N H hH_closed hyH'))).elim
+        · rw [(finite_Iio N).closure_biUnion] at hy_low
+          obtain ⟨k, _, hyk⟩ := mem_iUnion₂.mp hy_low
+          obtain ⟨M, hM_open, hyM, hM_uniq⟩ := hO_disc k y
+          by_cases hhit : ∃ p : ↥(E k), (M ∩ closure (O k p)).Nonempty
+          · obtain ⟨p₀, hp₀⟩ := hhit
+            let 𝓖₀ : Set (Set X) :=
+              { S : Set X | ∃ P ∈ 𝓗, ∃ hp : (p₀ : X) ∈ P.1.1, S = V P k p₀ }
+            have hsubM : M ∩ (⋃ P ∈ 𝓗, ⋃ p : ↥(E k), V P k p) ⊆ ⋃₀ 𝓖₀ := by
+              rintro z ⟨hzM, hzU⟩
+              obtain ⟨P, hP𝓗, hzP⟩ := mem_iUnion₂.mp hzU
+              obtain ⟨p, hzp⟩ := mem_iUnion.mp hzP
+              by_cases hp : (p : X) ∈ P.1.1
+              · have hzO : z ∈ O k p := (hV_sub P k p hp hzp).1.2
+                have hpeq : p = p₀ := hM_uniq p p₀ ⟨z, hzM, subset_closure hzO⟩ hp₀
+                subst hpeq
+                exact ⟨V P k p, ⟨P, hP𝓗, hp, rfl⟩, hzp⟩
+              · rw [hV_empty P k p hp] at hzp; exact hzp.elim
+            have hy0 : y ∈ closure (⋃₀ 𝓖₀) :=
+              closure_mono hsubM (hM_open.inter_closure ⟨hyM, hyk⟩)
+            have h𝓖₀_sub : 𝓖₀ ⊆ 𝓤 k p₀ := by
+              rintro S ⟨P, _, hp, rfl⟩; exact hV_mem_𝓤 P k p₀ hp
+            rw [h𝓤_cp k p₀ 𝓖₀ h𝓖₀_sub] at hy0
+            obtain ⟨_, ⟨S, ⟨P, hP𝓗, _, rfl⟩, rfl⟩, hyS⟩ := hy0
+            refine ⟨closure (W P), mem_image_of_mem _ hP𝓗, ?_⟩
+            refine closure_mono (fun z hz => Or.inr (mem_iUnion.mpr ⟨k, mem_iUnion.mpr ⟨p₀, hz⟩⟩)) hyS
+          · exfalso
+            obtain ⟨z, hzM, hzU⟩ := mem_closure_iff.mp hyk M hM_open hyM
+            obtain ⟨P, _, hzP⟩ := mem_iUnion₂.mp hzU
+            obtain ⟨p, hzp⟩ := mem_iUnion.mp hzP
+            by_cases hp : (p : X) ∈ P.1.1
+            · exact hhit ⟨p, z, hzM, subset_closure (hV_sub P k p hp hzp).1.2⟩
+            · rw [hV_empty P k p hp] at hzp; exact hzp.elim
+        · exact (hyN hy_high).elim
+    · exact sUnion_subset (by rintro _ ⟨S, hS, rfl⟩; exact closure_mono (subset_sUnion_of_mem hS))
+
+/-- Theorem 7: If every closed subset of an `M₃`-space satisfies Ito's dense-trace
+condition over points having CP open neighborhood bases, then `X` is `M₁`. -/
+theorem M3_is_M1_of_pointwise_cp_and_dense_trace
+    (X : Type) [TopologicalSpace X] (hM3 : MSpace.IsM3 X)
+    (htrace : ∀ F : Set X, IsClosed F →
+      ∃ (𝓚 : Set (Set X)) (E : ℕ → Set X),
+        (∀ K ∈ 𝓚, IsClosed K ∧ F ⊆ interior K) ∧
+        (∀ U : Set X, IsOpen U → F ⊆ U → ∃ K ∈ 𝓚, K ⊆ U) ∧
+        MSpace.ClosurePreserving 𝓚 ∧
+        (∀ k, ∀ A ⊆ E k, IsClosed A) ∧
+        (∀ k, ∀ p ∈ E k, HasCPOpenLocalBase p) ∧
+        (∀ K ∈ 𝓚, K ⊆ closure (interior K ∪ (K ∩ ⋃ k, E k)))) :
+    MSpace.IsM1 X := by
+  refine M3_is_M1_of_closed_cp_outer_base X hM3 fun F hF => ?_
+  obtain ⟨𝓚, E, h1, h2, h3, h4, h5, h6⟩ := htrace F hF
+  exact closed_cp_outer_base_of_pointwise_cp_and_dense_trace X hM3 F 𝓚 h1 h2 h3 E h4 h5 h6
+
+/-- Theorem 8 (Conditional reduction of `Specs.L_0028`):
+In an `M₃`-space `X` (in particular, any `M₁`-space), if a point `x : X` has a CP
+closed neighborhood base `𝓚` and a `σ`-closed-discrete set `E = ⋃ k, E k`
+of points having CP open neighborhood bases covers the non-regular boundary of each
+`K ∈ 𝓚` (`K ⊆ closure (interior K ∪ (K ∩ ⋃ k, E k))`), then `x` has a CP
+regular-closed neighborhood base (the conclusion of `Specs.L_0028`). -/
+theorem L0028_of_boundary_cp_trace
+    (X : Type) [TopologicalSpace X] (hM3 : MSpace.IsM3 X) (x : X)
+    (𝓚 : Set (Set X))
+    (h𝓚_nhd : ∀ K ∈ 𝓚, IsClosed K ∧ x ∈ interior K)
+    (h𝓚_base : ∀ U : Set X, IsOpen U → x ∈ U → ∃ K ∈ 𝓚, K ⊆ U)
+    (h𝓚_cp : MSpace.ClosurePreserving 𝓚)
+    (E : ℕ → Set X)
+    (hE_disc : ∀ k, ∀ A ⊆ E k, IsClosed A)
+    (hE_cp : ∀ k, ∀ p ∈ E k, HasCPOpenLocalBase p)
+    (hK_trace : ∀ K ∈ 𝓚, K ⊆ closure (interior K ∪ (K ∩ ⋃ k, E k))) :
+    ∃ 𝓚' : Set (Set X),
+      (∀ K ∈ 𝓚', IsClosed K ∧ closure (interior K) = K ∧ x ∈ interior K) ∧
+      (∀ U : Set X, IsOpen U → x ∈ U → ∃ K ∈ 𝓚', K ⊆ U) ∧
+      MSpace.ClosurePreserving 𝓚' := by
+  have : T3Space X := hM3.1
+  obtain ⟨𝓥, h𝓥_open, h𝓥_base, h𝓥_cp⟩ :=
+    closed_cp_outer_base_of_pointwise_cp_and_dense_trace X hM3 {x}
+      𝓚 (fun K hK => ⟨(h𝓚_nhd K hK).1, singleton_subset_iff.mpr (h𝓚_nhd K hK).2⟩)
+      (fun U hU hsub => h𝓚_base U hU (singleton_subset_iff.mp hsub))
+      h𝓚_cp E hE_disc hE_cp hK_trace
+  refine ⟨closure '' 𝓥, ?_, ?_, ?_⟩
+  · rintro _ ⟨V, hV, rfl⟩
+    have hVo := h𝓥_open V hV
+    refine ⟨isClosed_closure, ?_, ?_⟩
+    · apply Subset.antisymm
+      · exact closure_minimal interior_subset isClosed_closure
+      · exact closure_mono (interior_maximal subset_closure hVo.1)
+    · exact interior_maximal subset_closure hVo.1 (singleton_subset_iff.mp hVo.2)
+  · intro U hU hxU
+    obtain ⟨K, hK_nhds, hK_closed, hKU⟩ := exists_mem_nhds_isClosed_subset (hU.mem_nhds hxU)
+    obtain ⟨W, hWK, hW_open, hxW⟩ := mem_nhds_iff.mp hK_nhds
+    obtain ⟨V, hV, hVW⟩ := h𝓥_base W hW_open (singleton_subset_iff.mpr hxW)
+    exact ⟨closure V, mem_image_of_mem _ hV,
+      (hK_closed.closure_subset_iff.mpr (hVW.trans hWK)).trans hKU⟩
+  · intro 𝓖 h𝓖
+    let 𝓖₀ : Set (Set X) := { V ∈ 𝓥 | closure V ∈ 𝓖 }
+    have himg : closure '' 𝓖₀ = 𝓖 := by
+      ext K
+      constructor
+      · rintro ⟨V, hV, rfl⟩; exact hV.2
+      · intro hK
+        obtain ⟨V, hV, rfl⟩ := h𝓖 hK
+        exact ⟨V, ⟨hV, hK⟩, rfl⟩
+    have hcl_eq : ⋃₀ (closure '' 𝓖) = ⋃₀ 𝓖 := by
+      ext z
+      constructor
+      · rintro ⟨C, ⟨K, hK, rfl⟩, hz⟩
+        obtain ⟨V, _, rfl⟩ := h𝓖 hK
+        rw [closure_closure] at hz
+        exact ⟨closure V, hK, hz⟩
+      · rintro ⟨K, hK, hz⟩
+        exact ⟨closure K, mem_image_of_mem _ hK, subset_closure hz⟩
+    have h𝓑_eq_aux : closure (⋃₀ (closure '' 𝓖₀)) = ⋃₀ (closure '' 𝓖₀) := by
+      rw [← h𝓥_cp 𝓖₀ (fun _ h => h.1), closure_closure]
+    rw [hcl_eq, ← himg, h𝓑_eq_aux]
+
+/-- Helper: Every point with a countable open neighborhood base in a `T3Space`
+admits a single-layer CP open neighborhood base. -/
+theorem hasCPOpenLocalBase_of_countable_nhds (X : Type) [TopologicalSpace X] [T3Space X]
+    (x : X) (B : ℕ → Set X)
+    (hB_open : ∀ n, IsOpen (B n) ∧ x ∈ B n)
+    (hB_base : ∀ U : Set X, IsOpen U → x ∈ U → ∃ n, B n ⊆ U) :
+    HasCPOpenLocalBase x := by
+  let V : ℕ → Set X := fun n => ⋂ k ∈ Iic n, B k
+  have hV_open : ∀ n, IsOpen (V n) ∧ x ∈ V n := fun n =>
+    ⟨(finite_Iic n).isOpen_biInter (fun k _ => (hB_open k).1),
+     mem_iInter₂.mpr (fun k _ => (hB_open k).2)⟩
+  have hV_sub_B : ∀ n, V n ⊆ B n := fun n _ hz => mem_iInter₂.mp hz n (mem_Iic.mpr le_rfl)
+  have hV_anti : ∀ {m n : ℕ}, m ≤ n → V n ⊆ V m := fun hmn _ hz =>
+    mem_iInter₂.mpr (fun k hk => mem_iInter₂.mp hz k (mem_Iic.mpr (le_trans (mem_Iic.mp hk) hmn)))
+  refine ⟨Set.range V, ?_, ?_, ?_⟩
+  · rintro _ ⟨n, rfl⟩; exact hV_open n
+  · intro U hU hxU
+    obtain ⟨n, hn⟩ := hB_base U hU hxU
+    exact ⟨V n, ⟨n, rfl⟩, (hV_sub_B n).trans hn⟩
+  · intro 𝓖 h𝓖
+    apply Subset.antisymm
+    · intro y hy
+      by_cases hyx : y = x
+      · subst hyx
+        rcases 𝓖.eq_empty_or_nonempty with rfl | ⟨U, hU⟩
+        · simp at hy
+        · obtain ⟨n, rfl⟩ := h𝓖 hU
+          exact ⟨closure (V n), mem_image_of_mem _ hU, subset_closure (hV_open n).2⟩
+      · obtain ⟨K, hK_nhds, hK_closed, hKsub⟩ :=
+          exists_mem_nhds_isClosed_subset (isClosed_singleton.isOpen_compl.mem_nhds (Ne.symm hyx))
+        obtain ⟨W, hWK, hW_open, hxW⟩ := mem_nhds_iff.mp hK_nhds
+        obtain ⟨N, hNB⟩ := hB_base W hW_open hxW
+        have hy_not_VN : y ∉ closure (V N) := by
+          intro h
+          have hyK : y ∈ K := (hK_closed.closure_subset_iff.mpr ((hV_sub_B N).trans (hNB.trans hWK))) h
+          exact hKsub hyK rfl
+        let 𝓖_low : Set (Set X) := { U ∈ 𝓖 | ∃ n < N, U = V n }
+        have hsplit : ⋃₀ 𝓖 ⊆ ⋃₀ 𝓖_low ∪ V N := by
+          rintro z ⟨U, hU𝓖, hzU⟩
+          obtain ⟨n, rfl⟩ := h𝓖 hU𝓖
+          by_cases hlt : n < N
+          · exact Or.inl ⟨V n, ⟨hU𝓖, n, hlt, rfl⟩, hzU⟩
+          · exact Or.inr (hV_anti (not_lt.mp hlt) hzU)
+        have hy_u : y ∈ closure (⋃₀ 𝓖_low) ∪ closure (V N) := by
+          rw [← closure_union]
+          exact closure_mono hsplit hy
+        rcases hy_u with hy_low | hy_high
+        · have hfin : 𝓖_low.Finite := by
+            refine ((finite_Iio N).image V).subset ?_
+            rintro U ⟨_, n, hlt, rfl⟩
+            exact ⟨n, hlt, rfl⟩
+          rw [hfin.closure_sUnion] at hy_low
+          obtain ⟨U, hU, hyU⟩ := mem_iUnion₂.mp hy_low
+          exact ⟨closure U, mem_image_of_mem _ hU.1, hyU⟩
+        · exact (hy_not_VN hy_high).elim
+    · exact sUnion_subset (by rintro _ ⟨U, hU, rfl⟩; exact closure_mono (subset_sUnion_of_mem hU))
+
+/-- Theorem 9: In any `M₃`-space `X` (without even assuming `M₁`), if `X \ {x}`
+is a `σ`-closed-discrete union `⋃ k, E k` of first-countable points (for example,
+isolated points, as in `S_ω` or countable/scattered `M₃`-spaces), then `x` admits
+a CP regular-closed neighborhood base (and hence a CP open outer base). -/
+theorem L0028_of_sigma_closed_discrete_firstCountable_compl
+    (X : Type) [TopologicalSpace X] (hM3 : MSpace.IsM3 X) (x : X)
+    (E : ℕ → Set X)
+    (hE_disc : ∀ k, ∀ A ⊆ E k, IsClosed A)
+    (hE_cover : ({x}ᶜ : Set X) ⊆ ⋃ k, E k)
+    (hE_fc : ∀ k, ∀ p ∈ E k, ∃ B : ℕ → Set X,
+      (∀ n, IsOpen (B n) ∧ p ∈ B n) ∧
+      (∀ U : Set X, IsOpen U → p ∈ U → ∃ n, B n ⊆ U)) :
+    ∃ 𝓚' : Set (Set X),
+      (∀ K ∈ 𝓚', IsClosed K ∧ closure (interior K) = K ∧ x ∈ interior K) ∧
+      (∀ U : Set X, IsOpen U → x ∈ U → ∃ K ∈ 𝓚', K ⊆ U) ∧
+      MSpace.ClosurePreserving 𝓚' := by
+  have : T3Space X := hM3.1
+  obtain ⟨𝓚, h𝓚_nhd, h𝓚_base, h𝓚_cp⟩ :=
+    M3_closed_subset_has_cp_closed_nhds X hM3 {x} isClosed_singleton
+  refine L0028_of_boundary_cp_trace X hM3 x 𝓚
+    (fun K hK => ⟨(h𝓚_nhd K hK).1, singleton_subset_iff.mp (h𝓚_nhd K hK).2⟩)
+    (fun U hU hxU => h𝓚_base U hU (singleton_subset_iff.mpr hxU))
+    h𝓚_cp E hE_disc
+    (fun k p hp => by
+      obtain ⟨B, hBo, hBb⟩ := hE_fc k p hp
+      exact hasCPOpenLocalBase_of_countable_nhds X p B hBo hBb)
+    (fun K hK y hyK => subset_closure ?_)
+  by_cases hyx : y = x
+  · exact Or.inl (hyx ▸ singleton_subset_iff.mp (h𝓚_nhd K hK).2)
+  · exact Or.inr ⟨hyK, hE_cover hyx⟩
+
 end Research.M3M1

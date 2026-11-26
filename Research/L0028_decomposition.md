@@ -28,6 +28,9 @@
 9. **`zero_dim_M1_has_cp_clopen_base`**: ゼロ次元 M₁ 空間（clopen $\sigma$-CP 基を持つ空間）の各点は CP な clopen（よって開かつ正則閉）近傍基を持つ（ゼロ次元版 `L_0028`）。
 10. **`collectionwise_normal_of_paracompact_t3`**: パラコンパクト $T_3$ 空間における任意の離散閉集合族は、閉包が互いに素かつ離散な開拡大を持つ。
 11. **`M3_is_M1_of_closed_cp_outer_base`（Gruenhage–Ito 型の M₁ 特徴付け）**: 任意の閉集合が CP 開外基を持つ M₃ 空間は M₁ 空間である。
+12. **`closed_cp_outer_base_of_pointwise_cp_and_dense_trace`（Ito の拡張補題）**: 任意の M₃ 空間において、部分集合 $F$ が CP 閉近傍基 $\mathcal{K}$ を持ち、さらに各点が CP 開近傍基を持つ $\sigma$-閉離散集合 $E = \bigcup_k E_k$ がすべての $K \in \mathcal{K}$ に対し $K \subseteq \overline{\operatorname{int} K \cup (K \cap E)}$ を満たすならば、$F$ は CP 開外基を持つ。
+13. **`M3_is_M1_of_pointwise_cp_and_dense_trace`**: 上記の条件がすべての閉集合 $F$ で成り立つ M₃ 空間は M₁ である。
+14. **`L0028_of_boundary_cp_trace` / `L0028_of_sigma_closed_discrete_firstCountable_compl`**: `Specs.L_0028` への条件付き帰着（境界トレースが $\sigma$-閉離散 CP 点集合で覆われる場合、特に $X \setminus \{x\}$ が第一可算点の $\sigma$-閉離散和である任意の M₃ 空間で `L_0028` の結論が成り立つ）。
 
 ## 2. 棄却された単純構成と反例
 
