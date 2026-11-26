@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0011`）に向けた **Lean 4 カーネル検証済みモジュール 12 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0011`）に向けた **Lean 4 カーネル検証済みモジュール 13 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -63,3 +63,8 @@
 - **`HeathJunnila X := X × Option ℕ`**（孤立層 `some n` + 極限層 `none`）を構成し、`heathJunnila_t3Space`・`heathJunnila_isM1_of_isM2`・`heathJunnila_isM1_of_isM3`（任意の $M_2$/$M_3$ 空間 $X$ が $M_1$ 空間 `HeathJunnila X` の閉部分空間・連続レトラクトとして埋め込まれること、`hjLimitHomeomorph` / `hjRetract`）を証明。
 - **`isStratifiable_subtype`**（Borges 1966）: stratifiable 空間の任意の部分空間は stratifiable。
 - **`Tinf_iff_closed_subspace_M1` / `Tinf_iff_hereditary_M1` / `Tinf_iff_retract_M1`**: Ceder の未解決問題 `Tinf`（$M_3 \Rightarrow M_1$）が「$M_1$ の閉部分空間は $M_1$ か」「$M_1$ の任意の部分空間は $M_1$ か」「$M_1$ の連続レトラクトは $M_1$ か」の 3 問題とすべて完全に同値であることを確立。
+
+## 12. [CollapseQuotient_OuterBase.lean](CollapseQuotient_OuterBase.lean)（閉集合縮約商 $X/F$ の Stratifiability と閉集合 CP 開外基定理）
+- **`CollapseQuotient X F := Option { x : X // x ∉ F }`**: 閉集合 $F$ を 1 点 `none` に潰す縮約商を構成し、`collapseProj_isClosedMap`・`collapseQuotient_t1Space`・`collapseQuotient_isStratifiable`（Heath–Lutzer–Zenor 単調正規性作用素による stratifiability の保存）を証明。
+- **`collapseQuotient_hasCPOuterBase_iff`**: 商空間の点 `none` が単層 CP 開外基を持つことと、元空間の閉集合 $F$ が単層 CP 開外基を持つことが厳密同値。
+- **`closed_hasCPOuterBase_of_not_L0020`**: `¬ Specs.L_0020.stmt` のもとで、任意の stratifiable 空間の任意の非空閉集合が単層 CP 開外基を持つことを導出。
