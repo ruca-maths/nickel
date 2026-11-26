@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-26 20:41:55",
+  "generated_at": "2026-11-26 20:51:56",
   "targets_hash": "198f3fa8f630b46d28aa23d1bba3194b216c79f4ca39920d47757a6f5efd6f89",
   "nodes": [
     {
@@ -341,6 +341,57 @@
         "refute": 0
       },
       "closed_by": null
+    },
+    {
+      "id": "L_0023",
+      "goal": null,
+      "tier": "Tinf",
+      "status": "proposed",
+      "exhausted": false,
+      "depth": 3,
+      "both_sides": false,
+      "stmt": "∀ (X : Type) [TopologicalSpace X], MSpace.IsM1 X → ∃ D : ℕ → Set X, (∀ n, ∀ A ⊆ D n, IsClosed A) ∧ Dense (⋃ n, D n)",
+      "informal": "部品(a): M1 空間は σ-閉離散な稠密集合 D=⋃D_n を持つ（各 D_n の任意の部分集合が閉、すなわち D_n は閉離散）。M1 ⇒ M3 ⇒ stratifiable ⇒ σ-空間（σ-離散網を持つ。Gruenhage, Generalized metric spaces, stratifiable ⇒ σ）で、σ-離散網 ⋃𝓝_n の各非空元から1点ずつ選べば D_n は閉離散、和は稠密。パラコンパクト性（L_0005）と stratification（L_0010）を使う標準的証明: 各 n で開被覆 {X∖cl G_n(X∖U)} 的なものの σ-離散細分を取る。",
+      "attempts": {
+        "prove": 0,
+        "decompose": 0,
+        "refute": 0
+      },
+      "closed_by": null
+    },
+    {
+      "id": "L_0024",
+      "goal": null,
+      "tier": "Tinf",
+      "status": "proposed",
+      "exhausted": false,
+      "depth": 3,
+      "both_sides": false,
+      "stmt": "∀ (X : Type) [TopologicalSpace X] (x : X) (𝓚 : Set (Set X)), (∀ K ∈ 𝓚, IsClosed K ∧ closure (interior K) = K ∧ x ∈ interior K) → (∀ U : Set X, IsOpen U → x ∈ U → ∃ K ∈ 𝓚, K ⊆ U) → MSpace.ClosurePreserving 𝓚 → Defs.D_0001.HasCPOuterBase x",
+      "informal": "部品(b)（易）: 正則閉集合からなる CP な閉近傍基 𝓚 から CP な開外基 𝓥 = interior '' 𝓚 を作る。各 interior K は開で x を含み、interior K ⊆ K ⊆ U。CP 性: 𝓖 ⊆ 𝓥 に対し 𝓗 := {K ∈ 𝓚 | interior K ∈ 𝓖} とおくと 𝓖 = interior '' 𝓗。closure(⋃ int K) ⊆ closure(⋃ K) = ⋃ closure K（𝓚 の CP）= ⋃ K = ⋃ closure(int K)（正則閉）。逆向き ⋃ closure(int K) ⊆ closure(⋃ int K) は常に成立。空間の分離公理は不要。",
+      "attempts": {
+        "prove": 0,
+        "decompose": 0,
+        "refute": 0
+      },
+      "closed_by": null
+    },
+    {
+      "id": "L_0025",
+      "goal": null,
+      "tier": "Tinf",
+      "status": "proposed",
+      "exhausted": false,
+      "depth": 3,
+      "both_sides": false,
+      "stmt": "∀ (X : Type) [TopologicalSpace X], MSpace.IsM1 X → (∃ D : ℕ → Set X, (∀ n, ∀ A ⊆ D n, IsClosed A) ∧ Dense (⋃ n, D n)) → ∀ x : X, (∃ 𝓚 : Set (Set X), (∀ K ∈ 𝓚, IsClosed K ∧ x ∈ interior K) ∧ (∀ U : Set X, IsOpen U → x ∈ U → ∃ K ∈ 𝓚, K ⊆ U) ∧ MSpace.ClosurePreserving 𝓚) → ∃ 𝓚' : Set (Set X), (∀ K ∈ 𝓚', IsClosed K ∧ closure (interior K) = K ∧ x ∈ interior K) ∧ (∀ U : Set X, IsOpen U → x ∈ U → ∃ K ∈ 𝓚', K ⊆ U) ∧ MSpace.ClosurePreserving 𝓚'",
+      "informal": "部品(c)（難所、Mizokami 2004 Topology Appl. 141 の中核）: M1 空間で、σ-閉離散な稠密集合 D=⋃D_n と点 x の CP 閉近傍基 𝓚 があれば、x は正則閉集合（K = cl(int K)）からなる CP 閉近傍基を持つ。注意: (b) と合わせると L_0022 の結論と同値（逆に CP 開外基 𝓥 があれば closure '' 𝓥 が正則閉 CP 閉近傍基）なので、真偽は Mizokami の定理に依存する。単純に K ↦ cl(int K) は CP を保たない可能性がある。σ-CP 基 𝓑=⋃𝓑_n で固定した n なら {⋃{B∈𝓑_n | cl B ⊆ int K}} は CP になるが、n を K ごとに選ぶと σ-CP にしかならない。Ito の手法（K∩D_n の各点を 𝓑 で膨らませ、D_n の閉離散性で n 方向の局所有限性を得る）で n の一様性を確保するのが鍵。さらに分解が必要な可能性が高い。",
+      "attempts": {
+        "prove": 0,
+        "decompose": 0,
+        "refute": 0
+      },
+      "closed_by": null
     }
   ],
   "reductions": [
@@ -394,6 +445,17 @@
         "L_0022"
       ],
       "status": "live",
+      "negate": false
+    },
+    {
+      "id": "R_0007",
+      "parent": "L_0022",
+      "children": [
+        "L_0023",
+        "L_0024",
+        "L_0025"
+      ],
+      "status": "proposed",
       "negate": false
     }
   ],
@@ -864,6 +926,30 @@
       "node": "L_0022",
       "path": "Specs/L_0022.lean",
       "sha256": "52db622469b42eae917de8872f06aed867e097fba18f7db5a34e41ce6f163cbe",
+      "axioms": []
+    },
+    {
+      "module": "Specs.L_0023",
+      "kind": "spec",
+      "node": "L_0023",
+      "path": "Specs/L_0023.lean",
+      "sha256": "9e2b8eee3427695b06387eed2f86617f628d2cebb5efcd73b106cf38fa234566",
+      "axioms": []
+    },
+    {
+      "module": "Specs.L_0024",
+      "kind": "spec",
+      "node": "L_0024",
+      "path": "Specs/L_0024.lean",
+      "sha256": "09dad4d92f76ff6cee082b82dbc025834e1c1b5bc1ba56f4889903258539292d",
+      "axioms": []
+    },
+    {
+      "module": "Specs.L_0025",
+      "kind": "spec",
+      "node": "L_0025",
+      "path": "Specs/L_0025.lean",
+      "sha256": "8292c72099765e2a66cb6cefc51c4ef245dfad1c4b8cfbf668d8d8dc2b26dd50",
       "axioms": []
     }
   ]
