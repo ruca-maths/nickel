@@ -438,4 +438,229 @@ theorem H_subset_unique_ICyl (T : Tree2 α) (q : ℕ ≃ α)
 
 end RhoProdBridge
 
+section QTreeBasisAndShrinking
+
+open Defs.D_0003 Defs.D_0003.Tree2 Defs.D_0009
+
+/-- Helper: if `x < y` in `List α` and `x` is not a prefix of `y`, then `x ++ [z] < y`
+for ANY `z : α`. -/
+private lemma list_lex_append_lt_of_not_prefix {α : Type*} [LinearOrder α]
+    {x y : List α} (hxy : x < y) (hnot : ¬ x <+: y) (z : α) :
+    x ++ [z] < y := by
+  induction x generalizing y with
+  | nil => exact (hnot (List.nil_prefix)).elim
+  | cons a as ih =>
+    cases y with
+    | nil => exact (not_lt_of_ge (list_lex_nil_le _) hxy).elim
+    | cons b bs =>
+      have h' : List.Lex (· < ·) (a :: as) (b :: bs) := hxy
+      cases h' with
+      | rel hab => exact List.Lex.rel hab
+      | cons htail =>
+        have hnot' : ¬ as <+: bs := fun hp => hnot (List.cons_prefix_cons.mpr ⟨rfl, hp⟩)
+        exact List.Lex.cons (ih htail hnot')
+
+/-- Every node `x : QTree` eventually belongs to `qtreeTree2.QStar a`. -/
+theorem qtree_mem_QStar (x : QTree) :
+    ∃ a₀ : ℕ, 0 < a₀ ∧ ∀ a, a₀ ≤ a → qtreeTree2.QStar a x := by
+  induction x using List.reverseRecOn with
+  | nil =>
+    exact ⟨1, Nat.one_pos, fun a _ => QStar.root⟩
+  | append_singleton xs d ih =>
+    obtain ⟨a₀, ha₀, hxs⟩ := ih
+    let k : ℕ := (OrderDual.ofDual d).1
+    have hk : 0 < k := (OrderDual.ofDual d).2
+    refine ⟨max a₀ k, lt_of_lt_of_le ha₀ (le_max_left _ _), fun a ha => ?_⟩
+    have hxs_a : qtreeTree2.QStar a xs := hxs a (le_trans (le_max_left _ _) ha)
+    have hC : qtreeTree2.C xs (xs ++ [d]) := ⟨k, hk, by rw [qchild_pos xs hk]; rfl⟩
+    have hidx : qtreeTree2.idx (xs ++ [d]) ≤ a := by
+      change qidx (xs ++ [d]) ≤ a
+      rw [qidx_append_singleton]
+      exact le_trans (le_max_right _ _) ha
+    exact QStar.step xs (xs ++ [d]) hxs_a hC hidx
+
+/-- Shrinking property on `QTree`: for any `x < y`, there exists `a > 0` such that
+`x ∈ QStar a` and `child x a < y` (so `[x, child x a) ⊆ [x, y)`). -/
+theorem qtree_Ico_shrink {x y : QTree} (hxy : x < y) :
+    ∃ a : ℕ, 0 < a ∧ qtreeTree2.QStar a x ∧ qtreeTree2.child x a < y := by
+  obtain ⟨a₀, ha₀, hxQ⟩ := qtree_mem_QStar x
+  by_cases hpre : x <+: y
+  · obtain ⟨t, rfl⟩ := hpre
+    cases t with
+    | nil =>
+      simp at hxy
+    | cons d rest =>
+      let k : ℕ := (OrderDual.ofDual d).1
+      let a : ℕ := max a₀ (k + 1)
+      have ha : 0 < a := lt_of_lt_of_le ha₀ (le_max_left _ _)
+      refine ⟨a, ha, hxQ a (le_max_left _ _), ?_⟩
+      change qchild x a < x ++ d :: rest
+      rw [qchild_pos x ha]
+      have hlt : k < a := lt_of_lt_of_le (Nat.lt_succ_self k) (le_max_right _ _)
+      have hdual : OrderDual.toDual (⟨a, ha⟩ : ℕ+) < d := hlt
+      have hgen : ∀ l : QTree, l ++ [OrderDual.toDual ⟨a, ha⟩] < l ++ d :: rest := by
+        intro l
+        induction l with
+        | nil => exact List.Lex.rel hdual
+        | cons b bs ih => exact List.Lex.cons ih
+      exact hgen x
+  · refine ⟨a₀, ha₀, hxQ a₀ le_rfl, ?_⟩
+    change qchild x a₀ < y
+    rw [qchild_pos x ha₀]
+    exact list_lex_append_lt_of_not_prefix hxy hpre _
+
+/-- `{ [p, child p a) | 0 < a, p ∈ QStar a }` is a clopen topological basis for
+`(QTree, Defs.D_0009.rho QTree)`. -/
+theorem qtree_I_isTopologicalBasis :
+    @TopologicalSpace.IsTopologicalBasis QTree (rho QTree)
+      { S : Set QTree | ∃ a : ℕ, 0 < a ∧ ∃ p : QTree,
+          qtreeTree2.QStar a p ∧ S = Set.Ico p (qtreeTree2.child p a) } := by
+  let : TopologicalSpace QTree := rho QTree
+  have hopen : ∀ S ∈ { S : Set QTree | ∃ a : ℕ, 0 < a ∧ ∃ p : QTree,
+      qtreeTree2.QStar a p ∧ S = Set.Ico p (qtreeTree2.child p a) }, IsOpen S := by
+    rintro _ ⟨a, _, p, _, rfl⟩
+    exact isOpen_Ico p _
+  refine TopologicalSpace.isTopologicalBasis_of_isOpen_of_nhds hopen ?_
+  intro x U hxU hU_open
+  have hgen : ∀ V : Set QTree, IsOpen V → ∀ y ∈ V, ∃ u v : QTree, y ∈ Set.Ico u v ∧ Set.Ico u v ⊆ V := by
+    intro V hV
+    induction hV with
+    | basic s hs =>
+      obtain ⟨u, v, rfl⟩ := hs
+      exact fun y hy => ⟨u, v, hy, Set.Subset.rfl⟩
+    | univ =>
+      intro y _
+      obtain ⟨v, hv⟩ := exists_gt y
+      exact ⟨y, v, ⟨le_rfl, hv⟩, Set.subset_univ _⟩
+    | inter s t _ _ ihs iht =>
+      intro y ⟨hys, hyt⟩
+      obtain ⟨u₁, v₁, hy1, h1⟩ := ihs y hys
+      obtain ⟨u₂, v₂, hy2, h2⟩ := iht y hyt
+      refine ⟨max u₁ u₂, min v₁ v₂, ⟨max_le hy1.1 hy2.1, lt_min hy1.2 hy2.2⟩, fun z hz => ?_⟩
+      exact ⟨h1 ⟨le_trans (le_max_left _ _) hz.1, lt_of_lt_of_le hz.2 (min_le_left _ _)⟩,
+             h2 ⟨le_trans (le_max_right _ _) hz.1, lt_of_lt_of_le hz.2 (min_le_right _ _)⟩⟩
+    | sUnion F _ ih =>
+      rintro y ⟨s, hsF, hys⟩
+      obtain ⟨u, v, hy, hsub⟩ := ih s hsF y hys
+      exact ⟨u, v, hy, hsub.trans (Set.subset_sUnion_of_mem hsF)⟩
+  obtain ⟨u, v, hxu_v, hsub⟩ := hgen U hU_open x hxU
+  obtain ⟨a, ha, hxQ, hchild_lt⟩ := qtree_Ico_shrink hxu_v.2
+  refine ⟨Set.Ico x (qtreeTree2.child x a), ⟨a, ha, x, hxQ, rfl⟩,
+    ⟨le_rfl, qtreeTree2.lt_child x _ (qtreeTree2.C_child x a ha)⟩, ?_⟩
+  intro z hz
+  exact hsub ⟨le_trans hxu_v.1 hz.1, lt_trans hz.2 hchild_lt⟩
+
+/-- Multi-coordinate cylinder blocks `ICyl qtreeTree2 n (fun _ => a) p` form a clopen
+topological basis for `(ℕ → QTree, rhoProd QTree)`. -/
+theorem qtree_ICyl_isTopologicalBasis :
+    @TopologicalSpace.IsTopologicalBasis (ℕ → QTree) (rhoProd QTree)
+      { S : Set (ℕ → QTree) | ∃ n a : ℕ, 0 < a ∧ ∃ p : Fin n → QTree,
+          (∀ i, qtreeTree2.QStar a (p i)) ∧ S = ICyl qtreeTree2 n (fun _ => a) p } := by
+  let : TopologicalSpace (ℕ → QTree) := rhoProd QTree
+  have hopen : ∀ S ∈ { S : Set (ℕ → QTree) | ∃ n a : ℕ, 0 < a ∧ ∃ p : Fin n → QTree,
+      (∀ i, qtreeTree2.QStar a (p i)) ∧ S = ICyl qtreeTree2 n (fun _ => a) p }, IsOpen S := by
+    rintro _ ⟨n, a, _, p, _, rfl⟩
+    exact (ICyl_clopen qtreeTree2 n (fun _ => a) p).1
+  refine TopologicalSpace.isTopologicalBasis_of_isOpen_of_nhds hopen ?_
+  intro x U hxU hU_open
+  let : TopologicalSpace QTree := rho QTree
+  obtain ⟨I, t, ht_all, htU⟩ := isOpen_pi_iff.mp hU_open x hxU
+  let n : ℕ := I.sup id + 1
+  have hcoord : ∀ i : Fin n, ∃ a : ℕ, 0 < a ∧ qtreeTree2.QStar a (x i.1) ∧
+      (i.1 ∈ I → Set.Ico (x i.1) (qtreeTree2.child (x i.1) a) ⊆ t i.1) := by
+    intro i
+    by_cases hi : i.1 ∈ I
+    · obtain ⟨S, ⟨a, ha, p, hp, rfl⟩, hxi, hSt⟩ :=
+        qtree_I_isTopologicalBasis.exists_subset_of_mem_open (ht_all i.1 hi).2 (ht_all i.1 hi).1
+      obtain ⟨b, hb, hxQ, hchild_lt⟩ := qtree_Ico_shrink hxi.2
+      refine ⟨b, hb, hxQ, fun _ z hz => hSt ⟨le_trans hxi.1 hz.1, lt_trans hz.2 hchild_lt⟩⟩
+    · obtain ⟨a₀, ha₀, hxQ⟩ := qtree_mem_QStar (x i.1)
+      exact ⟨a₀, ha₀, hxQ a₀ le_rfl, fun h => (hi h).elim⟩
+  choose a ha hxQ hsub using hcoord
+  let A : ℕ := (Finset.univ : Finset (Fin n)).sup a + 1
+  have hA : 0 < A := Nat.succ_pos _
+  have hleA : ∀ i : Fin n, a i ≤ A := fun i =>
+    le_trans (Finset.le_sup (f := a) (Finset.mem_univ i)) (Nat.le_succ _)
+  let p : Fin n → QTree := fun i => x i.1
+  have hpQ : ∀ i : Fin n, qtreeTree2.QStar A (p i) := fun i =>
+    prop_2_2_2 qtreeTree2 (hleA i) (hxQ i)
+  refine ⟨ICyl qtreeTree2 n (fun _ => A) p, ⟨n, A, hA, p, hpQ, rfl⟩, ?_, ?_⟩
+  · intro i
+    exact ⟨le_rfl, qtreeTree2.lt_child (x i.1) _ (qtreeTree2.C_child (x i.1) A hA)⟩
+  · intro y hy
+    refine htU fun k hkI => ?_
+    have hkn : k < n := Nat.lt_succ_of_le (Finset.le_sup (f := id) hkI)
+    let i : Fin n := ⟨k, hkn⟩
+    have hyi : y k ∈ Set.Ico (x k) (qtreeTree2.child (x k) A) := hy i
+    have hle_child : qtreeTree2.child (x k) A ≤ qtreeTree2.child (x k) (a i) := by
+      rcases eq_or_lt_of_le (hleA i) with heq | hlt
+      · rw [heq]
+      · exact le_of_lt (qtreeTree2.child_anti (x k) _ _
+          (qtreeTree2.C_child (x k) (a i) (ha i)) (qtreeTree2.C_child (x k) A hA)
+          (by rw [qtreeTree2.idx_child, qtreeTree2.idx_child]; exact hlt))
+    exact hsub i hkI ⟨hyi.1, lt_of_lt_of_le hyi.2 hle_child⟩
+
+/-- Every point `x : ℕ → QTree` is the intersection of a decreasing sequence of
+`rhoProd QTree`-clopen cylinder blocks `ICyl qtreeTree2 (n + 1) (fun _ => n + 1) (p n)`. -/
+theorem qtree_rhoProd_inter_eq_singleton (x : ℕ → QTree) :
+    ∃ C : ℕ → Set (ℕ → QTree),
+      (∀ n, @IsOpen (ℕ → QTree) (rhoProd QTree) (C n) ∧
+            @IsClosed (ℕ → QTree) (rhoProd QTree) (C n) ∧
+            x ∈ C n ∧ C (n + 1) ⊆ C n) ∧
+      (⋂ n : ℕ, C n) = {x} := by
+  have huniq : ∀ n : ℕ, ∃ p : Fin (n + 1) → QTree,
+      (∀ i, qtreeTree2.QStar (n + 1) (p i)) ∧ x ∈ ICyl qtreeTree2 (n + 1) (fun _ => n + 1) p := by
+    intro n
+    obtain ⟨⟨p, hp⟩, hxp, _⟩ :=
+      (ICyl_coD qtreeTree2 (n + 1) (fun _ => n + 1) (fun _ => Nat.succ_pos n)).2.2 x
+    exact ⟨p, hp, hxp⟩
+  choose p hpQ hxp using huniq
+  let C : ℕ → Set (ℕ → QTree) := fun n => ICyl qtreeTree2 (n + 1) (fun _ => n + 1) (p n)
+  refine ⟨C, fun n => ⟨(ICyl_clopen qtreeTree2 _ _ _).1, (ICyl_clopen qtreeTree2 _ _ _).2,
+    hxp n, ?_⟩, ?_⟩
+  · intro y hy i
+    let i' : Fin (n + 2) := ⟨i.1, Nat.lt_succ_of_lt i.2⟩
+    have hxi : x i.1 ∈ Set.Ico (p n i) (qtreeTree2.child (p n i) (n + 1)) := hxp n i
+    have hxi' : x i.1 ∈ Set.Ico (p (n + 1) i') (qtreeTree2.child (p (n + 1) i') (n + 2)) :=
+      hxp (n + 1) i'
+    rcases Defs.D_0005.prop_2_2_5 qtreeTree2 (Nat.succ_pos n) (Nat.le_succ (n + 1))
+        (hpQ n i) (hpQ (n + 1) i') with hdisj | hsub
+    · exact (Set.disjoint_left.mp hdisj hxi hxi').elim
+    · exact hsub (hy i')
+  · ext y
+    simp only [Set.mem_iInter, Set.mem_singleton_iff]
+    constructor
+    · intro hy
+      funext k
+      by_contra hne
+      rcases lt_or_gt_of_ne hne with hlt | hgt
+      · obtain ⟨a, ha, hyQ, hchild_lt⟩ := qtree_Ico_shrink hlt
+        let n : ℕ := max k a
+        have hkn : k < n + 1 := Nat.lt_succ_of_le (le_max_left k a)
+        have han : a ≤ n + 1 := le_trans (le_max_right k a) (Nat.le_succ n)
+        let i : Fin (n + 1) := ⟨k, hkn⟩
+        have hy_in : y k ∈ Set.Ico (p n i) (qtreeTree2.child (p n i) (n + 1)) := hy n i
+        have hx_in : x k ∈ Set.Ico (p n i) (qtreeTree2.child (p n i) (n + 1)) := hxp n i
+        have hy_a : y k ∈ Set.Ico (y k) (qtreeTree2.child (y k) a) :=
+          ⟨le_rfl, qtreeTree2.lt_child _ _ (qtreeTree2.C_child _ a ha)⟩
+        rcases Defs.D_0005.prop_2_2_5 qtreeTree2 ha han hyQ (hpQ n i) with hdisj | hsub
+        · exact Set.disjoint_left.mp hdisj hy_a hy_in
+        · exact not_lt_of_ge (le_of_lt hchild_lt) (hsub hx_in).2
+      · obtain ⟨a, ha, hxQ, hchild_lt⟩ := qtree_Ico_shrink hgt
+        let n : ℕ := max k a
+        have hkn : k < n + 1 := Nat.lt_succ_of_le (le_max_left k a)
+        have han : a ≤ n + 1 := le_trans (le_max_right k a) (Nat.le_succ n)
+        let i : Fin (n + 1) := ⟨k, hkn⟩
+        have hy_in : y k ∈ Set.Ico (p n i) (qtreeTree2.child (p n i) (n + 1)) := hy n i
+        have hx_in : x k ∈ Set.Ico (p n i) (qtreeTree2.child (p n i) (n + 1)) := hxp n i
+        have hx_a : x k ∈ Set.Ico (x k) (qtreeTree2.child (x k) a) :=
+          ⟨le_rfl, qtreeTree2.lt_child _ _ (qtreeTree2.C_child _ a ha)⟩
+        rcases Defs.D_0005.prop_2_2_5 qtreeTree2 ha han hxQ (hpQ n i) with hdisj | hsub
+        · exact Set.disjoint_left.mp hdisj hx_a hx_in
+        · exact not_lt_of_ge (le_of_lt hchild_lt) (hsub hy_in).2
+    · rintro rfl n
+      exact hxp n
+
+end QTreeBasisAndShrinking
+
 end Research.ChenWangTree

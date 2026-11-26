@@ -8,6 +8,7 @@
 - **`H_isDiscreteFam` / `H_isTopologicalBasis` / `H_inter_eq_singleton`**: `Defs.D_0011.xtop`（Baire 型積位相 $\rho$）上で $\{H(n, c)\}_c$ が離散開閉分割・開閉開基をなし、$\bigcap_n H(n+1, \operatorname{code}(n+1, q^{-1} \circ x)) = \{x\}$ となること。
 - **`rho_t1Space` / `rho_t3Space` / `xtop_le_rhoProd`**: 半開区間位相 $\rho'$ の $T_3$ 性と $\rho \le \rho'^{\mathbb{N}}$。
 - **`ICyl_clopen` / `ICyl_coD` / `ICyl_laminar` / `H_subset_unique_ICyl`**: 多座標柱状ブロック `ICyl T n a p` が c.o.D 層状細分をなし、各 `H q n c` が一意な `ICyl T n a p` に含まれること（第2〜3節と第4節 $L_n$ 被覆の橋渡し）。
+- **`qtree_mem_QStar` / `qtree_Ico_shrink` / `qtree_I_isTopologicalBasis` / `qtree_ICyl_isTopologicalBasis` / `qtree_rhoProd_inter_eq_singleton`**: `QTree` 上で区間族 $\{[p, p_a)\}$ と多座標柱状族 `ICyl` がそれぞれ $\rho'$・$\rho'^{\mathbb{N}}$ の開閉開基をなし、単調減少な開閉柱状列の交わりが 1 点 $\{x\}$ に収束すること。
 
 ## 2. [ChenWang_UnboundedMAD.lean](ChenWang_UnboundedMAD.lean)（第9節 Proposition 9.1 の ZFC 修正と非有界分割脱出）
 - **`exists_unbounded_AD` / `exists_unbounded_MAD`**: ZFC で $(\mathbb{N}^\mathbb{N}, \le^*)$ における非有界 MAD 族が存在すること（`List ℕ ↪ ℕ` の枝族 + Zorn の補題）。
