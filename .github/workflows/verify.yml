@@ -37,7 +37,7 @@ jobs:
           cat changes.txt
           track=A
           files=""
-          protected='^(Targets/|Targets\.lean$|Specs/|Proofs/|core/|prompts/|tools/|tests/|\.github/|status/|STATUS\.md$|config\.yaml$|lakefile\.toml$|lean-toolchain$|lake-manifest\.json$)'
+          protected='^(Targets/|Targets\.lean$|Defs/|Specs/|Proofs/|core/|prompts/|tools/|tests/|\.github/|status/|STATUS\.md$|config\.yaml$|lakefile\.toml$|lean-toolchain$|lake-manifest\.json$)'
           while IFS=$'\t' read -r st path rest; do
             if [[ "$st" == "A" && "$path" =~ ^Proofs/(L|N|R)_[0-9]{4}\.lean$ ]]; then
               files="$files $path"

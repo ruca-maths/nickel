@@ -467,7 +467,7 @@ class Desk:
         """origin の基準ブランチを取り込み、新しい証明を受理し、状態を commit して push する。"""
         gcfg = self.cfg.get("git") or {}
         g = self.git()
-        paths = ["Specs", "Proofs", "STATUS.md", "status", "memory"]
+        paths = ["Defs", "Specs", "Proofs", "STATUS.md", "status", "memory"]
 
         def commit_state(msg: str) -> None:
             present = [p for p in paths if (self.root / p).exists()]
@@ -626,7 +626,7 @@ class Desk:
             return  # 子機: 追跡ファイル（STATUS.md 等）は書かない
         status_gen.generate(self, activity)
         if commit_msg and (self.cfg.get("git") or {}).get("autocommit"):
-            paths = ["Specs", "Proofs", "STATUS.md", "status", "memory"]
+            paths = ["Defs", "Specs", "Proofs", "STATUS.md", "status", "memory"]
             subprocess.run(["git", "add", "--", *paths], cwd=self.root, capture_output=True)
             subprocess.run(["git", "commit", "-q", "-m", commit_msg, "--", *paths],
                            cwd=self.root, capture_output=True)
