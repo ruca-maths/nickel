@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-26 21:02:57",
+  "generated_at": "2026-11-26 21:03:13",
   "targets_hash": "198f3fa8f630b46d28aa23d1bba3194b216c79f4ca39920d47757a6f5efd6f89",
   "nodes": [
     {
@@ -303,7 +303,7 @@
       "informal": "stratifiable だが、ある点が closure-preserving な開外基を持たない空間が存在する（Chen–Wang の空間 (Y,τ): Theorem 1.a と Proposition 9.5）。次の分解で Y を定義モジュールに置き、stratifiable 性と 9.5 を別々の子に分けること。",
       "attempts": {
         "prove": 5,
-        "decompose": 4,
+        "decompose": 5,
         "refute": 4
       },
       "closed_by": null
