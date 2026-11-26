@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0011`）に向けた **Lean 4 カーネル検証済みモジュール 6 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0011`）に向けた **Lean 4 カーネル検証済みモジュール 7 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -28,3 +28,8 @@
 - **`hasCPOuterBase_inter_clopen` / `hasCPOuterBase_iff_clopen_subtype` / `not_hasCPOuterBase_local_escape`**: `HasCPOuterBase y₀` が開閉近傍 $W \ni y_0$ への制限・部分空間化と完全に同値であり、`¬ HasCPOuterBase y₀` ならば任意の開閉近傍 $W$ の内部 $W \setminus \{y_0\}$ に CP 破綻点 $z$ が存在すること。
 - **`hasCPOuterBase_of_isolated_compl` / `hasCPOuterBase_of_clopen_nhd_isolated_compl` / `exists_nonisolated_in_clopen_of_not_hasCPOuterBase`**: 任意の位相空間において $y_0$ のある開閉近傍 $W$ で $W \setminus \{y_0\}$ の全点が孤立していれば `HasCPOuterBase y₀` が成り立つ（よって `L_0031` 反例の $y_0$ は必ず他の非孤立点の集積点）。
 - **`hasCPOuterBase_of_no_nonisolated_hole_interior`（No-Go 定理 2）** & **`exists_nonisolated_hole_interior_of_not_hasCPOuterBase`**: 層状開分割 $W(n, y)$ と基本近傍系 $\{W(n, y_0) \setminus D \mid D \in \mathrm{Holes}\}$ を持つ任意の位相空間において、あるレベル $N$ で「どの穴 $D$ の内部 $\operatorname{int} D$ も $W(N, y_0)$ 内の非孤立点を含まない」ならば `HasCPOuterBase y₀` が成り立つ（`idealHoleSystem_hasCPOuterBase` の大幅な一般化）。対偶として、層状穴あけによる `L_0031` 反例では**すべての $N$ について** $W(N, y_0) \setminus \{y_0\}$ の非孤立点を内部に含む穴 $D$ が不可欠。
+
+## 6. [ChenWang_NonCP_Model.lean](ChenWang_NonCP_Model.lean)（有限 $\Delta$-系補題と `¬ HasCPOuterBase` の初の具体モデル `BoxFan I`）
+- **`delta_system_of_card_eq` / `exists_infinite_delta_system`**: 非可算有限集合族に対する有限 $\Delta$-系補題の純 ZFC 証明。
+- **`cantorCube_not_hasCPOuterBase`**: 任意の非可算添字集合 $I$ に対し、Cantor 立方体 $I \to \mathrm{Bool}$ の零点が `¬ Defs.D_0001.HasCPOuterBase` を満たすことを証明。
+- **`BoxFan I := Option (ℕ × (I → Bool))`**: `Specs.L_0031` の stratifiability 以外の**全条件**を具体的に満たす 0 次元 $T_3$ 空間を構成し、`boxFan_t3Space`・`boxFan_W_clopen`・`boxFan_W_inter`（$\bigcap_n W_n = \{\mathrm{none}\}$）・`boxFan_not_hasCPOuterBase`・`boxFan_not_hasSigmaCPLocalBase`（`Proofs.L_0032` 経由）・`boxFan_not_isM1`（`Proofs.L_0029` 経由）をすべてカーネル検証済みで証明。
