@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0011`）に向けた **Lean 4 カーネル検証済みモジュール 13 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0011`）に向けた **Lean 4 カーネル検証済みモジュール 14 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -68,3 +68,8 @@
 - **`CollapseQuotient X F := Option { x : X // x ∉ F }`**: 閉集合 $F$ を 1 点 `none` に潰す縮約商を構成し、`collapseProj_isClosedMap`・`collapseQuotient_t1Space`・`collapseQuotient_isStratifiable`（Heath–Lutzer–Zenor 単調正規性作用素による stratifiability の保存）を証明。
 - **`collapseQuotient_hasCPOuterBase_iff`**: 商空間の点 `none` が単層 CP 開外基を持つことと、元空間の閉集合 $F$ が単層 CP 開外基を持つことが厳密同値。
 - **`closed_hasCPOuterBase_of_not_L0020`**: `¬ Specs.L_0020.stmt` のもとで、任意の stratifiable 空間の任意の非空閉集合が単層 CP 開外基を持つことを導出。
+
+## 13. [ChenWang_Clopen_Shells.lean](ChenWang_Clopen_Shells.lean)（開閉族 CP 特徴付けと開閉殻分解二分法）
+- **`closurePreserving_iff_sUnion_isClosed_of_clopen` / `isM1_of_clopen_basis_sUnion_closed`**: 開閉集合族の closure-preserving 性が「任意部分和が閉」と同値であり、$\sigma$-部分和閉な開閉開基を持つ $T_1$ 空間は自動的に $T_3$ かつ $M_1$。
+- **`isM1_of_countable_clopen_M1_cover` / `isM1_of_clopen_shells_and_hasCPOuterBase`**: 可算個の開閉 $M_1$ 部分空間で覆われる $T_3$ 空間は $M_1$。特に開閉殻 `clopenShell W n`（$W_0^c, W_n \setminus W_{n+1}$）がすべて $M_1$ で $y_0$ が `HasCPOuterBase y₀` を持てば全体が $M_1$。
+- **`L0031_or_shell_not_isM1`**: 開閉 $G_\delta$ 点 $y_0$ を持つ非 $M_1$ stratifiable 空間は、$(Y, y_0)$ 自身が `Specs.L_0031.stmt` の証人となるか、ある開閉殻 `clopenShell W n` が既に非 $M_1$ であるかの二分法を満たす。
