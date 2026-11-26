@@ -393,6 +393,241 @@ theorem idealHoleSystem_isStratifiable {Y : Type}
     simp only [hy_not_H₀, ↓reduceIte]
     exact singleton_subset_iff.mpr hyx
 
+/-- No-Go Theorem 1 for `idealHoleSystem`:
+For ANY `W`-closed `H₀` and ANY ideal `𝓘` on `H₀ᶜ` (even MAD-generated or
+non-principal ultrafilter ideals), every point `y₀ : Y` of `idealHoleSystem`
+admits a single-layer closure-preserving open outer base (`Defs.D_0001.HasCPOuterBase y₀`).
+Consequently, no `idealHoleSystem` can witness `Specs.L_0031`: a counterexample
+must either have non-isolated points outside `H₀` or carve holes that meet `H₀`. -/
+theorem idealHoleSystem_hasCPOuterBase {Y : Type}
+    (W : ℕ → Y → Set Y)
+    (hmem : ∀ n y, y ∈ W n y)
+    (hdec : ∀ n y, W (n + 1) y ⊆ W n y)
+    (hpart : ∀ n x y, y ∈ W n x → W n y = W n x)
+    (hinter : ∀ y, (⋂ n, W n y) = {y})
+    (H₀ : Set Y)
+    (𝓘 : Set (Set Y))
+    (h𝓘_empty : ∅ ∈ 𝓘)
+    (h𝓘_sub : ∀ D ∈ 𝓘, D ⊆ H₀ᶜ)
+    (h𝓘_union : ∀ D₁ ∈ 𝓘, ∀ D₂ ∈ 𝓘, D₁ ∪ D₂ ∈ 𝓘)
+    (y₀ : Y) :
+    let H := idealHoleSystem W hmem hdec hpart hinter H₀ 𝓘 h𝓘_empty h𝓘_sub h𝓘_union
+    @Defs.D_0001.HasCPOuterBase Y H.toTopologicalSpace y₀ := by
+  classical
+  intro H
+  let : TopologicalSpace Y := H.toTopologicalSpace
+  by_cases hy₀ : y₀ ∈ H₀
+  · refine ⟨{ S : Set Y | ∃ n, ∃ D ∈ 𝓘, S = W n y₀ \ D }, ?_, ?_, ?_⟩
+    · rintro _ ⟨n, D, hD, rfl⟩
+      refine ⟨H.isOpen_basic n y₀ (by simp [H, idealHoleSystem, hy₀, hD]),
+        hmem n y₀, fun hyD => h𝓘_sub D hD hyD hy₀⟩
+    · intro U hU hy₀U
+      obtain ⟨n, D, hD, hsub⟩ := hU y₀ hy₀U
+      have hD𝓘 : D ∈ 𝓘 := by simpa [H, idealHoleSystem, hy₀] using hD
+      exact ⟨W n y₀ \ D, ⟨n, D, hD𝓘, rfl⟩, hsub⟩
+    · intro 𝓖 h𝓖
+      apply Subset.antisymm
+      · intro z hz
+        by_cases hzH₀ : z ∈ H₀
+        · by_cases hzy : z = y₀
+          · subst hzy
+            rcases 𝓖.eq_empty_or_nonempty with rfl | ⟨S, hS𝓖⟩
+            · simp at hz
+            · obtain ⟨n, D, hD, rfl⟩ := h𝓖 hS𝓖
+              refine ⟨closure (W n z \ D), mem_image_of_mem _ hS𝓖,
+                subset_closure ⟨hmem n z, fun hzD => h𝓘_sub D hD hzD hzH₀⟩⟩
+          · have hz_not : z ∉ ⋂ n, W n y₀ := by rw [hinter y₀]; exact hzy
+            rw [mem_iInter] at hz_not
+            push Not at hz_not
+            obtain ⟨N, hzWN⟩ := hz_not
+            rw [H.mem_closure_iff_hole] at hz
+            obtain ⟨w, ⟨hwWNz, _⟩, S, hS𝓖, hwS⟩ := hz N ∅ (by simp [H, idealHoleSystem, hzH₀, h𝓘_empty])
+            obtain ⟨n, D, hD, rfl⟩ := h𝓖 hS𝓖
+            have hlt : n < N := by
+              by_contra hge
+              have hwW : w ∈ W N y₀ := H.W_anti (not_lt.mp hge) y₀ hwS.1
+              have h1 : W N w = W N z := hpart N z w hwWNz
+              have h2 : W N w = W N y₀ := hpart N y₀ w hwW
+              exact hzWN ((h1.symm.trans h2) ▸ hmem N z)
+            have hwWnz : w ∈ W n z := H.W_anti hlt.le z hwWNz
+            have h1 : W n w = W n z := hpart n z w hwWnz
+            have h2 : W n w = W n y₀ := hpart n y₀ w hwS.1
+            have hzWny : z ∈ W n y₀ := (h1.symm.trans h2) ▸ hmem n z
+            have hzD : z ∉ D := fun h => h𝓘_sub D hD h hzH₀
+            exact ⟨closure (W n y₀ \ D), mem_image_of_mem _ hS𝓖, subset_closure ⟨hzWny, hzD⟩⟩
+        · -- z ∉ H₀: {z} is open, so z ∈ ⋃₀ 𝓖 directly
+          rw [H.mem_closure_iff_hole] at hz
+          obtain ⟨w, ⟨_, hwnot⟩, S, hS𝓖, hwS⟩ := hz 0 {z}ᶜ (by simp [H, idealHoleSystem, hzH₀])
+          have hwz : w = z := by by_contra hne; exact hwnot hne
+          exact ⟨closure S, mem_image_of_mem _ hS𝓖, subset_closure (hwz ▸ hwS)⟩
+      · exact sUnion_subset (by rintro _ ⟨S, hS, rfl⟩; exact closure_mono (subset_sUnion_of_mem hS))
+  · -- y₀ ∉ H₀: {y₀} is isolated, so {{y₀}} is a CP open outer base
+    have hy₀_open : IsOpen ({y₀} : Set Y) := by
+      have hEq : ({y₀} : Set Y) = W 0 y₀ \ {y₀}ᶜ := by
+        ext z
+        simp only [mem_singleton_iff, mem_sdiff, mem_compl_iff, not_not]
+        exact ⟨fun h => ⟨h ▸ hmem 0 y₀, h⟩, fun h => h.2⟩
+      rw [hEq]
+      exact H.isOpen_basic 0 y₀ (by simp [H, idealHoleSystem, hy₀])
+    refine ⟨{{y₀}}, ?_, ?_, ?_⟩
+    · rintro _ rfl; exact ⟨hy₀_open, rfl⟩
+    · intro U _ hy₀U; exact ⟨{y₀}, mem_singleton _, singleton_subset_iff.mpr hy₀U⟩
+    · intro 𝓖 h𝓖
+      rcases 𝓖.eq_empty_or_nonempty with rfl | ⟨S, hS⟩
+      · simp
+      · have hEq : 𝓖 = {{y₀}} := by
+          ext T
+          constructor
+          · intro hT; exact h𝓖 hT
+          · intro hT
+            rw [mem_singleton_iff] at hT
+            have hS' := h𝓖 hS
+            rw [mem_singleton_iff] at hS'
+            exact hT.symm ▸ hS'.symm ▸ hS
+        rw [hEq, sUnion_singleton, image_singleton, sUnion_singleton]
+
+/-- **No-Go Theorem 1 (Full M₁ Strength):** Every `idealHoleSystem` is in fact an
+`M₁`-space (`MSpace.IsM1 Y`), regardless of the choice of ideal `𝓘` on `H₀ᶜ`.
+Its `σ`-closure-preserving open basis splits into:
+* `𝓑' (2 * n) = { {z} | Disjoint (W n z) H₀ }` (each layer is closed-discrete),
+* `𝓑' (2 * n + 1) = { W n y \ D | y ∈ H₀, D ∈ 𝓘 }` (each layer is closure-preserving
+  because every `W n y \ D` contains all of `W n y ∩ H₀`). -/
+theorem idealHoleSystem_isM1
+    {Y : Type}
+    (W : ℕ → Y → Set Y)
+    (hmem : ∀ n y, y ∈ W n y)
+    (hdec : ∀ n y, W (n + 1) y ⊆ W n y)
+    (hpart : ∀ n x y, y ∈ W n x → W n y = W n x)
+    (hinter : ∀ y, (⋂ n, W n y) = {y})
+    (H₀ : Set Y)
+    (hH₀ : ∀ z, z ∉ H₀ → ∃ n, Disjoint (W n z) H₀)
+    (𝓘 : Set (Set Y))
+    (h𝓘_empty : ∅ ∈ 𝓘)
+    (h𝓘_sub : ∀ D ∈ 𝓘, D ⊆ H₀ᶜ)
+    (h𝓘_union : ∀ D₁ ∈ 𝓘, ∀ D₂ ∈ 𝓘, D₁ ∪ D₂ ∈ 𝓘) :
+    let H := idealHoleSystem W hmem hdec hpart hinter H₀ 𝓘 h𝓘_empty h𝓘_sub h𝓘_union
+    @MSpace.IsM1 Y H.toTopologicalSpace := by
+  intro H
+  let : TopologicalSpace Y := H.toTopologicalSpace
+  have hT1 : T1Space Y := H.t1Space
+  have hSingleOpen : ∀ z, z ∉ H₀ → IsOpen ({z} : Set Y) := by
+    intro z hzH₀
+    have hEq : ({z} : Set Y) = W 0 z \ {z}ᶜ := by
+      ext x
+      simp only [mem_singleton_iff, mem_sdiff, mem_compl_iff, not_not]
+      exact ⟨fun h => ⟨h ▸ hmem 0 z, h⟩, fun h => h.2⟩
+    rw [hEq]
+    exact H.isOpen_basic 0 z (by simp [H, idealHoleSystem, hzH₀])
+  have hReg : RegularSpace Y := by
+    refine RegularSpace.of_exists_mem_nhds_isClosed_subset fun x s hs => ?_
+    obtain ⟨U, hUs, hUopen, hxU⟩ := mem_nhds_iff.mp hs
+    by_cases hxH₀ : x ∈ H₀
+    · obtain ⟨n, D, hD, hsub⟩ := hUopen x hxU
+      have hD𝓘 : D ∈ 𝓘 := by simpa [H, idealHoleSystem, hxH₀] using hD
+      refine ⟨W n x \ D, (H.isOpen_basic n x hD).mem_nhds ⟨hmem n x, fun hxD => h𝓘_sub D hD𝓘 hxD hxH₀⟩,
+        ?_, hsub.trans hUs⟩
+      rw [← isOpen_compl_iff, isOpen_iff_forall_mem_open]
+      intro z hz
+      by_cases hzW : z ∈ W n x
+      · have hzD : z ∈ D := by by_contra hnot; exact hz ⟨hzW, hnot⟩
+        exact ⟨{z}, singleton_subset_iff.mpr hz, hSingleOpen z (h𝓘_sub D hD𝓘 hzD), rfl⟩
+      · refine ⟨W n z, ?_, (H.W_clopen n z).1, hmem n z⟩
+        intro w hw ⟨hwW, _⟩
+        have h1 : W n w = W n z := hpart n z w hw
+        have h2 : W n w = W n x := hpart n x w hwW
+        exact hzW ((h1.symm.trans h2) ▸ hmem n z)
+    · exact ⟨{x}, (hSingleOpen x hxH₀).mem_nhds rfl, isClosed_singleton,
+        (singleton_subset_iff.mpr hxU).trans hUs⟩
+  have hT3 : T3Space Y := ⟨⟩
+  refine ⟨hT3, ?_⟩
+  let 𝓑₀ : ℕ → Set (Set Y) := fun n =>
+    { S : Set Y | ∃ z : Y, Disjoint (W n z) H₀ ∧ S = {z} }
+  let 𝓑₁ : ℕ → Set (Set Y) := fun n =>
+    { S : Set Y | ∃ y ∈ H₀, ∃ D ∈ 𝓘, S = W n y \ D }
+  let 𝓑' : ℕ → Set (Set Y) := fun k =>
+    if k % 2 = 0 then 𝓑₀ (k / 2) else 𝓑₁ (k / 2)
+  have h𝓑₀_open : ∀ n, ∀ S ∈ 𝓑₀ n, IsOpen S := by
+    rintro n _ ⟨z, hdisj, rfl⟩
+    have hzH₀ : z ∉ H₀ := fun hz => Set.disjoint_left.mp hdisj (hmem n z) hz
+    have hEq : ({z} : Set Y) = W 0 z \ {z}ᶜ := by
+      ext x
+      simp only [mem_singleton_iff, mem_sdiff, mem_compl_iff, not_not]
+      exact ⟨fun h => ⟨h ▸ hmem 0 z, h⟩, fun h => h.2⟩
+    rw [hEq]
+    exact H.isOpen_basic 0 z (by simp [H, idealHoleSystem, hzH₀])
+  have h𝓑₁_open : ∀ n, ∀ S ∈ 𝓑₁ n, IsOpen S := by
+    rintro n _ ⟨y, hyH₀, D, hD, rfl⟩
+    exact H.isOpen_basic n y (by simp [H, idealHoleSystem, hyH₀, hD])
+  have h𝓑₀_cp : ∀ n, ClosurePreserving (𝓑₀ n) := by
+    intro n 𝓖 h𝓖
+    apply Subset.antisymm
+    · intro x hx
+      by_cases hxH₀ : x ∈ H₀
+      · rw [H.mem_closure_iff_hole] at hx
+        obtain ⟨w, ⟨hwWnx, _⟩, S, hS𝓖, hwS⟩ :=
+          hx n ∅ (by simp [H, idealHoleSystem, hxH₀, h𝓘_empty])
+        obtain ⟨z, hdisj, rfl⟩ := h𝓖 hS𝓖
+        rw [mem_singleton_iff] at hwS
+        subst hwS
+        have hEq : W n w = W n x := hpart n x w hwWnx
+        exact absurd hxH₀ (Set.disjoint_left.mp hdisj (hEq ▸ hmem n x))
+      · rw [H.mem_closure_iff_hole] at hx
+        obtain ⟨w, ⟨_, hwnot⟩, S, hS𝓖, hwS⟩ :=
+          hx 0 {x}ᶜ (by simp [H, idealHoleSystem, hxH₀])
+        have hwx : w = x := by by_contra hne; exact hwnot hne
+        exact ⟨closure S, mem_image_of_mem _ hS𝓖, subset_closure (hwx ▸ hwS)⟩
+    · exact sUnion_subset (by rintro _ ⟨S, hS, rfl⟩; exact closure_mono (subset_sUnion_of_mem hS))
+  have h𝓑₁_cp : ∀ n, ClosurePreserving (𝓑₁ n) := by
+    intro n 𝓖 h𝓖
+    apply Subset.antisymm
+    · intro z hz
+      by_cases hzH₀ : z ∈ H₀
+      · rw [H.mem_closure_iff_hole] at hz
+        obtain ⟨w, ⟨hwWnz, _⟩, S, hS𝓖, hwS⟩ :=
+          hz n ∅ (by simp [H, idealHoleSystem, hzH₀, h𝓘_empty])
+        obtain ⟨y, hyH₀, D, hD, rfl⟩ := h𝓖 hS𝓖
+        have h1 : W n w = W n z := hpart n z w hwWnz
+        have h2 : W n w = W n y := hpart n y w hwS.1
+        have hzWny : z ∈ W n y := (h1.symm.trans h2) ▸ hmem n z
+        have hzD : z ∉ D := fun h => h𝓘_sub D hD h hzH₀
+        exact ⟨closure (W n y \ D), mem_image_of_mem _ hS𝓖, subset_closure ⟨hzWny, hzD⟩⟩
+      · rw [H.mem_closure_iff_hole] at hz
+        obtain ⟨w, ⟨_, hwnot⟩, S, hS𝓖, hwS⟩ :=
+          hz 0 {z}ᶜ (by simp [H, idealHoleSystem, hzH₀])
+        have hwz : w = z := by by_contra hne; exact hwnot hne
+        exact ⟨closure S, mem_image_of_mem _ hS𝓖, subset_closure (hwz ▸ hwS)⟩
+    · exact sUnion_subset (by rintro _ ⟨S, hS, rfl⟩; exact closure_mono (subset_sUnion_of_mem hS))
+  refine ⟨⋃ k, 𝓑' k, ?_, ⟨𝓑', ?_, rfl⟩⟩
+  · apply TopologicalSpace.isTopologicalBasis_of_isOpen_of_nhds
+    · rintro S hS
+      rw [mem_iUnion] at hS
+      obtain ⟨k, hk⟩ := hS
+      dsimp only [𝓑'] at hk
+      split_ifs at hk
+      · exact h𝓑₀_open (k / 2) S hk
+      · exact h𝓑₁_open (k / 2) S hk
+    · intro a U haU hU
+      by_cases haH₀ : a ∈ H₀
+      · obtain ⟨n, D, hD, hsub⟩ := hU a haU
+        have hD𝓘 : D ∈ 𝓘 := by simpa [H, idealHoleSystem, haH₀] using hD
+        refine ⟨W n a \ D, mem_iUnion.mpr ⟨2 * n + 1, ?_⟩,
+          ⟨hmem n a, fun haD => h𝓘_sub D hD𝓘 haD haH₀⟩, hsub⟩
+        have hmod : (2 * n + 1) % 2 ≠ 0 := by omega
+        have hdiv : (2 * n + 1) / 2 = n := by omega
+        simp only [𝓑', hmod, ↓reduceIte, hdiv]
+        exact ⟨a, haH₀, D, hD𝓘, rfl⟩
+      · obtain ⟨n, hdisj⟩ := hH₀ a haH₀
+        refine ⟨{a}, mem_iUnion.mpr ⟨2 * n, ?_⟩, rfl, singleton_subset_iff.mpr haU⟩
+        have hmod : (2 * n) % 2 = 0 := by omega
+        have hdiv : (2 * n) / 2 = n := by omega
+        simp only [𝓑', hmod, ↓reduceIte, hdiv]
+        exact ⟨a, hdisj, rfl⟩
+  · intro k
+    dsimp only [𝓑']
+    split_ifs
+    · exact h𝓑₀_cp (k / 2)
+    · exact h𝓑₁_cp (k / 2)
+
 end IdealHoleConstruction
 
 end Research.ChenWangHoleSystem
