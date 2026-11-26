@@ -238,7 +238,8 @@ class DB:
         )
 
     def count_attempts(self, node: str, task: str, failed_only: bool = True) -> int:
-        sql = "SELECT COUNT(*) n FROM attempts WHERE node=? AND task=?"
+        # outcome が reset: で始まる行は人間がリセットした過去の試行（記録は残すが上限には数えない）
+        sql = "SELECT COUNT(*) n FROM attempts WHERE node=? AND task=? AND outcome NOT LIKE 'reset:%'"
         if failed_only:
             sql += " AND outcome!='accepted'"
         return self.q1(sql, (node, task))["n"]
