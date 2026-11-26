@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0011`）に向けた **Lean 4 カーネル検証済みモジュール 4 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0011`）に向けた **Lean 4 カーネル検証済みモジュール 6 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -23,3 +23,8 @@
 - **`NhdSystem Y`**: 基本近傍系 `B : Y → Set (Set Y)` から位相 $\tau$ を直接構成し、基底レベルで stratifiability と `¬ Tinf` を判定。
 - **`HoleSystem Y`**: 層状分割列 `W : ℕ → Y → Set Y`（`W_of_H_axioms` により `Defs.D_0007.H q (n + 1)` が直接インスタンス化）と穴族 `Holes y` から基本近傍 $W(n, y) \setminus D$ の位相 $\tau$ を構成し、$W(n, y)$ の自動開閉性（`W_clopen`）・`T1Space`・穴吸収 stratifiability（`isStratifiable_of_hole_absorption` / `isStratifiable_of_uniform_hole_absorption`）・`not_Tinf_of_sep_and_escape` を提供。
 - **No-Go 定理 1（`idealHoleSystem` の $M_1$ 崩壊）**: 任意の $W$-閉集合 $H_0$ と $H_0^c$ 上の任意のイデアル $\mathcal{I}$（MAD 生成イデアル等を含む）による穴あけ空間 `idealHoleSystem` は、常に stratifiable（`idealHoleSystem_isStratifiable`）であるだけでなく、すべての点 $y_0$ で単層 CP 開外基を持ち（`idealHoleSystem_hasCPOuterBase`）、空間全体が常に $M_1$ 空間になる（`idealHoleSystem_isM1`）ことを証明。したがって `Specs.L_0031` の真の反例には、$H_0$ の外にも非孤立点を持つ多層構造、または $H_0$ に交わる穴が不可欠であることが形式的に確定した。
+
+## 5. [ChenWang_OuterBase_Localization.lean](ChenWang_OuterBase_Localization.lean)（`HasCPOuterBase` の局所化定理と No-Go 定理 2）
+- **`hasCPOuterBase_inter_clopen` / `hasCPOuterBase_iff_clopen_subtype` / `not_hasCPOuterBase_local_escape`**: `HasCPOuterBase y₀` が開閉近傍 $W \ni y_0$ への制限・部分空間化と完全に同値であり、`¬ HasCPOuterBase y₀` ならば任意の開閉近傍 $W$ の内部 $W \setminus \{y_0\}$ に CP 破綻点 $z$ が存在すること。
+- **`hasCPOuterBase_of_isolated_compl` / `hasCPOuterBase_of_clopen_nhd_isolated_compl` / `exists_nonisolated_in_clopen_of_not_hasCPOuterBase`**: 任意の位相空間において $y_0$ のある開閉近傍 $W$ で $W \setminus \{y_0\}$ の全点が孤立していれば `HasCPOuterBase y₀` が成り立つ（よって `L_0031` 反例の $y_0$ は必ず他の非孤立点の集積点）。
+- **`hasCPOuterBase_of_no_nonisolated_hole_interior`（No-Go 定理 2）** & **`exists_nonisolated_hole_interior_of_not_hasCPOuterBase`**: 層状開分割 $W(n, y)$ と基本近傍系 $\{W(n, y_0) \setminus D \mid D \in \mathrm{Holes}\}$ を持つ任意の位相空間において、あるレベル $N$ で「どの穴 $D$ の内部 $\operatorname{int} D$ も $W(N, y_0)$ 内の非孤立点を含まない」ならば `HasCPOuterBase y₀` が成り立つ（`idealHoleSystem_hasCPOuterBase` の大幅な一般化）。対偶として、層状穴あけによる `L_0031` 反例では**すべての $N$ について** $W(N, y_0) \setminus \{y_0\}$ の非孤立点を内部に含む穴 $D$ が不可欠。
