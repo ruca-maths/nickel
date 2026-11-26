@@ -147,7 +147,9 @@ class Desk:
             elif role == "redteam":
                 rf = self.db.count_attempts(nid, "refute")
                 ready = n["both_sides"] or pf >= int(self.lim("refute_after_failures", 2))
-                if ready and rf < mx:
+                # 反証側の帰着が進行中なら、直接の反証は配らない（子補題の側で進める）
+                neg_live = any(r["negate"] for r in live)
+                if ready and rf < mx and not neg_live:
                     out.append(((tr, rf, nid), "refute", nid))
         if role == "redteam":
             last = self.db.q1("SELECT MAX(created_at) t FROM attempts WHERE task='audit'")["t"]
