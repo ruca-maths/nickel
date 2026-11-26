@@ -47,6 +47,7 @@
 28. **`M3_monotone_normality`（Heath–Lutzer–Zenor 1973）**: 任意の M₃ 空間は単調正規（monotonically normal）である。
 29. **`M3_of_isClosedMap_surjective`（Borges 1966 閉写像定理）**: M₃ 空間の任意の $T_1$ 閉連続全射像は M₃ 空間である。
 30. **`M3_prod` / `M3_has_GDelta_diagonal`（Borges 1966 / Ceder 1961）**: M₃ 空間の有限積は M₃ であり、任意の M₃ 空間は $G_\delta$-対角線を持つ。
+31. **`Tinf_of_every_M3_point_hasCPOpenLocalBase`（`Tinf` の点局所化帰着）**: 任意の M₃ 空間の各点が CP 開近傍基を持つならば `MSpace.Goals.Tinf_M3_imp_M1` が成り立つ（閉集合縮約商 `Collapse X F` + Borges 閉写像定理 + Gruenhage–Ito 特徴付けの合成）。
 
 ## 2. 棄却された単純構成と反例
 
