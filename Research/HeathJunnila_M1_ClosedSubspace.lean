@@ -408,6 +408,107 @@ theorem Tinf_iff_closed_subspace_M1 :
     have hM1Lim : MSpace.IsM1 ↥(hjLimit X) := hClosed (HeathJunnila X) hM1Z (hjLimit X) (hjLimit_isClosed X)
     exact isM1_of_homeomorph (hjLimitHomeomorph X) hM1Lim
 
+/-- **Borges (1966) Hereditary Stratifiability Theorem:**
+Every subspace `↥S` of a stratifiable space `Z` is stratifiable. -/
+theorem isStratifiable_subtype {Z : Type} [TopologicalSpace Z]
+    (hStrat : MSpace.IsStratifiable Z) (S : Set Z) :
+    MSpace.IsStratifiable ↥S := by
+  have hT1Z : T1Space Z := hStrat.1
+  have hT1S : T1Space ↥S := inferInstance
+  obtain ⟨G, hGo, hGs, hGi, hGm⟩ := hStrat.2
+  let GS : ℕ → Set ↥S → Set ↥S := fun n H =>
+    ((↑) : ↥S → Z) ⁻¹' G n (closure (((↑) : ↥S → Z) '' H))
+  refine ⟨hT1S, GS, ?_, ?_, ?_, ?_⟩
+  · intro n H _
+    exact (hGo n _ isClosed_closure).preimage continuous_subtype_val
+  · intro n H _ x hx
+    exact hGs n _ isClosed_closure (subset_closure ⟨x, hx, rfl⟩)
+  · intro H hH
+    apply Subset.antisymm
+    · intro x hx
+      have hxZ : (x : Z) ∈ ⋂ n, closure (G n (closure (((↑) : ↥S → Z) '' H))) :=
+        mem_iInter.mpr fun n =>
+          continuous_subtype_val.closure_preimage_subset _ (mem_iInter.mp hx n)
+      rw [hGi _ isClosed_closure] at hxZ
+      rw [isClosed_induced_iff] at hH
+      obtain ⟨C, hCclosed, rfl⟩ := hH
+      have hsubC : closure (((↑) : ↥S → Z) '' (((↑) : ↥S → Z) ⁻¹' C)) ⊆ C :=
+        closure_minimal (image_preimage_subset _ _) hCclosed
+      exact hsubC hxZ
+    · exact subset_iInter fun n x hx =>
+        subset_closure (hGs n _ isClosed_closure (subset_closure ⟨x, hx, rfl⟩))
+  · intro n H K _ _ hHK
+    exact preimage_mono (hGm n _ _ isClosed_closure isClosed_closure
+      (closure_mono (image_mono hHK)))
+
+/-- **Hereditary `M₁` Equivalence Theorem:**
+`Tinf` (`M₃ ⇒ M₁`) is equivalent to "every subspace of every `M₁` space is `M₁`". -/
+theorem Tinf_iff_hereditary_M1 :
+    MSpace.Goals.Tinf_M3_imp_M1 ↔
+      ∀ (Z : Type) [TopologicalSpace Z], MSpace.IsM1 Z → ∀ S : Set Z, MSpace.IsM1 ↥S := by
+  constructor
+  · intro hTinf Z _ hM1 S
+    have hM3Z : MSpace.IsM3 Z := Proofs.L_0003.main Z (Proofs.L_0002.main Z hM1)
+    have hStratZ : MSpace.IsStratifiable Z := (Proofs.L_0004.main Z).mp hM3Z
+    have hStratS : MSpace.IsStratifiable ↥S := isStratifiable_subtype hStratZ S
+    have hM3S : MSpace.IsM3 ↥S := (Proofs.L_0004.main ↥S).mpr hStratS
+    exact hTinf ↥S hM3S
+  · intro hHer
+    exact Tinf_iff_closed_subspace_M1.mpr fun Z _ hM1 F _ => hHer Z hM1 F
+
+/-- Continuous retraction `r : HeathJunnila X → HeathJunnila X` onto the closed
+subspace `hjLimit X`: `(x, _) ↦ (x, none)`. -/
+def hjRetract (X : Type) : HeathJunnila X → HeathJunnila X := fun p => (p.1, none)
+
+theorem hjRetract_continuous (X : Type) [TopologicalSpace X] :
+    @Continuous (HeathJunnila X) (HeathJunnila X)
+      (heathJunnilaTopology X) (heathJunnilaTopology X) (hjRetract X) := by
+  let : TopologicalSpace (HeathJunnila X) := heathJunnilaTopology X
+  rw [continuous_def]
+  intro S hS
+  rw [hj_isOpen_iff]
+  intro x hx
+  obtain ⟨U, hUopen, hxU, _, hsub⟩ := hj_isOpen_iff.mp hS x hx
+  refine ⟨U, hUopen, hxU, 0, fun p hp => hsub ⟨hp.1, trivial⟩⟩
+
+theorem hjRetract_idemp (X : Type) (p : HeathJunnila X) :
+    hjRetract X (hjRetract X p) = hjRetract X p := rfl
+
+theorem hjRetract_range (X : Type) :
+    range (hjRetract X) = hjLimit X := by
+  ext ⟨x, o⟩
+  simp only [mem_range, hjRetract, hjLimit, mem_ofPred_eq]
+  constructor
+  · rintro ⟨p, hp⟩
+    have := congrArg Prod.snd hp
+    exact this.symm
+  · rintro rfl
+    exact ⟨(x, none), rfl⟩
+
+/-- **Retract `M₁` Equivalence Theorem (Heath–Junnila 1981):**
+`Tinf` (`M₃ ⇒ M₁`) is equivalent to "every retract of every `M₁` space is `M₁`". -/
+theorem Tinf_iff_retract_M1 :
+    MSpace.Goals.Tinf_M3_imp_M1 ↔
+      ∀ (Z : Type) [TopologicalSpace Z], MSpace.IsM1 Z →
+        ∀ r : Z → Z, Continuous r → (∀ z, r (r z) = r z) → MSpace.IsM1 ↥(range r) := by
+  constructor
+  · intro hTinf Z _ hM1 r _ _
+    exact Tinf_iff_hereditary_M1.mp hTinf Z hM1 (range r)
+  · intro hRet
+    refine Tinf_iff_closed_subspace_M1.mpr fun Z _ hM1 F hF => ?_
+    have hM3Z : MSpace.IsM3 Z := Proofs.L_0003.main Z (Proofs.L_0002.main Z hM1)
+    have hStratZ : MSpace.IsStratifiable Z := (Proofs.L_0004.main Z).mp hM3Z
+    have hStratF : MSpace.IsStratifiable ↥F := isStratifiable_closed_subtype hStratZ hF
+    have hM3F : MSpace.IsM3 ↥F := (Proofs.L_0004.main ↥F).mpr hStratF
+    let : TopologicalSpace (HeathJunnila ↥F) := heathJunnilaTopology ↥F
+    have hM1HJ : MSpace.IsM1 (HeathJunnila ↥F) := heathJunnila_isM1_of_isM3 hM3F
+    have hM1Rng : MSpace.IsM1 ↥(range (hjRetract ↥F)) :=
+      hRet (HeathJunnila ↥F) hM1HJ (hjRetract ↥F) (hjRetract_continuous ↥F) (hjRetract_idemp ↥F)
+    have hM1Lim : MSpace.IsM1 ↥(hjLimit ↥F) := by
+      have hEq := hjRetract_range ↥F
+      exact hEq ▸ hM1Rng
+    exact isM1_of_homeomorph (hjLimitHomeomorph ↥F) hM1Lim
+
 end EquivalenceWithClosedSubspaceM1
 
 end Research.HeathJunnilaTheorem

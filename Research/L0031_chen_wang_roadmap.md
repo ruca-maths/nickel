@@ -59,6 +59,7 @@
 - **`hasSigmaCPLocalBase_of_isClosedMap_isOpenMap` / `hasSigmaCPLocalBase_prod`**: 連続開閉写像および有限直積での保存性。
 - **`hasSigmaCPLocalBase_countable_pi` / `hasCPOuterBase_countable_pi_of_clopen_gDelta`**: 可算積 $\prod_{k \in \mathbb{N}} X_k$ における `HasSigmaCPLocalBase` の保存性、および各座標が開閉 $G_\delta$ 点を持つときの単層 `HasCPOuterBase` の保存性（`Proofs.L_0032` 結合）。
 
-## 11. [HeathJunnila_M1_ClosedSubspace.lean](HeathJunnila_M1_ClosedSubspace.lean)（Heath–Junnila 1981：`M₁` 閉部分空間問題と `Tinf` の厳密同値）
-- **`HeathJunnila X := X × Option ℕ`**（孤立層 `some n` + 極限層 `none`）を構成し、`heathJunnila_t3Space`・`heathJunnila_isM1_of_isM2`・`heathJunnila_isM1_of_isM3`（任意の $M_2$/$M_3$ 空間 $X$ が $M_1$ 空間 `HeathJunnila X` の閉部分空間として同相埋め込みされること、`hjLimitHomeomorph`）を証明。
-- **`Tinf_iff_closed_subspace_M1`**: Ceder の未解決問題 `Tinf`（$M_3 \Rightarrow M_1$）が「任意の $M_1$ 空間の閉部分空間は $M_1$ か？」という閉部分空間問題と完全に同値であることを確立。
+## 11. [HeathJunnila_M1_ClosedSubspace.lean](HeathJunnila_M1_ClosedSubspace.lean)（Heath–Junnila 1981 & Borges 1966：`M₁` 閉部分空間・遺伝・レトラクト問題と `Tinf` の厳密同値）
+- **`HeathJunnila X := X × Option ℕ`**（孤立層 `some n` + 極限層 `none`）を構成し、`heathJunnila_t3Space`・`heathJunnila_isM1_of_isM2`・`heathJunnila_isM1_of_isM3`（任意の $M_2$/$M_3$ 空間 $X$ が $M_1$ 空間 `HeathJunnila X` の閉部分空間・連続レトラクトとして埋め込まれること、`hjLimitHomeomorph` / `hjRetract`）を証明。
+- **`isStratifiable_subtype`**（Borges 1966）: stratifiable 空間の任意の部分空間は stratifiable。
+- **`Tinf_iff_closed_subspace_M1` / `Tinf_iff_hereditary_M1` / `Tinf_iff_retract_M1`**: Ceder の未解決問題 `Tinf`（$M_3 \Rightarrow M_1$）が「$M_1$ の閉部分空間は $M_1$ か」「$M_1$ の任意の部分空間は $M_1$ か」「$M_1$ の連続レトラクトは $M_1$ か」の 3 問題とすべて完全に同値であることを確立。
