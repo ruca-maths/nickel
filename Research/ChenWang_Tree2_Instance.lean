@@ -2,6 +2,7 @@ import Mathlib.Data.PNat.Basic
 import Mathlib.Data.List.Lex
 import Mathlib.Basic.Countable.Basic
 import Mathlib.Topology.Bases
+import Mathlib.Topology.Separation.Regular
 import Defs.D_0002
 import Defs.D_0003
 import Defs.D_0005
@@ -256,5 +257,185 @@ theorem H_inter_eq_singleton (x : ℕ → α) :
     rfl
 
 end XTopLemmas
+
+section RhoProdBridge
+
+open Defs.D_0003 Defs.D_0003.Tree2 Defs.D_0005 Defs.D_0007 Defs.D_0009 Defs.D_0011
+
+variable {α : Type} [LinearOrder α]
+
+/-- `(α, rho α)` is `T1Space` whenever `NoMaxOrder α`. -/
+theorem rho_t1Space [NoMaxOrder α] : @T1Space α (rho α) := by
+  let : TopologicalSpace α := rho α
+  refine ⟨fun x => ?_⟩
+  rw [← isOpen_compl_iff, isOpen_iff_forall_mem_open]
+  intro y hy
+  have hyx : y ≠ x := hy
+  rcases lt_or_gt_of_ne hyx with hlt | hgt
+  · refine ⟨Set.Ico y x, ?_, isOpen_Ico y x, ⟨le_rfl, hlt⟩⟩
+    intro z hz hzx
+    exact (lt_irrefl x (hzx ▸ hz.2)).elim
+  · obtain ⟨u, hu⟩ := exists_gt y
+    refine ⟨Set.Ico y u, ?_, isOpen_Ico y u, ⟨le_rfl, hu⟩⟩
+    intro z hz hzx
+    exact (not_le_of_gt hgt (hzx ▸ hz.1)).elim
+
+/-- `(α, rho α)` is `T3Space` (regular + T₁) whenever `NoMaxOrder α`. -/
+theorem rho_t3Space [NoMaxOrder α] : @T3Space α (rho α) := by
+  let : TopologicalSpace α := rho α
+  have : T1Space α := rho_t1Space
+  have hbas : TopologicalSpace.IsTopologicalBasis { s : Set α | ∃ p q : α, s = Set.Ico p q } := by
+    refine TopologicalSpace.isTopologicalBasis_of_isOpen_of_nhds ?_ ?_
+    · rintro _ ⟨p, q, rfl⟩; exact isOpen_Ico p q
+    · intro x U hxU hU_open
+      -- Induction on GenerateOpen
+      have hgen : ∀ S, TopologicalSpace.GenerateOpen { s : Set α | ∃ p q : α, s = Set.Ico p q } S →
+          ∀ y ∈ S, ∃ p q : α, y ∈ Set.Ico p q ∧ Set.Ico p q ⊆ S := by
+        intro S hS
+        induction hS with
+        | basic s hs =>
+          obtain ⟨p, q, rfl⟩ := hs
+          exact fun y hy => ⟨p, q, hy, Set.Subset.rfl⟩
+        | univ =>
+          intro y _
+          obtain ⟨u, hu⟩ := exists_gt y
+          exact ⟨y, u, ⟨le_rfl, hu⟩, Set.subset_univ _⟩
+        | inter s t _ _ ihs iht =>
+          intro y ⟨hys, hyt⟩
+          obtain ⟨p₁, q₁, hy1, h1⟩ := ihs y hys
+          obtain ⟨p₂, q₂, hy2, h2⟩ := iht y hyt
+          refine ⟨max p₁ p₂, min q₁ q₂, ⟨max_le hy1.1 hy2.1, lt_min hy1.2 hy2.2⟩, ?_⟩
+          intro z hz
+          exact ⟨h1 ⟨le_trans (le_max_left _ _) hz.1, lt_of_lt_of_le hz.2 (min_le_left _ _)⟩,
+                 h2 ⟨le_trans (le_max_right _ _) hz.1, lt_of_lt_of_le hz.2 (min_le_right _ _)⟩⟩
+        | sUnion F _ ih =>
+          rintro y ⟨s, hsF, hys⟩
+          obtain ⟨p, q, hy, hsub⟩ := ih s hsF y hys
+          exact ⟨p, q, hy, hsub.trans (Set.subset_sUnion_of_mem hsF)⟩
+      obtain ⟨p, q, hy, hsub⟩ := hgen U hU_open x hxU
+      exact ⟨Set.Ico p q, ⟨p, q, rfl⟩, hy, hsub⟩
+  have : RegularSpace α := RegularSpace.of_exists_mem_nhds_isClosed_subset fun x U hU => by
+    obtain ⟨O, hOU, hO_open, hxO⟩ := mem_nhds_iff.mp hU
+    obtain ⟨S, ⟨p, q, rfl⟩, hxS, hSO⟩ := hbas.exists_subset_of_mem_open hxO hO_open
+    exact ⟨Set.Ico p q, (isOpen_Ico p q).mem_nhds hxS, isClosed_Ico p q, hSO.trans hOU⟩
+  exact ⟨⟩
+
+/-- The `ρ'`-product topology on `ℕ → α`. -/
+@[instance_reducible]
+def rhoProd (α : Type) [LinearOrder α] : TopologicalSpace (ℕ → α) :=
+  @Pi.topologicalSpace ℕ (fun _ => α) (fun _ => rho α)
+
+/-- Every `rhoProd`-open set is `xtop`-open (`xtop α ≤ rhoProd α`). -/
+theorem xtop_le_rhoProd : xtop α ≤ rhoProd α := by
+  intro U hU
+  let : TopologicalSpace (ℕ → α) := xtop α
+  rw [isOpen_iff_forall_mem_open]
+  intro x hx
+  let : TopologicalSpace α := rho α
+  obtain ⟨I, t, ht_all, htU⟩ := isOpen_pi_iff.mp hU x hx
+  let n : ℕ := I.sup id + 1
+  refine ⟨{ y : ℕ → α | ∀ k < n, y k = x k }, ?_, isOpen_cyl n x, fun _ _ => rfl⟩
+  intro y hy
+  refine htU fun k hkI => ?_
+  have hkn : k < n := Nat.lt_succ_of_le (Finset.le_sup (f := id) hkI)
+  rw [hy k hkn]
+  exact (ht_all k hkI).2
+
+/-- Multi-coordinate cylinder block in `ℕ → α` determined by `p : Fin n → α` and `a : Fin n → ℕ`. -/
+def ICyl (T : Tree2 α) (n : ℕ) (a : Fin n → ℕ) (p : Fin n → α) : Set (ℕ → α) :=
+  { x : ℕ → α | ∀ i : Fin n, x i.1 ∈ Set.Ico (p i) (T.child (p i) (a i)) }
+
+/-- Each cylinder block `ICyl T n a p` is clopen in `rhoProd α` (and hence in `xtop α`). -/
+theorem ICyl_clopen [NoMaxOrder α] (T : Tree2 α) (n : ℕ) (a : Fin n → ℕ) (p : Fin n → α) :
+    @IsOpen (ℕ → α) (rhoProd α) (ICyl T n a p) ∧
+    @IsClosed (ℕ → α) (rhoProd α) (ICyl T n a p) := by
+  let : TopologicalSpace α := rho α
+  have hEq : ICyl T n a p =
+      ⋂ i : Fin n, (fun x : ℕ → α => x i.1) ⁻¹' Set.Ico (p i) (T.child (p i) (a i)) := by
+    ext x; simp [ICyl]
+  constructor
+  · change IsOpen (ICyl T n a p)
+    rw [hEq]
+    exact isOpen_iInter_of_finite fun i => (isOpen_Ico _ _).preimage (continuous_apply i.1)
+  · change IsClosed (ICyl T n a p)
+    rw [hEq]
+    exact isClosed_iInter fun i => (isClosed_Ico _ _).preimage (continuous_apply i.1)
+
+/-- Multi-coordinate c.o.D partition: for `a i > 0`, `{ICyl T n a p | ∀ i, QStar (a i) (p i)}`
+is a clopen discrete partition of `(ℕ → α, rhoProd α)`. -/
+theorem ICyl_coD [NoMaxOrder α] (T : Tree2 α) (n : ℕ) (a : Fin n → ℕ) (ha : ∀ i, 0 < a i) :
+    (∀ p : { p : Fin n → α // ∀ i, T.QStar (a i) (p i) },
+      @IsOpen (ℕ → α) (rhoProd α) (ICyl T n a p.1) ∧
+      @IsClosed (ℕ → α) (rhoProd α) (ICyl T n a p.1)) ∧
+    IsDiscreteFam (rhoProd α)
+      (fun p : { p : Fin n → α // ∀ i, T.QStar (a i) (p i) } => ICyl T n a p.1) ∧
+    (∀ x : ℕ → α, ∃! p : { p : Fin n → α // ∀ i, T.QStar (a i) (p i) }, x ∈ ICyl T n a p.1) := by
+  have huniq : ∀ x : ℕ → α,
+      ∃! p : { p : Fin n → α // ∀ i, T.QStar (a i) (p i) }, x ∈ ICyl T n a p.1 := by
+    intro x
+    have hcoord : ∀ i : Fin n, ∃ p : α, T.QStar (a i) p ∧ x i.1 ∈ Set.Ico p (T.child p (a i)) :=
+      fun i => prop_2_2_1_cover T (ha i) (x i.1)
+    choose p hp hx using hcoord
+    refine ⟨⟨p, hp⟩, hx, ?_⟩
+    rintro ⟨p', hp'⟩ hx'
+    apply Subtype.ext
+    funext i
+    by_contra hne
+    exact Set.disjoint_left.mp (prop_2_2_1_disjoint T (ha i) (hp' i) (hp i) hne) (hx' i) (hx i)
+  refine ⟨fun p => ICyl_clopen T n a p.1, ?_, huniq⟩
+  intro x
+  obtain ⟨p₀, hxp₀, hp₀_uniq⟩ := huniq x
+  refine ⟨ICyl T n a p₀.1, (ICyl_clopen T n a p₀.1).1, hxp₀, ?_⟩
+  intro p₁ p₂ ⟨w₁, hw₁, hw₁₀⟩ ⟨w₂, hw₂, hw₂₀⟩
+  have h1 : p₁ = p₀ := by
+    apply Subtype.ext; funext i
+    by_contra hne
+    exact Set.disjoint_left.mp (prop_2_2_1_disjoint T (ha i) (p₁.2 i) (p₀.2 i) hne) (hw₁ i) (hw₁₀ i)
+  have h2 : p₂ = p₀ := by
+    apply Subtype.ext; funext i
+    by_contra hne
+    exact Set.disjoint_left.mp (prop_2_2_1_disjoint T (ha i) (p₂.2 i) (p₀.2 i) hne) (hw₂ i) (hw₂₀ i)
+  rw [h1, h2]
+
+/-- Multi-coordinate laminar refinement: if `0 < a i ≤ b i` for all `i`, every `ICyl T n b h`
+is either disjoint from or contained in `ICyl T n a p`. -/
+theorem ICyl_laminar (T : Tree2 α) (n : ℕ) (a b : Fin n → ℕ)
+    (ha : ∀ i, 0 < a i) (hab : ∀ i, a i ≤ b i)
+    {p h : Fin n → α} (hp : ∀ i, T.QStar (a i) (p i)) (hh : ∀ i, T.QStar (b i) (h i)) :
+    Disjoint (ICyl T n a p) (ICyl T n b h) ∨ ICyl T n b h ⊆ ICyl T n a p := by
+  by_cases hd : Disjoint (ICyl T n a p) (ICyl T n b h)
+  · exact Or.inl hd
+  · right
+    obtain ⟨x, hxa, hxb⟩ := Set.not_disjoint_iff.mp hd
+    intro y hy i
+    rcases prop_2_2_5 T (ha i) (hab i) (hp i) (hh i) with hdisj | hsub
+    · exact (Set.disjoint_left.mp hdisj (hxa i) (hxb i)).elim
+    · exact hsub (hy i)
+
+/-- Bridge between Section 2 (`ICyl`) and Section 3 (`H q n c`):
+For `n ≥ 1` and `a i > 0`, every `H q n c` is contained in a unique `ICyl T n a p`
+with `∀ i, T.QStar (a i) (p i)`. -/
+theorem H_subset_unique_ICyl (T : Tree2 α) (q : ℕ ≃ α)
+    {n : ℕ} (hn : 0 < n) (a : Fin n → ℕ) (ha : ∀ i, 0 < a i) (c : ℕ) :
+    ∃! p : { p : Fin n → α // ∀ i, T.QStar (a i) (p i) }, H q n c ⊆ ICyl T n a p.1 := by
+  obtain ⟨x₀, hx₀⟩ := H_nonempty q n hn c
+  have hcoord : ∀ i : Fin n, ∃ p : α, T.QStar (a i) p ∧ x₀ i.1 ∈ Set.Ico p (T.child p (a i)) :=
+    fun i => prop_2_2_1_cover T (ha i) (x₀ i.1)
+  choose p₀ hp₀ hx₀p using hcoord
+  refine ⟨⟨p₀, hp₀⟩, ?_, ?_⟩
+  · intro x hx i
+    have hc : c = code n (fun k => q.symm (x₀ k)) := hx₀.symm
+    rw [hc] at hx
+    have hsame : x i.1 = x₀ i.1 := (mem_H_iff_same q n hn x x₀).mp hx i.1 i.2
+    rw [hsame]
+    exact hx₀p i
+  · rintro ⟨p, hp⟩ hsub
+    apply Subtype.ext
+    funext i
+    by_contra hne
+    exact Set.disjoint_left.mp (prop_2_2_1_disjoint T (ha i) (hp i) (hp₀ i) hne)
+      (hsub hx₀ i) (hx₀p i)
+
+end RhoProdBridge
 
 end Research.ChenWangTree
