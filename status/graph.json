@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-27 01:35:59",
+  "generated_at": "2026-11-27 01:38:15",
   "targets_hash": "198f3fa8f630b46d28aa23d1bba3194b216c79f4ca39920d47757a6f5efd6f89",
   "nodes": [
     {
@@ -392,6 +392,40 @@
         "refute": 5
       },
       "closed_by": null
+    },
+    {
+      "id": "L_0029",
+      "goal": null,
+      "tier": "Tinf",
+      "status": "open",
+      "exhausted": false,
+      "depth": 1,
+      "both_sides": false,
+      "stmt": "∀ (X : Type) [TopologicalSpace X], MSpace.IsM1 X → ∀ x : X, Defs.D_0010.HasSigmaCPLocalBase x",
+      "informal": "M1 空間の各点は σ-CP な開局所基を持つ。σ-CP 基 𝓑 = ⋃ 𝓑' n を取り、各層 {B ∈ 𝓑' n : x ∈ B} を並べる（ClosurePreserving は任意部分族で定義されているので部分族も CP、基の元は開）。外基性は IsTopologicalBasis から。",
+      "attempts": {
+        "prove": 0,
+        "decompose": 0,
+        "refute": 0
+      },
+      "closed_by": null
+    },
+    {
+      "id": "L_0030",
+      "goal": null,
+      "tier": "Tinf",
+      "status": "open",
+      "exhausted": false,
+      "depth": 1,
+      "both_sides": false,
+      "stmt": "∃ (Y : Type) (_ : TopologicalSpace Y), MSpace.IsStratifiable Y ∧ ∃ y : Y, ¬ Defs.D_0010.HasSigmaCPLocalBase y",
+      "informal": "Chen–Wang (arXiv:1809.03763v2) の空間 (Y,τ) は stratifiable（Theorem 1.a）で、y ∈ H₀ は σ-CP 開局所基を持たない（命題 9.5 の σ 版）。σ 版への強化: 9.1–9.2 の鳩の巣（A の可算分割の一つは unbounded）に『V_α が属する層の番号』を可算パラメータとして一つ加え、同じ層 𝓑 n から V_α を取る unbounded な A₀ を得てから 9.2・9.5 の議論を A₀ 内で回す。",
+      "attempts": {
+        "prove": 0,
+        "decompose": 0,
+        "refute": 0
+      },
+      "closed_by": null
     }
   ],
   "reductions": [
@@ -457,6 +491,17 @@
       ],
       "status": "live",
       "negate": false
+    },
+    {
+      "id": "R_0009",
+      "parent": "L_0009",
+      "children": [
+        "L_0029",
+        "L_0030",
+        "L_0004"
+      ],
+      "status": "live",
+      "negate": true
     }
   ],
   "artifacts": [
@@ -805,6 +850,18 @@
       ]
     },
     {
+      "module": "Proofs.R_0009",
+      "kind": "reduction_neg",
+      "node": "L_0009",
+      "path": "Proofs/R_0009.lean",
+      "sha256": "8706fa9d21ed7e631aa093391368e2d8cfb13c902408969474c0805bf49405cd",
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    {
       "module": "Specs.L_0001",
       "kind": "spec",
       "node": "L_0001",
@@ -1026,6 +1083,22 @@
       "node": "L_0028",
       "path": "Specs/L_0028.lean",
       "sha256": "bc73ce581c0cd41e63eff1a809647e273de0f81cace6f25a9be2caea8a299983",
+      "axioms": []
+    },
+    {
+      "module": "Specs.L_0029",
+      "kind": "spec",
+      "node": "L_0029",
+      "path": "Specs/L_0029.lean",
+      "sha256": "e2d1f27e8b233c62eb76d7efe8ff798be9d9175dfbb9511d93c4b721157d008f",
+      "axioms": []
+    },
+    {
+      "module": "Specs.L_0030",
+      "kind": "spec",
+      "node": "L_0030",
+      "path": "Specs/L_0030.lean",
+      "sha256": "ce36e87d3a7532cc8a1a74c0349da51f32a6f59dc90bf1ba37be82891d094868",
       "axioms": []
     }
   ]
