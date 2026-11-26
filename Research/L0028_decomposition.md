@@ -38,6 +38,8 @@
 19. **`sigma_closed_discrete_normal_is_strongly_zero_dim`**: 任意の $\sigma$-閉離散正規空間は強ゼロ次元（$\operatorname{Ind}(X) = 0$、任意の閉集合と開近傍が clopen 集合で分離可能）である。
 20. **`hasCPOpenLocalBase_iff_open_subspace`**: $T_3$ 空間において、点の CP 開近傍基の存在は開部分空間への制限・拡張で完全に不変な局所的性質である。
 21. **`hasCPOpenLocalBase_of_isClosedMap_isOpenMap` / `M1_of_isClosedMap_isOpenMap_surjective`**: 連続かつ開閉写像のもとで、点の CP 開近傍基および M₁ 空間性（$T_3$ 全射像）が保存される。
+22. **`M1_of_locally_M1`**: パラコンパクト $T_3$（特に M₃）空間が局所 M₁ ならば M₁ 空間である。
+23. **`M3_is_M1_of_closed_discrete_sigmaCP_and_M1_compl`**: M₃ 空間 $X$ において閉離散集合 $D$ の各点が $\sigma$-CP 開局所基を持ち、補空間 $X \setminus D$ が M₁ ならば $X$ は M₁ 空間である。
 
 ## 2. 棄却された単純構成と反例
 
