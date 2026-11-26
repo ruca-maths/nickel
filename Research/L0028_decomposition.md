@@ -40,6 +40,8 @@
 21. **`hasCPOpenLocalBase_of_isClosedMap_isOpenMap` / `M1_of_isClosedMap_isOpenMap_surjective`**: 連続かつ開閉写像のもとで、点の CP 開近傍基および M₁ 空間性（$T_3$ 全射像）が保存される。
 22. **`M1_of_locally_M1`**: パラコンパクト $T_3$（特に M₃）空間が局所 M₁ ならば M₁ 空間である。
 23. **`M3_is_M1_of_closed_discrete_sigmaCP_and_M1_compl`**: M₃ 空間 $X$ において閉離散集合 $D$ の各点が $\sigma$-CP 開局所基を持ち、補空間 $X \setminus D$ が M₁ ならば $X$ は M₁ 空間である。
+24. **`M1_countable_pi`（Ceder 1961）**: M₁ 空間の可算直積 $\prod_{i \in \mathbb{N}} X_i$ は M₁ 空間である。
+25. **`M1_sigma`**: M₁ 空間の任意の直和（位相和）$\bigoplus_{i \in \iota} X_i$ は M₁ 空間である。
 
 ## 2. 棄却された単純構成と反例
 
