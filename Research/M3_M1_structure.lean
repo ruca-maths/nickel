@@ -503,4 +503,80 @@ theorem collectionwise_normal_of_paracompact_t3
       (hv_hits z i ⟨w₁, hw₁v, hO_cl i hw₁i⟩)
       (hv_hits z j ⟨w₂, hw₂v, hO_cl j hw₂j⟩)
 
+/-- Theorem 5 (Gruenhage–Ito characterization of M₁ spaces):
+Every M₃ space in which every closed subset admits a closure-preserving open
+neighborhood base is an M₁ space. -/
+theorem M3_is_M1_of_closed_cp_outer_base (X : Type) [TopologicalSpace X]
+    (hM3 : MSpace.IsM3 X)
+    (hcp_base : ∀ F : Set X, IsClosed F →
+      ∃ 𝓥 : Set (Set X),
+        (∀ V ∈ 𝓥, IsOpen V ∧ F ⊆ V) ∧
+        (∀ U : Set X, IsOpen U → F ⊆ U → ∃ V ∈ 𝓥, V ⊆ U) ∧
+        MSpace.ClosurePreserving 𝓥) :
+    MSpace.IsM1 X := by
+  have : T3Space X := hM3.1
+  have hpara : ParacompactSpace X :=
+    Proofs.L_0005.main X ⟨inferInstance, Proofs.L_0010.main X hM3⟩
+  obtain ⟨𝓕, h𝓕_closed, h𝓕_disc, h𝓕_net⟩ := M3_is_sigma_space X hM3
+  -- For each m, expand the discrete closed family 𝓕 m to a discrete open family O m.
+  have hexp : ∀ m : ℕ, ∃ O : ↥(𝓕 m) → Set X,
+      (∀ H : ↥(𝓕 m), IsOpen (O H) ∧ H.1 ⊆ O H) ∧
+      Pairwise (fun H₁ H₂ : ↥(𝓕 m) => Disjoint (closure (O H₁)) (closure (O H₂))) ∧
+      (∀ y : X, ∃ N : Set X, IsOpen N ∧ y ∈ N ∧
+        ∀ H₁ H₂ : ↥(𝓕 m), (N ∩ closure (O H₁)).Nonempty → (N ∩ closure (O H₂)).Nonempty → H₁ = H₂) := by
+    intro m
+    refine collectionwise_normal_of_paracompact_t3 X (fun H : ↥(𝓕 m) => H.1)
+      (fun H => h𝓕_closed m H.1 H.2) ?_
+    intro y
+    obtain ⟨U, hU_open, hyU, hU_uniq⟩ := h𝓕_disc m y
+    exact ⟨U, hU_open, hyU, fun H₁ H₂ h1 h2 => Subtype.ext (hU_uniq H₁.1 H₁.2 H₂.1 H₂.2 h1 h2)⟩
+  choose O hO_open hO_disj hO_disc using hexp
+  -- For each closed F, choose a CP open neighborhood base 𝓥 F.
+  choose 𝓥 h𝓥_open h𝓥_base h𝓥_cp using fun F (hF : IsClosed F) => hcp_base F hF
+  -- Define the m-th CP open family 𝓑' m.
+  let 𝓑' : ℕ → Set (Set X) := fun m =>
+    { V : Set X | ∃ H : ↥(𝓕 m), V ∈ 𝓥 H.1 (h𝓕_closed m H.1 H.2) ∧ V ⊆ O m H }
+  refine ⟨inferInstance, ⋃ m, 𝓑' m, ?_, 𝓑', ?_, rfl⟩
+  · -- IsTopologicalBasis (⋃ m, 𝓑' m)
+    have hopen : ∀ V ∈ ⋃ m, 𝓑' m, IsOpen V := by
+      intro V hV
+      obtain ⟨m, H, hV𝓥, _⟩ := mem_iUnion.mp hV
+      exact (h𝓥_open H.1 (h𝓕_closed m H.1 H.2) V hV𝓥).1
+    refine isTopologicalBasis_of_isOpen_of_nhds hopen ?_
+    intro x U hxU hU_open
+    obtain ⟨m, F, hFm, hxF, hFU⟩ := h𝓕_net x U hU_open hxU
+    let H : ↥(𝓕 m) := ⟨F, hFm⟩
+    have hUO_open : IsOpen (U ∩ O m H) := hU_open.inter (hO_open m H).1
+    have hF_sub : F ⊆ U ∩ O m H := subset_inter hFU (hO_open m H).2
+    obtain ⟨V, hV𝓥, hVsub⟩ := h𝓥_base F (h𝓕_closed m F hFm) (U ∩ O m H) hUO_open hF_sub
+    refine ⟨V, mem_iUnion.mpr ⟨m, H, hV𝓥, hVsub.trans inter_subset_right⟩, ?_,
+      hVsub.trans inter_subset_left⟩
+    exact (h𝓥_open F (h𝓕_closed m F hFm) V hV𝓥).2 hxF
+  · -- ∀ m, ClosurePreserving (𝓑' m)
+    intro m 𝓖 h𝓖
+    apply Subset.antisymm
+    · intro y hy
+      obtain ⟨N, hN_open, hyN, hN_uniq⟩ := hO_disc m y
+      by_cases hhit : ∃ H : ↥(𝓕 m), (N ∩ closure (O m H)).Nonempty
+      · obtain ⟨H₀, hH₀⟩ := hhit
+        let 𝓖₀ : Set (Set X) := { V ∈ 𝓖 | V ∈ 𝓥 H₀.1 (h𝓕_closed m H₀.1 H₀.2) ∧ V ⊆ O m H₀ }
+        have hsub : N ∩ ⋃₀ 𝓖 ⊆ ⋃₀ 𝓖₀ := by
+          rintro z ⟨hzN, V, hV𝓖, hzV⟩
+          obtain ⟨H, hV𝓥, hVO⟩ := h𝓖 hV𝓖
+          have hHeq : H = H₀ :=
+            hN_uniq H H₀ ⟨z, hzN, subset_closure (hVO hzV)⟩ hH₀
+          subst hHeq
+          exact ⟨V, ⟨hV𝓖, hV𝓥, hVO⟩, hzV⟩
+        have hy0 : y ∈ closure (⋃₀ 𝓖₀) :=
+          closure_mono hsub (hN_open.inter_closure ⟨hyN, hy⟩)
+        rw [h𝓥_cp H₀.1 (h𝓕_closed m H₀.1 H₀.2) 𝓖₀ (fun _ h => h.2.1)] at hy0
+        obtain ⟨_, ⟨V, hV, rfl⟩, hyV⟩ := hy0
+        exact ⟨closure V, mem_image_of_mem _ hV.1, hyV⟩
+      · exfalso
+        obtain ⟨z, hzN, hzU⟩ := mem_closure_iff.mp hy N hN_open hyN
+        obtain ⟨V, hV𝓖, hzV⟩ := hzU
+        obtain ⟨H, _, hVO⟩ := h𝓖 hV𝓖
+        exact hhit ⟨H, z, hzN, subset_closure (hVO hzV)⟩
+    · exact sUnion_subset (by rintro _ ⟨V, hV, rfl⟩; exact closure_mono (subset_sUnion_of_mem hV))
+
 end Research.M3M1

@@ -19,6 +19,16 @@
 5. **`regular_closed_base_of_cp_open_base`**: `L_0027` の逆（点 $x$ に CP 開近傍基 $\mathcal{V}$ があれば $\operatorname{closure}'' \mathcal{V}$ は正則閉 CP 閉近傍基になる）。
 6. **`regular_closed_base_of_isolated` / `regular_closed_base_of_countable_nhds`**: 孤立点および可算近傍基を持つ点（特に第一可算空間）では `L_0028` の結論が直接成り立つ。
 
+### 追加の構造定理（[M3_M1_structure.lean](M3_M1_structure.lean)）
+
+同じく `sorry` なし・標準公理のみで検証済み：
+
+7. **`M3_is_sigma_space`（Heath 1969）**: 任意の M₃ 空間は $\sigma$-離散な閉網を持つ。
+8. **`M3_closed_subset_has_cp_closed_nhds`**: 任意の M₃ 空間の任意の閉集合 $F$ は CP 閉近傍基を持つ（`L_0021` の閉集合・M₃ 版への一般化）。
+9. **`zero_dim_M1_has_cp_clopen_base`**: ゼロ次元 M₁ 空間（clopen $\sigma$-CP 基を持つ空間）の各点は CP な clopen（よって開かつ正則閉）近傍基を持つ（ゼロ次元版 `L_0028`）。
+10. **`collectionwise_normal_of_paracompact_t3`**: パラコンパクト $T_3$ 空間における任意の離散閉集合族は、閉包が互いに素かつ離散な開拡大を持つ。
+11. **`M3_is_M1_of_closed_cp_outer_base`（Gruenhage–Ito 型の M₁ 特徴付け）**: 任意の閉集合が CP 開外基を持つ M₃ 空間は M₁ 空間である。
+
 ## 2. 棄却された単純構成と反例
 
 - **$K \mapsto \operatorname{int} K$**: `L_0021` の $K = \overline{B} \cap \overline{W_n}$ に対し $K_k = [-2, -1/k] \cup \{0\}$ のように孤立境界点が残ると $\operatorname{int} K_k = (-2, -1/k)$ の CP 性が壊れる。
