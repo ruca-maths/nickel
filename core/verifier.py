@@ -221,28 +221,34 @@ class Verifier:
         return Verdict(True, "ok", out, sorted(used))
 
     # ---- Spec（補題の命題） --------------------------------------------------
-    def spec_source(self, node_id: str, stmt: str) -> str:
+    def spec_source(self, node_id: str, stmt: str, extra_imports: tuple[str, ...] | list[str] = ()) -> str:
         lc = self.cfg["lean"]
-        imps = "\n".join(f"import {m}" for m in lc.get("spec_imports", []))
+        imps = "\n".join(f"import {m}" for m in [*lc.get("spec_imports", []), *extra_imports])
         opens = lc.get("spec_opens") or []
         open_line = f"open {' '.join(opens)}\n" if opens else ""
         return (f"{imps}\n\n-- 機械生成ファイル（desk が DB から生成）。手で編集しないこと。\n"
                 f"namespace Specs.{node_id}\n{open_line}\n"
                 f"def stmt : Prop :=\n  {stmt.strip()}\n\nend Specs.{node_id}\n")
 
-    def verify_spec(self, node_id: str, stmt: str, *, trusted: bool = False) -> Verdict:
+    def verify_spec(self, node_id: str, stmt: str, *, trusted: bool = False,
+                    imports: tuple[str, ...] | list[str] = ()) -> Verdict:
         """命題テキストを Specs/<node_id>.lean に書き出してビルドする。
-        trusted=True は Targets 由来の根ノード用（静的フィルタは同じく通す）。"""
+        trusted=True は Targets 由来の根ノード用（静的フィルタは同じく通す）。
+        imports には受理済みの定義モジュール（Defs.D_xxxx）だけを指定できる。"""
         self.assert_targets_locked()
         fr = static_filter.check_spec_text(stmt)
         if not fr.ok:
             return Verdict(False, "命題の静的検査に失敗: " + "; ".join(fr.violations))
+        for m in imports:
+            a = self.db.artifact(m)
+            if a is None or a["kind"] != "defs":
+                return Verdict(False, f"命題が import できるのは受理済みの定義モジュールだけ: {m}")
         module = f"Specs.{node_id}"
         path = self.module_path(module)
         if self.db.artifact(module):
             raise InfraError(f"{module} は既に登録済み")
         path.parent.mkdir(parents=True, exist_ok=True)
-        src = self.spec_source(node_id, stmt)
+        src = self.spec_source(node_id, stmt, imports)
         write_lf(path, src)
         with self._slot():
             ok, out = self.lake_build([module])
@@ -266,11 +272,43 @@ class Verifier:
             return f"Specs.{node_id}.stmt", [f"Specs.{node_id}"]
         if kind == "refutation":
             return f"¬ Specs.{node_id}.stmt", [f"Specs.{node_id}"]
-        if kind == "reduction":
+        if kind in ("reduction", "reduction_neg"):
+            # reduction: 子すべて ⇒ 親。reduction_neg: 子すべて ⇒ ¬親（反証側の分解）
             assert children is not None
             hyps = " → ".join(f"Specs.{c}.stmt" for c in children)
-            return f"{hyps} → Specs.{node_id}.stmt", [f"Specs.{c}" for c in children] + [f"Specs.{node_id}"]
+            neg = "¬ " if kind == "reduction_neg" else ""
+            return (f"{hyps} → {neg}Specs.{node_id}.stmt",
+                    [f"Specs.{c}" for c in children] + [f"Specs.{node_id}"])
         raise ValueError(kind)
+
+    def verify_defs(self, *, module_id: str, src: str, agent: str | None) -> Verdict:
+        """定義モジュール Defs/<module_id>.lean を検証して登録する。
+        定義そのものは「正しい」必要はない（命題の意味を与えるだけ）。sorry・axiom などは静的フィルタで
+        拒否し、さらにそれを使う証明は最終的に公理検査されるので、健全性は損なわれない。"""
+        self.assert_targets_locked()
+        module = f"Defs.{module_id}"
+        if self.db.artifact(module):
+            return Verdict(False, f"{module} は既に受理済み")
+        allowed_mods = self.db.checked_proof_modules()
+        fr = static_filter.check_proof(
+            src, module_id, lib="Defs",
+            allowed_prefixes=[p for p in self.cfg["lean"].get("allowed_import_prefixes", []) if p != "Specs"],
+            allowed_modules={m for m in allowed_mods if m.startswith("Defs.")},
+            forbidden_imports=list(self.cfg["lean"].get("forbidden_imports") or []), max_heartbeats=self.max_hb)
+        if not fr.ok:
+            return Verdict(False, "静的フィルタで拒否: " + "; ".join(fr.violations))
+        path = self.module_path(module)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        write_lf(path, src)
+        with self._slot():
+            ok, out = self.lake_build([module])
+        if not ok or "declaration uses 'sorry'" in out:
+            self.purge_module(module)
+            return Verdict(False, "定義モジュールがビルドできない", out)
+        self.db.add_artifact(module=module, kind="defs", node=None,
+                             path=path.relative_to(self.root).as_posix(),
+                             sha256=sha256_bytes(src.encode()), axioms=[], agent=agent)
+        return Verdict(True, "受理", out)
 
     def verify_module(self, *, module_id: str, kind: str, node_id: str, src: str,
                       agent: str | None, children: list[str] | None = None) -> Verdict:

@@ -11,6 +11,10 @@
   離散/密着位相・Sorgenfrey 直線などで反例を探すこと。
 * 命題が正しいと確信したら、反証を無理に続けず理由を書いて `release` する。
 
+* 反例の構成が大きいときは、無理に1ファイルで反証せず、構成の要点と必要な補題を `release --note` に
+  まとめる。Architect が `negate: true` の分解と定義モジュールで段階的に形式化する。
+* `human_hints` に研究責任者の戦略メモがあれば、それに沿うこと。
+
 ## B. 仕様監査タスク（task = audit）
 `Targets/Defs.lean` と `Targets/Goals.lean` を、原典（Ceder 1961, Borges 1966,
 Gruenhage のハンドブック等）の定義と照合し、Markdown の監査報告を

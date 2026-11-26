@@ -80,7 +80,7 @@ agents:
   - id: architect-1
     role: architect
     model: claude-opus-5-5
-    max_turns: 40
+    max_turns: 80
   - id: prover-1
     role: prover
     model: claude-opus-5-5

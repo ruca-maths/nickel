@@ -225,8 +225,14 @@ class Desk:
         elif task == "decompose":
             info["instructions"] = ("子補題を JSON で `research.sh propose <file>` に提出し、"
                                     "返ってきた帰着モジュールを書いて `research.sh submit` する。")
-            info["proposal_format"] = {"children": [{"stmt": "<Lean の命題項>", "informal": "<日本語の説明>"},
-                                                    {"existing": "L_0002"}]}
+            info["proposal_format"] = {
+                "negate": False,
+                "children": [{"stmt": "<Lean の命題項>", "informal": "<日本語の説明>",
+                              "imports": ["Defs.D_0001 など（任意）"]},
+                             {"existing": "L_0002"}]}
+            info["proposal_notes"] = (
+                "negate: true にすると「子すべて ⇒ ¬親」（反証側の分解）になる。新しい対象（反例の空間など）が"
+                "必要なら、先に `research.sh define <file>` で定義モジュールを登録し、子の imports に書く。")
         return info
 
     # ======================================================================
@@ -261,7 +267,7 @@ class Desk:
                            (ls["token"],))
             if not r:
                 raise DeskError("先に `propose` で子補題を登録してください")
-            return r["id"], "reduction", json.loads(r["children"])
+            return r["id"], ("reduction_neg" if r["negate"] else "reduction"), json.loads(r["children"])
         raise DeskError(f"{ls['task']} では Lean ファイルを提出しません")
 
     def check(self, file: str, token: str | None = None) -> dict:
@@ -286,6 +292,26 @@ class Desk:
         return {"ok": ok, "stage": "lean", "log": _excerpt(out), "checks_used": n,
                 "note": "ok=true でも命題一致・公理検査は submit 時に行われます"}
 
+    def define(self, file: str, token: str | None = None) -> dict:
+        """（Architect の分解タスク中）定義モジュール Defs.D_xxxx を登録する。
+        ファイルでは名前空間を `Defs.NEW` と書く（受理時に Defs.D_xxxx へ置換する）。"""
+        ls = self._lease(token)
+        if ls["task"] != "decompose":
+            raise DeskError("define は decompose タスク専用です")
+        p = self._own_file(ls, file)
+        src = p.read_text(encoding="utf-8")
+        if "Defs.NEW" not in src:
+            raise DeskError("名前空間は `namespace Defs.NEW` / `end Defs.NEW` と書いてください")
+        did = self.db.next_id("D")
+        src = src.replace("Defs.NEW", f"Defs.{did}")
+        verdict = self.v.verify_defs(module_id=did, src=src, agent=ls["agent"])
+        if not verdict.ok:
+            return {"ok": False, "reason": verdict.reason, "log": _excerpt(verdict.log)}
+        self.db.event("defs", ls["agent"], {"module": f"Defs.{did}"})
+        self.regen(commit_msg=f"{ls['agent']}: 定義 Defs.{did} を登録")
+        return {"ok": True, "module": f"Defs.{did}",
+                "note": f"命題では Defs.{did}.<名前> と書き、子の imports に \"Defs.{did}\" を入れる"}
+
     def propose(self, file: str, token: str | None = None) -> dict:
         ls = self._lease(token)
         if ls["task"] != "decompose":
@@ -295,6 +321,7 @@ class Desk:
         try:
             data = json.loads(p.read_text(encoding="utf-8"))
             children = data["children"]
+            negate = bool(data.get("negate", False))
             assert isinstance(children, list) and children
         except Exception as e:
             raise DeskError(f"提案 JSON が不正です: {e}")
@@ -319,13 +346,14 @@ class Desk:
                 fr = static_filter.check_spec_text(stmt)
                 if not fr.ok:
                     raise DeskError("命題の静的検査に失敗: " + "; ".join(fr.violations))
-                dup = self.db.q1("SELECT id FROM nodes WHERE stmt=? AND status IN ('open','checked')",
-                                 (stmt.strip(),))
+                imps = [str(m) for m in (ch.get("imports") or [])]
+                dup = None if imps else self.db.q1(
+                    "SELECT id FROM nodes WHERE stmt=? AND status IN ('open','checked')", (stmt.strip(),))
                 if dup:
                     child_ids.append(dup["id"])
                     continue
                 nid = self.db.next_id("L")
-                verdict = self.v.verify_spec(nid, stmt)
+                verdict = self.v.verify_spec(nid, stmt, imports=imps)
                 if not verdict.ok:
                     raise DeskError(f"子補題の命題が不正: {verdict.reason}\n{_excerpt(verdict.log)}")
                 self.db.add_node(node_id=nid, origin="lemma", tier=parent["tier"], stmt=stmt.strip(),
@@ -338,8 +366,8 @@ class Desk:
                 self.db.set_node_status(nid, "void", ls["agent"])
             raise
         rid = self.db.next_id("R")
-        self.db.add_reduction(rid, parent["id"], child_ids, ls["agent"], ls["token"])
-        exp, _ = self.v.expected_type("reduction", parent["id"], child_ids)
+        self.db.add_reduction(rid, parent["id"], child_ids, ls["agent"], ls["token"], negate=negate)
+        exp, _ = self.v.expected_type("reduction_neg" if negate else "reduction", parent["id"], child_ids)
         wd = self.agent_dir(ls["agent"]).relative_to(self.root).as_posix()
         imports = "\n".join(f"import Specs.{c}" for c in child_ids + [parent["id"]])
         return {"reduction": rid, "children": child_ids, "file": f"{wd}/{rid}.lean",
@@ -381,7 +409,7 @@ class Desk:
             self.regen()
             return {"ok": False, "reason": verdict.reason, "log": _excerpt(verdict.log)}
         self.db.add_attempt(ls["node"], ls["task"], ls["agent"], ls["token"], "accepted", note[:2000])
-        if kind == "reduction":
+        if kind in ("reduction", "reduction_neg"):
             rid = mod
             self.db.set_reduction_status(rid, "live")
             for c in children or []:
@@ -548,19 +576,22 @@ class Desk:
             self.db.set_reduction_status(r["id"], "done")
             return
         pid = parent["id"]
+        negate = bool(r["negate"])
+        mid = ("N_" + pid.split("_", 1)[1]) if negate else pid
+        goal = f"¬ Specs.{pid}.stmt" if negate else f"Specs.{pid}.stmt"
         args = " ".join(f"Proofs.{c}.main" for c in children)
         imports = [f"Specs.{pid}", f"Proofs.{r['id']}"] + [f"Proofs.{c}" for c in children]
         src = ("\n".join(f"import {m}" for m in imports)
                + f"\n\n-- 機械生成: 帰着 {r['id']} と子補題の証明の合成\n"
-               f"namespace Proofs.{pid}\n\ntheorem main : Specs.{pid}.stmt :=\n  Proofs.{r['id']}.main {args}\n\n"
-               f"end Proofs.{pid}\n")
-        verdict = self.v.verify_module(module_id=pid, kind="composed", node_id=pid, src=src,
-                                       agent="desk")
+               f"namespace Proofs.{mid}\n\ntheorem main : {goal} :=\n  Proofs.{r['id']}.main {args}\n\n"
+               f"end Proofs.{mid}\n")
+        verdict = self.v.verify_module(module_id=mid, kind="refutation" if negate else "composed",
+                                       node_id=pid, src=src, agent="desk")
         if not verdict.ok:
             self.db.event("infra_error", "desk", {"compose": r["id"], "reason": verdict.reason})
             raise InfraError(f"合成に失敗 ({r['id']}): {verdict.reason}\n{_excerpt(verdict.log)}")
         self.db.set_reduction_status(r["id"], "done")
-        self._mark_checked(pid, "desk")
+        (self._mark_refuted if negate else self._mark_checked)(pid, "desk")
 
     def _goal_closed(self, n, how: str) -> None:
         self.db.event("goal_closed", None, {"node": n["id"], "goal": n["goal_key"], "how": how})
@@ -616,6 +647,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("beat")
     s = sub.add_parser("check"); s.add_argument("file")
     s = sub.add_parser("propose"); s.add_argument("file")
+    s = sub.add_parser("define"); s.add_argument("file")
     s = sub.add_parser("submit"); s.add_argument("file"); s.add_argument("--note", default="")
     s = sub.add_parser("release"); s.add_argument("--reason", required=True); s.add_argument("--note", default="")
     s = sub.add_parser("audit"); s.add_argument("file")
@@ -643,6 +675,8 @@ def main(argv: list[str] | None = None) -> int:
             res = d.beat(a.token)
         elif a.cmd == "check":
             res = d.check(a.file, a.token)
+        elif a.cmd == "define":
+            res = d.define(a.file, a.token)
         elif a.cmd == "propose":
             res = d.propose(a.file, a.token)
         elif a.cmd == "submit":

@@ -33,9 +33,9 @@ def refresh(db: DB, graph: dict, *, keep_leases: bool = False) -> None:
                  n.get("informal") or "", n["status"], n.get("depth", 0), int(bool(n.get("both_sides"))),
                  "mirror"))
         for r in graph["reductions"]:
-            c.execute("INSERT INTO reductions(id,parent,children,status,created_by,created_at)"
-                      " VALUES(?,?,?,?,?,0)", (r["id"], r["parent"], json.dumps(r["children"]),
-                                               r["status"], "mirror"))
+            c.execute("INSERT INTO reductions(id,parent,children,status,created_by,created_at,negate)"
+                      " VALUES(?,?,?,?,?,0,?)", (r["id"], r["parent"], json.dumps(r["children"]),
+                                                 r["status"], "mirror", int(bool(r.get("negate")))))
         for a in graph["artifacts"]:
             c.execute("INSERT INTO artifacts(module,kind,node,path,sha256,axioms,agent,accepted_at)"
                       " VALUES(?,?,?,?,?,?,?,0)", (a["module"], a["kind"], a["node"], a["path"],

@@ -103,6 +103,9 @@ class DB:
         self.conn.execute("PRAGMA journal_mode=WAL")
         self.conn.execute("PRAGMA busy_timeout=30000")
         self.conn.executescript(SCHEMA)
+        cols = {r[1] for r in self.conn.execute("PRAGMA table_info(reductions)")}
+        if "negate" not in cols:  # 反証側の帰着（子すべて ⇒ ¬親）の印
+            self.conn.execute("ALTER TABLE reductions ADD COLUMN negate INTEGER NOT NULL DEFAULT 0")
         self._depth = 0
 
     def close(self) -> None:
@@ -189,11 +192,11 @@ class DB:
 
     # ---- reductions ----------------------------------------------------------
     def add_reduction(self, rid: str, parent: str, children: list[str], agent: str,
-                      lease_token: str) -> None:
+                      lease_token: str, negate: bool = False) -> None:
         self.conn.execute(
-            "INSERT INTO reductions(id,parent,children,status,lease_token,created_by,created_at)"
-            " VALUES(?,?,?,?,?,?,?)",
-            (rid, parent, json.dumps(children), "proposed", lease_token, agent, time.time()),
+            "INSERT INTO reductions(id,parent,children,status,lease_token,created_by,created_at,negate)"
+            " VALUES(?,?,?,?,?,?,?,?)",
+            (rid, parent, json.dumps(children), "proposed", lease_token, agent, time.time(), int(negate)),
         )
 
     def reduction(self, rid: str) -> sqlite3.Row | None:

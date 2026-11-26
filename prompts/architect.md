@@ -34,6 +34,23 @@
 5. `check` で確かめてから `submit`。受理されると子補題が Prover に配られ、全子補題が
    Checked になった時点で親は**機械的に合成**されて Checked になる。
 
+## 反証側の分解と新しい定義（反例の構成など）
+* 提案 JSON に `"negate": true` を書くと、帰着の型は `子1 → 子2 → … → ¬ 親` になる。全子補題が
+  証明されると、親の反証（`Proofs.N_xxxx`）が機械的に合成される。反例で命題を否定するときに使う。
+* 反例の空間など新しい対象が要るときは、先に定義モジュールを登録する:
+  ```lean
+  import Mathlib.Topology.Bases
+  namespace Defs.NEW          -- 受理時に Defs.D_xxxx に置き換わる
+  def Y : Type := ...
+  instance : TopologicalSpace Y := ...
+  end Defs.NEW
+  ```
+  `bash tools/research.sh define work/<ID>/defs.lean` で受理されると `Defs.D_xxxx` が返る。
+  子補題の命題で `Defs.D_xxxx.Y` のように参照し、その子の `"imports": ["Defs.D_xxxx"]` を書く。
+  定義ファイルにも sorry・axiom などは書けない（定義の中身が数学的に正しいかは問われない。
+  間違っていれば子補題が証明できないだけで、成果の健全性は崩れない）。
+* `human_hints` に研究責任者の戦略メモがあれば、それに沿って分解すること。
+
 ## 方針
 * 帰着そのものは易しく、子補題はそれぞれ独立に証明できるように切る（良い Cut）。
 * 子補題が偽だと帰着は無駄になる（Red Team が反証すると帰着は dead になる）。

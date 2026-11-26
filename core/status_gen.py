@@ -25,7 +25,7 @@ def build_graph(desk) -> dict:
                       "exhausted": exhausted, "depth": n["depth"], "both_sides": bool(n["both_sides"]), "stmt": n["stmt"],
                       "informal": n["informal"], "attempts": att, "closed_by": n["closed_by"]})
     reductions = [{"id": r["id"], "parent": r["parent"], "children": json.loads(r["children"]),
-                   "status": r["status"]}
+                   "status": r["status"], "negate": bool(r["negate"])}
                   for r in db.q("SELECT * FROM reductions WHERE status!='void' ORDER BY id")]
     artifacts = [{"module": r["module"], "kind": r["kind"], "node": r["node"], "path": r["path"],
                   "sha256": r["sha256"], "axioms": json.loads(r["axioms"] or "[]")}

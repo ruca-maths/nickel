@@ -6,7 +6,7 @@ PY="${RESEARCH_PYTHON:-python3}"
 cmd="${1:-help}"
 shift || true
 case "$cmd" in
-  task|next|beat|check|propose|submit|release|audit|context|lemmas|status)
+  task|next|beat|check|define|propose|submit|release|audit|context|lemmas|status)
     exec "$PY" "$ROOT/core/desk.py" "$cmd" "$@" ;;
   help|-h|--help)
     cat <<'USAGE'
@@ -15,7 +15,8 @@ usage: bash tools/research.sh <command> [args]
   context <L_xxxx>             ノードの情報（命題・関連補題・過去の失敗）
   lemmas [--query 語]          Checked 補題の一覧／検索
   check <file>                 静的フィルタ＋コンパイル（受理はしない）
-  propose <children.json>      (Architect) 子補題を登録
+  define <defs.lean>           (Architect) 定義モジュールを登録（namespace Defs.NEW）
+  propose <children.json>      (Architect) 子補題を登録（negate: true で反証側の分解）
   submit <file> [--note 要約]  最終提出（リース終了）
   release --reason 理由 [--note 知見]   断念（リース終了）
   audit <report.md>            (Red Team) 監査報告を提出

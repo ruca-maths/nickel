@@ -10,6 +10,10 @@ rev = "v4.36.0"   # lean-toolchain と同じタグに固定する
 name = "Targets"
 
 [[lean_lib]]
+name = "Defs"
+globs = ["Defs.+"]
+
+[[lean_lib]]
 name = "Specs"
 globs = ["Specs.+"]
 

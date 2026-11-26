@@ -5,6 +5,10 @@ defaultTargets = ["Targets"]
 name = "Targets"
 
 [[lean_lib]]
+name = "Defs"
+globs = ["Defs.+"]
+
+[[lean_lib]]
 name = "Specs"
 globs = ["Specs.+"]
 

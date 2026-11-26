@@ -172,8 +172,9 @@ def parse_imports(code: str) -> tuple[list[str], str, list[str]]:
 
 def check_proof(src: str, module_id: str, *, allowed_prefixes: list[str],
                 allowed_modules: set[str], max_heartbeats: int = 1_000_000,
-                forbidden_imports: list[str] | None = None) -> FilterResult:
-    """証明ファイル Proofs/<module_id>.lean の静的検査。"""
+                forbidden_imports: list[str] | None = None, lib: str = "Proofs") -> FilterResult:
+    """証明ファイル Proofs/<module_id>.lean（lib="Defs" なら定義ファイル Defs/<module_id>.lean）の静的検査。
+    定義ファイルは theorem main を要求しない。"""
     code, problems = strip_comments_and_strings(src)
     v = list(problems)
     imports, rest, p2 = parse_imports(code)
@@ -181,15 +182,15 @@ def check_proof(src: str, module_id: str, *, allowed_prefixes: list[str],
     for imp in imports:
         ok = imp in allowed_modules or any(imp == p or imp.startswith(p + ".")
                                            for p in allowed_prefixes)
-        if imp.startswith("Proofs.") and imp not in allowed_modules:
-            ok = False
+        if imp.startswith(("Proofs.", "Defs.")) and imp not in allowed_modules:
+            ok = False  # 証明・定義モジュールは受理済みのものだけ
         if not ok:
             v.append(f"import `{imp}` は許可されていない（Checked でない証明か、許可外モジュール）")
         elif imp in (forbidden_imports or []):
             v.append(f"import `{imp}` は禁止（重すぎる。必要な部分モジュールだけを import すること）")
     v += _common_checks(rest, max_heartbeats)
 
-    ns = f"Proofs.{module_id}"
+    ns = f"{lib}.{module_id}"
     body = rest.strip()
     m_ns = re.match(r"namespace\s+([\w.]+)\s", body + "\n")
     if not m_ns or m_ns.group(1) != ns:
@@ -200,11 +201,11 @@ def check_proof(src: str, module_id: str, *, allowed_prefixes: list[str],
     if len(re.findall(r"\bnamespace\s+" + re.escape(ns) + r"(?![\w.])", body)) != 1:
         v.append(f"`namespace {ns}` はちょうど1回だけ書く")
     # 名前空間を途中で閉じて外側に宣言を置くことを禁止
-    closing = {"Proofs", module_id, ns}
+    closing = {lib, module_id, ns}
     ends = re.findall(r"\bend\s+([\w.]+)", body)
     if sum(1 for e in ends if e in closing) != 1:
         v.append(f"`end {ns}` 以外の方法で名前空間 {ns} を閉じてはならない")
-    if not re.search(r"\btheorem\s+main\b", body):
+    if lib == "Proofs" and not re.search(r"\btheorem\s+main\b", body):
         v.append("`theorem main` が見つからない")
     return FilterResult(ok=not v, violations=v, imports=imports)
 

@@ -87,8 +87,11 @@ class Retriever:
             reds.append({"id": r["id"], "status": r["status"], "children": json.loads(r["children"])})
         parents = [r["parent"] for r in self.db.q("SELECT * FROM reductions WHERE status IN ('live','done')")
                    if node_id in json.loads(r["children"])]
+        hint_file = self.failures_path.parent / "hints" / f"{node_id}.md"
+        hints = hint_file.read_text(encoding="utf-8") if hint_file.exists() else ""
         return {
             "node": node_id,
+            "human_hints": hints,
             "tier": n["tier"],
             "status": n["status"],
             "stmt": n["stmt"],
