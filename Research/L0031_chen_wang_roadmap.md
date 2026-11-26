@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0011`）に向けた **Lean 4 カーネル検証済みモジュール 8 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0011`）に向けた **Lean 4 カーネル検証済みモジュール 9 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -39,3 +39,9 @@
 - **`isStratifiable_of_refinement` / `isStratifiable_of_refinement_g`**: stratifiable 位相 $\tau_0$ の任意の細分 $\tau \le \tau_0$ に対し、単調 $\tau$-開作用素 $R_n(F)$（または $\tau$-開 $g$-関数 $g_n(y)$）が $\tau$-閉集合 $F$ とその **$\tau_0$-境界 $\overline{F}^{\tau_0} \setminus F$** のみを分離すれば $(Y, \tau)$ が stratifiable になることを証明（$\tau_0$-閉包の外側は $\tau_0$ が自動分離）。
 - **`isStratifiable_of_laminar_clopen_partition` / `xtop_isStratifiable` / `xtop_subtype_isStratifiable`**: `Defs.D_0011.xtop α` およびその任意の部分空間 $Y \subseteq \mathbb{N} \to \alpha$ が stratifiable であること。
 - **`xtop_subtype_refinement_L0031` / `xtop_subtype_refinement_not_Tinf`**: 任意の部分空間 $Y \subseteq \mathbb{N} \to \alpha$ 上の細分位相 $\tau \le \mathrm{xtop}_Y$ に対し、境界分離 $g$-関数と `¬ HasCPOuterBase y₀` から `Specs.L_0031.stmt` および `¬ MSpace.Goals.Tinf_M3_imp_M1` を直接導出。
+
+## 8. [ChenWang_BoxFan_Equiv.lean](ChenWang_BoxFan_Equiv.lean)（`BoxFanGen` による厳密同値 `Specs.L_0030.stmt ↔ Specs.L_0031.stmt`）
+- **`BoxFanGen Z := Option (ℕ × Z)`**（基点 $z_0 \in Z$ に対する一般化ボックス扇）を構成し、`boxFanGen_isStratifiable`（Heath–Lutzer–Zenor 単調正規性作用素を経由して、**任意の** stratifiable 空間 $Z$ に対し `BoxFanGen Z` が常に stratifiable になること）を証明。
+- **`boxFanGen_W_clopen` / `boxFanGen_W_inter`**: 頂点 `none` は常に減少開閉近傍列 $\bigcap_n W_n = \{\mathrm{none}\}$ を持つ。
+- **`hasSigmaCPLocalBase_of_boxFanGen_hasCPOuterBase`**: `none` の単層 CP 開外基は各層 $k$ への切断により $z_0 \in Z$ の $\sigma$-CP 開局所基を誘導する。
+- **`L0030_imp_L0031` / `L0030_iff_L0031`**: 親機の `R_0010` + `L_0032` の**完全な逆**を示し、`Specs.L_0030.stmt ↔ Specs.L_0031.stmt` を確立（`L_0031` の開閉 $G_\delta$ 点条件は一般性を全く失わない）。
