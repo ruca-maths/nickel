@@ -130,7 +130,8 @@ class Desk:
             pf = self.db.count_attempts(nid, "prove")
             if role == "prover":
                 # 本題など「直接証明させても無駄な段階」は Prover に配らない（分解役・反証役が担当）
-                skip = n["tier"] in (self.lim("prover_skip_tiers", None) or [])
+                # 除外は目標ノードそのものだけ（その分解でできた子補題は普通に配る）
+                skip = n["origin"] == "goal" and n["tier"] in (self.lim("prover_skip_tiers", None) or [])
                 if pf < mx and not live and not skip:
                     out.append(((tr, -n["depth"], pf, nid), "prove", nid))
             elif role == "architect":
