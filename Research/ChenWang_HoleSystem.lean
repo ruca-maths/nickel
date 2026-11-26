@@ -176,6 +176,60 @@ theorem not_Tinf_of_sep_and_escape
   have h30 : Specs.L_0030.stmt := Proofs.R_0010.main h31 Proofs.L_0032.main
   exact Proofs.R_0009.main Proofs.L_0029.main h30 Proofs.L_0004.main
 
+/-- Hole-absorption stratifiability criterion:
+If `g : ℕ → Y → Set Y` is a monotone open `g`-function with `g n y ⊆ H.W n y`,
+and for every closed `F` and `x ∉ F` there exist `n, m` and `D' ∈ H.Holes x`
+such that `∀ y ∈ F ∩ H.W m x, g n y ⊆ D'`, then `(Y, H.toTopologicalSpace)` is
+stratifiable (`MSpace.IsStratifiable Y`). -/
+theorem isStratifiable_of_hole_absorption
+    (g : ℕ → Y → Set Y)
+    (hg_open : ∀ n y, @IsOpen Y H.toTopologicalSpace (g n y) ∧ y ∈ g n y)
+    (hg_dec : ∀ n y, g (n + 1) y ⊆ g n y)
+    (hg_sub_W : ∀ n y, g n y ⊆ H.W n y)
+    (habs : ∀ F : Set Y, @IsClosed Y H.toTopologicalSpace F → ∀ x ∉ F,
+      ∃ n m, ∃ D' ∈ H.Holes x, ∀ y ∈ F ∩ H.W m x, g n y ⊆ D') :
+    @MSpace.IsStratifiable Y H.toTopologicalSpace := by
+  let : TopologicalSpace Y := H.toTopologicalSpace
+  have hg_anti : ∀ {a b : ℕ} (y : Y), a ≤ b → g b y ⊆ g a y := by
+    intro a b y hab
+    induction hab with
+    | refl => exact Subset.rfl
+    | step _ ih => exact (hg_dec _ y).trans ih
+  refine ⟨H.t1Space, Proofs.L_0017.main Y ⟨g, hg_open, hg_dec, ?_⟩⟩
+  intro F hF x hxF
+  obtain ⟨n, m, D', hD', hsub⟩ := habs F hF x hxF
+  refine ⟨max n m, fun hx_cl => ?_⟩
+  rw [H.mem_closure_iff_hole] at hx_cl
+  obtain ⟨w, ⟨hwWx, hwD'⟩, hwU⟩ := hx_cl m D' hD'
+  obtain ⟨y, hyF, hwy⟩ := mem_iUnion₂.mp hwU
+  by_cases hyW : y ∈ H.W m x
+  · exact hwD' (hsub y ⟨hyF, hyW⟩ (hg_anti y (le_max_left n m) hwy))
+  · have hwyW : w ∈ H.W m y := H.W_anti (le_max_right n m) y (hg_sub_W (max n m) y hwy)
+    have h1 : H.W m w = H.W m x := H.W_part m x w hwWx
+    have h2 : H.W m w = H.W m y := H.W_part m y w hwyW
+    exact hyW ((h1.symm.trans h2).symm ▸ H.mem_W m y)
+
+/-- Uniform hole-absorption corollary:
+If every hole `D ∈ H.Holes x` is absorbed into some `D' ∈ H.Holes x` by `g n`
+at a uniform level `n`, then `(Y, H.toTopologicalSpace)` is stratifiable. -/
+theorem isStratifiable_of_uniform_hole_absorption
+    (g : ℕ → Y → Set Y)
+    (hg_open : ∀ n y, @IsOpen Y H.toTopologicalSpace (g n y) ∧ y ∈ g n y)
+    (hg_dec : ∀ n y, g (n + 1) y ⊆ g n y)
+    (hg_sub_W : ∀ n y, g n y ⊆ H.W n y)
+    (hunif : ∀ x, ∀ D ∈ H.Holes x, ∃ n, ∃ D' ∈ H.Holes x, ∀ y ∈ D, g n y ⊆ D') :
+    @MSpace.IsStratifiable Y H.toTopologicalSpace := by
+  refine H.isStratifiable_of_hole_absorption g hg_open hg_dec hg_sub_W ?_
+  intro F hF x hxF
+  have hopen : @IsOpen Y H.toTopologicalSpace Fᶜ := hF.isOpen_compl
+  obtain ⟨m, D, hD, hsub⟩ := hopen x hxF
+  obtain ⟨n, D', hD', habs⟩ := hunif x D hD
+  refine ⟨n, m, D', hD', fun y ⟨hyF, hyW⟩ => ?_⟩
+  have hyD : y ∈ D := by
+    by_contra hyD
+    exact hsub ⟨hyW, hyD⟩ hyF
+  exact habs y hyD
+
 end HoleSystem
 
 section DefsD0007Instance
