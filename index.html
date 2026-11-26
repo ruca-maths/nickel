@@ -1,194 +1,8 @@
-<!doctype html>
-<html lang="ja">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>M₃ ⇒ M₁ 証明マップ</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@600;900&family=IBM+Plex+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
-<style>
-/* Layout: 方眼紙の上に描いた研究ノート。冒頭に問い、件数の帯、段階ごとの依存マップ、下に台帳・経過・墓場 */
-:root {
-  --paper: #f5f6f2;
-  --sheet: #ffffff;
-  --ink: #1d2433;
-  --ink-2: #5b6475;
-  --rule: #dfe3e8;
-  --grid: rgba(54, 84, 140, .07);
-  --accent: #2f4fa8;
-  --ok: #217a4b;   --ok-bg: #e3f3e9;
-  --open: #6a7384; --open-bg: #eef0f3;
-  --bad: #b23a3a;  --bad-bg: #f8e4e2;
-  --dead: #8a7a5c; --dead-bg: #f2ede2;
-  --work: #b7791f; --work-bg: #fbf0dc;
-  --f-display: "Zen Old Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
-  --f-body: "IBM Plex Sans JP", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
-  --f-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
-}
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --paper: #121620; --sheet: #192030; --ink: #e6e9f0; --ink-2: #9aa3b5; --rule: #2a3346;
-  --grid: rgba(140, 170, 230, .06); --accent: #8ea8ff;
-  --ok: #5fd39a; --ok-bg: #173527; --open: #a3acbd; --open-bg: #232b3b;
-  --bad: #ff8d84; --bad-bg: #3a1f22; --dead: #cdb88f; --dead-bg: #2f2a20; --work: #f2b65a; --work-bg: #392c16;
-  color-scheme: dark } }
-:root[data-theme="dark"] {
-  --paper: #121620; --sheet: #192030; --ink: #e6e9f0; --ink-2: #9aa3b5; --rule: #2a3346;
-  --grid: rgba(140, 170, 230, .06); --accent: #8ea8ff;
-  --ok: #5fd39a; --ok-bg: #173527; --open: #a3acbd; --open-bg: #232b3b;
-  --bad: #ff8d84; --bad-bg: #3a1f22; --dead: #cdb88f; --dead-bg: #2f2a20; --work: #f2b65a; --work-bg: #392c16;
-  color-scheme: dark }
-
-* { box-sizing: border-box }
-body {
-  background: var(--paper); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.7;
-  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-.mono { font-family: var(--f-mono); }
-h1, h2 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
-h2 { font-size: 1.45rem; }
-.eyebrow { font-size: .75rem; letter-spacing: .12em; color: var(--ink-2); text-transform: uppercase; font-weight: 500; }
-section { padding-block: 2.2rem; display: grid; gap: 1rem; }
-.lede { color: var(--ink-2); max-width: 65ch; margin: 0; }
-
-/* 冒頭 */
-.hero { padding-block: 3rem 1.5rem; display: grid; gap: 1.2rem; }
-.chain { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem .9rem; font-family: var(--f-display); font-weight: 900; font-size: clamp(2.4rem, 7vw, 4.6rem); line-height: 1.1; }
-.chain .arrow { color: var(--ok); font-size: .7em; }
-.chain .q { color: var(--accent); font-size: .7em; position: relative; }
-.chain .q small { font-family: var(--f-body); font-size: .9rem; font-weight: 500; display: block; text-align: center; }
-.verdict { display: flex; flex-wrap: wrap; gap: .6rem 1rem; align-items: center; }
-.pill { display: inline-flex; align-items: center; gap: .4rem; padding: .15rem .7rem; border-radius: 999px; font-size: .82rem; font-weight: 500; white-space: nowrap; }
-.pill::before { content: ""; width: .55rem; height: .55rem; border-radius: 50%; background: currentColor; }
-.s-checked { color: var(--ok); background: var(--ok-bg); }
-.s-open { color: var(--open); background: var(--open-bg); }
-.s-refuted { color: var(--bad); background: var(--bad-bg); }
-.s-dead { color: var(--dead); background: var(--dead-bg); }
-.s-work { color: var(--work); background: var(--work-bg); }
-
-/* 件数の帯 */
-.tally { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; }
-.tally div { padding: 1rem 1.1rem; display: grid; gap: .1rem; border-right: 1px solid var(--rule); }
-.tally div:last-child { border-right: 0; }
-.tally b { font-family: var(--f-display); font-size: 2rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.tally span { font-size: .8rem; color: var(--ink-2); }
-
-/* 段階の進捗 */
-.tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: .8rem; }
-.tier { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: .9rem 1rem; display: grid; gap: .45rem; }
-.tier header { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
-.tier header b { font-family: var(--f-mono); }
-.bar { height: 8px; border-radius: 4px; background: var(--open-bg); overflow: hidden; display: flex; }
-.bar i { display: block; height: 100%; background: var(--ok); }
-.tier p { margin: 0; font-size: .82rem; color: var(--ink-2); }
-
-/* 依存マップ */
-.map-box { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; overflow-x: auto; }
-.map-box svg { display: block; min-width: 900px; width: 100%; height: auto; }
-.legend { display: flex; flex-wrap: wrap; gap: .5rem 1rem; font-size: .82rem; color: var(--ink-2); align-items: center; }
-.legend .ln { display: inline-flex; align-items: center; gap: .4rem; }
-.legend svg { overflow: visible; }
-.node { cursor: pointer; }
-.node:focus-visible rect { outline: none; stroke: var(--accent); stroke-width: 3; }
-.detail { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem 1.1rem; display: grid; gap: .5rem; min-width: 0; }
-.detail h3 { margin: 0; font-size: 1.05rem; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
-.detail pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-family: var(--f-mono); font-size: .8rem; color: var(--ink-2); }
-
-/* 台帳 */
-.table-box { overflow-x: auto; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; }
-table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: .88rem; }
-th, td { text-align: left; padding: .6rem .8rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
-th { font-size: .72rem; letter-spacing: .1em; color: var(--ink-2); font-weight: 500; text-transform: uppercase; }
-tr:last-child td { border-bottom: 0; }
-td.num { font-variant-numeric: tabular-nums; font-family: var(--f-mono); white-space: nowrap; }
-tbody tr { cursor: pointer; }
-tbody tr:hover { background: var(--paper); }
-
-/* 経過と墓場 */
-.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; align-items: start; }
-.cols > * { min-width: 0; }
-.feed { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border-left: 2px solid var(--rule); }
-.feed li { padding: .35rem 0 .35rem 1rem; position: relative; font-size: .9rem; }
-.feed li::before { content: ""; position: absolute; left: -6px; top: .85rem; width: 10px; height: 10px; border-radius: 50%; background: var(--c, var(--open)); border: 2px solid var(--paper); }
-.feed time { font-family: var(--f-mono); color: var(--ink-2); font-size: .8rem; margin-right: .5rem; }
-.grave { display: grid; gap: .7rem; }
-.grave details { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: .7rem .9rem; }
-.grave summary { cursor: pointer; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; font-weight: 500; }
-.grave p { margin: .5rem 0 0; font-size: .86rem; color: var(--ink-2); }
-.grave .who { font-family: var(--f-mono); font-size: .78rem; color: var(--ink-2); }
-
-.agents { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .8rem; }
-.agent { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: .9rem 1rem; display: grid; gap: .35rem; }
-.agent b { font-family: var(--f-mono); }
-.agent dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: .1rem .8rem; font-size: .85rem; }
-.agent dt { color: var(--ink-2); }
-.agent dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; }
-
-footer { padding-block: 2rem 3rem; color: var(--ink-2); font-size: .82rem; border-top: 1px solid var(--rule); display: grid; gap: .3rem; }
-footer a { color: var(--accent); }
-@media (prefers-reduced-motion: no-preference) { .bar i { transition: width .6s ease; } }
-</style>
-</head>
-<body>
-<div class="wrap">
-  <header class="hero">
-    <div class="eyebrow">自律マルチ AI 数学研究 · Lean 4 / Mathlib で検証済みのものだけを数える</div>
-    <div class="chain" aria-label="M1 ならば M2 ならば M3。M3 ならば M1 かは未解決">
-      <span>M<sub>1</sub></span><span class="arrow">⟹</span><span>M<sub>2</sub></span><span class="arrow">⟹</span><span>M<sub>3</sub></span>
-      <span class="q">⟹?<small>M<sub>1</sub></small></span>
-    </div>
-    <h1 style="font-size:1.35rem;font-weight:600">任意の M₃ 空間（stratifiable 空間）は M₁ 空間か　— Ceder, 1961</h1>
-    <div class="verdict" id="verdict"></div>
-    <p class="lede">4 台の AI（分解役・証明役 2・反証役）がこの問いと周辺定理に取り組んでいます。成果は Lean カーネルと公理検査を通ったものだけで、AI の自己申告は数えません。</p>
-  </header>
-
-  <div class="tally" id="tally"></div>
-
-  <section>
-    <div><div class="eyebrow">段階ごとの到達点</div><h2>どこまで来たか</h2></div>
-    <div class="tiers" id="tiers"></div>
-  </section>
-
-  <section>
-    <div><div class="eyebrow">依存マップ</div><h2>補題はどう支え合っているか</h2></div>
-    <p class="lede">左から右へ難しくなります。実線は帰着（親は子すべてから従う）、破線は証明の中で別の結果を使っていることを表します。ノードを選ぶと詳細が出ます。</p>
-    <div class="legend" id="legend"></div>
-    <div class="map-box"><svg id="map" role="img" aria-label="補題の依存マップ"></svg></div>
-    <div class="detail" id="detail" aria-live="polite"></div>
-  </section>
-
-  <section>
-    <div><div class="eyebrow">台帳</div><h2>すべての命題</h2></div>
-    <div class="table-box"><table>
-      <thead><tr><th>ノード</th><th>段階</th><th>命題</th><th>状態</th><th>試行 証明/分解/反証</th><th>証明</th></tr></thead>
-      <tbody id="board"></tbody>
-    </table></div>
-  </section>
-
-  <section class="cols">
-    <div style="display:grid;gap:1rem">
-      <div><div class="eyebrow">経過</div><h2>状態が変わった記録</h2></div>
-      <ol class="feed" id="feed"></ol>
-    </div>
-    <div style="display:grid;gap:1rem">
-      <div><div class="eyebrow">墓場</div><h2>断念した方針と理由</h2></div>
-      <div class="grave" id="grave"></div>
-    </div>
-  </section>
-
-  <section>
-    <div><div class="eyebrow">エージェント</div><h2>誰が何をしたか</h2></div>
-    <div class="agents" id="agents"></div>
-  </section>
-
-  <footer id="foot"></footer>
-</div>
-
 <script>
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
 function render(D) {
   const $ = (id) => document.getElementById(id);
-  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const STATE = {
     checked: { label: "証明済み", cls: "s-checked", v: "--ok", bg: "--ok-bg" },
     open: { label: "未解決", cls: "s-open", v: "--open", bg: "--open-bg" },
@@ -196,29 +10,52 @@ function render(D) {
     exhausted: { label: "試行上限", cls: "s-dead", v: "--dead", bg: "--dead-bg" },
     work: { label: "作業中", cls: "s-work", v: "--work", bg: "--work-bg" },
   };
+  const nodes = D.nodes || [];
+  const failures = D.failures || [];
+  const spend = D.spend || [];
+  const reductions = D.reductions || [];
+  const uses = D.uses || {};
+  const accepted = D.accepted || [];
+  const events = D.events || [];
+  const attempts = D.attempts || [];
+
   const busy = new Set((D.running || []).map((r) => r.node));
   const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-  const stateOf = (n) => (n.status !== "open" ? n.status : busy.has(n.id) ? "work" : n.exhausted ? "exhausted" : "open");
-  const pill = (st) => `<span class="pill ${STATE[st].cls}">${STATE[st].label}</span>`;
+  const stateOf = (n) => (!n ? "open" : n.status !== "open" ? n.status : busy.has(n.id) ? "work" : n.exhausted ? "exhausted" : "open");
+  const pill = (st) => `<span class="pill ${(STATE[st] || STATE.open).cls}">${(STATE[st] || STATE.open).label}</span>`;
   const TIER_NAME = { T1: "T1 動作確認", T2: "T2 実用補題", T3: "T3 M₃ ⇒ M₂", Tinf: "T∞ 本題" };
-  const fmtTime = (t) => { const d = new Date(t * 1000); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
-  const nodes = D.nodes, byId = Object.fromEntries(nodes.map((n) => [n.id, n]));
-  const label = (n) => n.goal ? (n.goal === "Tinf" ? "T∞" : n.goal) : n.id;
+  const fmtTime = (t) => {
+    if (!t) return "—";
+    const d = new Date(t * 1000);
+    return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  };
+  const fmtTs = (ts) => (typeof ts === "string" ? ts.slice(5, 16).replace("T", " ") : typeof ts === "number" ? fmtTime(ts) : "");
+  const parseAxioms = (ax) => {
+    if (Array.isArray(ax)) return ax.join(", ");
+    if (typeof ax === "string") {
+      try { const p = JSON.parse(ax); return Array.isArray(p) ? p.join(", ") : String(p); }
+      catch { return ax; }
+    }
+    return "";
+  };
+
+  const byId = Object.fromEntries(nodes.map((n) => [n.id, n]));
+  const label = (n) => (!n ? "" : n.goal ? (n.goal === "Tinf" ? "T∞" : n.goal) : n.id);
 
   // 判定
-  const main = nodes.find((n) => n.goal === "Tinf");
+  const main = nodes.find((n) => n.goal === "Tinf") || nodes[0];
   const goals = nodes.filter((n) => n.goal);
   $("verdict").innerHTML = `${pill(stateOf(main))}<span>本題は未解決。周辺の目標は ${goals.filter((n) => n.status === "checked").length} / ${goals.length} 件が証明済み。</span>`;
 
   // 件数
-  const gaveUp = D.failures.filter((f) => f.outcome === "gave_up").length;
-  const usd = D.spend.reduce((a, s) => a + s.usd, 0);
+  const gaveUp = failures.filter((f) => f.outcome === "gave_up").length;
+  const usd = spend.reduce((a, s) => a + Number(s.usd || 0), 0);
   const tallies = [
     [nodes.filter((n) => n.status === "checked").length, "証明済みの命題"],
     [nodes.filter((n) => n.status === "refuted").length, "反証された命題"],
     [gaveUp, "断念した試み"],
-    [D.reductions.filter((r) => r.status !== "dead").length, "受理された帰着"],
-    [D.sessions, "AI のセッション"],
+    [reductions.filter((r) => r.status !== "dead").length, "受理された帰着"],
+    [D.sessions ?? 0, "AI のセッション"],
     ["$" + usd.toFixed(2), "使った API 費用"],
   ];
   $("tally").innerHTML = tallies.map(([v, l]) => `<div><b>${esc(v)}</b><span>${esc(l)}</span></div>`).join("");
@@ -244,18 +81,18 @@ function render(D) {
   });
   const W = 180, H = 62, GX = 70, GY = 26, PAD = 30, TOP = 44;
   const pos = {};
-  const maxRows = Math.max(...cols.map((c) => c.length));
+  const maxRows = Math.max(1, ...cols.map((c) => c.length));
   const height = TOP + maxRows * (H + GY) + PAD;
   cols.forEach((c, i) => {
     const off = (maxRows - c.length) * (H + GY) / 2;
     c.forEach((n, j) => { pos[n.id] = { x: PAD + i * (W + GX), y: TOP + off + j * (H + GY) }; });
   });
-  const width = PAD * 2 + cols.length * W + (cols.length - 1) * GX;
+  const width = PAD * 2 + cols.length * W + Math.max(0, cols.length - 1) * GX;
   const svg = $("map");
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   const edges = [];
-  D.reductions.forEach((r) => r.children.forEach((c) => edges.push({ from: r.parent, to: c, kind: "and", rid: r.id, dead: r.status === "dead" })));
-  Object.entries(D.uses).forEach(([mod, u]) => u.imports.forEach((imp) => {
+  reductions.forEach((r) => (r.children || []).forEach((c) => edges.push({ from: r.parent, to: c, kind: "and", rid: r.id, dead: r.status === "dead" })));
+  Object.entries(uses).forEach(([mod, u]) => (u.imports || []).forEach((imp) => {
     const to = imp.replace("Proofs.", "");
     if (byId[mod] && byId[to]) edges.push({ from: mod, to, kind: "use" });
   }));
@@ -275,13 +112,15 @@ function render(D) {
     const y1 = a.y + H / 2, y2 = b.y + H / 2, mx = (x1 + x2) / 2;
     const col = e.kind === "and" ? css("--accent") : css("--ink-2");
     parts.push(`<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="${col}" stroke-width="${e.kind === "and" ? 2 : 1.4}" ${e.kind === "use" ? 'stroke-dasharray="5 4"' : ""} ${e.dead ? 'opacity=".35"' : ""} marker-end="url(#ah-${e.kind})"/>`);
-    if (e.rid) parts.push(`<text x="${mx}" y="${(y1 + y2) / 2 - 6}" text-anchor="middle" font-size="11" fill="${col}" font-family="${css("--f-mono")}">${e.rid}</text>`);
+    if (e.rid) parts.push(`<text x="${mx}" y="${(y1 + y2) / 2 - 6}" text-anchor="middle" font-size="11" fill="${col}" font-family="${css("--f-mono")}">${esc(e.rid)}</text>`);
   });
   nodes.forEach((n) => {
-    const p = pos[n.id], st = STATE[stateOf(n)];
+    const p = pos[n.id];
+    if (!p) return;
+    const st = STATE[stateOf(n)] || STATE.open;
     const text = (n.informal || "").replace(/（.*$/, "");
     const short = text.length > 15 ? text.slice(0, 14) + "…" : text;
-    parts.push(`<g class="node" tabindex="0" role="button" data-id="${n.id}" aria-label="${esc(label(n))} ${esc(text)} ${st.label}">
+    parts.push(`<g class="node" tabindex="0" role="button" data-id="${esc(n.id)}" aria-label="${esc(label(n))} ${esc(text)} ${st.label}">
       <rect x="${p.x}" y="${p.y}" width="${W}" height="${H}" rx="8" fill="${css(st.bg)}" stroke="${css(st.v)}" stroke-width="${n.goal ? 2 : 1.2}" ${n.goal ? "" : 'stroke-dasharray="3 2"'}/>
       <text x="${p.x + 12}" y="${p.y + 24}" font-size="14" font-weight="700" fill="${css(st.v)}" font-family="${css("--f-mono")}">${esc(label(n))}</text>
       <text x="${p.x + W - 12}" y="${p.y + 24}" font-size="11" text-anchor="end" fill="${css(st.v)}" font-family="${css("--f-body")}">${st.label}</text>
@@ -295,76 +134,105 @@ function render(D) {
     `<span class="ln"><svg width="34" height="14"><rect x="1" y="1" width="32" height="12" rx="3" fill="none" stroke="${css("--ink-2")}" stroke-dasharray="3 2"/></svg>Architect が立てた補題</span>`;
 
   const failsBy = {};
-  D.failures.forEach((f) => (failsBy[f.node] ||= []).push(f));
-  const accBy = Object.fromEntries(D.accepted.map((a) => [a.module, a]));
+  failures.forEach((f) => (failsBy[f.node] ||= []).push(f));
+  const accBy = Object.fromEntries(accepted.map((a) => [a.module, a]));
   function show(id) {
-    const n = byId[id], st = stateOf(n), a = accBy["Proofs." + id];
-    const used = edges.filter((e) => e.to === id).map((e) => label(byId[e.from]));
-    const needs = edges.filter((e) => e.from === id).map((e) => label(byId[e.to]));
+    const n = byId[id];
+    if (!n) return;
+    const st = stateOf(n), a = accBy["Proofs." + id];
+    const used = edges.filter((e) => e.to === id).map((e) => label(byId[e.from])).filter(Boolean);
+    const needs = edges.filter((e) => e.from === id).map((e) => label(byId[e.to])).filter(Boolean);
     const f = failsBy[id] || [];
+    const att = n.attempts || { prove: 0, decompose: 0, refute: 0 };
     $("detail").innerHTML = `<h3><span class="mono">${esc(label(n))}</span>${pill(st)}<span style="font-weight:500">${esc(n.informal)}</span></h3>
       <pre>${esc(n.stmt)}</pre>
       <div style="font-size:.86rem;color:var(--ink-2)">
-        ${a ? `証明: <span class="mono">${esc(a.module)}</span>（${esc(a.agent)}, ${fmtTime(a.accepted_at)}、${D.uses[id] ? D.uses[id].lines + " 行" : ""}、公理 ${esc(JSON.parse(a.axioms).join(", "))}）<br>` : ""}
+        ${a ? `証明: <span class="mono">${esc(a.module)}</span>（${esc(a.agent)}, ${fmtTime(a.accepted_at)}、${uses[id] ? uses[id].lines + " 行" : ""}、公理 ${esc(parseAxioms(a.axioms))}）<br>` : ""}
         ${needs.length ? `使っている結果: ${needs.map(esc).join(", ")}<br>` : ""}${used.length ? `使われている先: ${used.map(esc).join(", ")}<br>` : ""}
-        試行: 証明 ${n.attempts.prove} / 分解 ${n.attempts.decompose} / 反証 ${n.attempts.refute}${f.length ? `（断念 ${f.length} 件は墓場を参照）` : ""}</div>`;
+        試行: 証明 ${att.prove ?? 0} / 分解 ${att.decompose ?? 0} / 反証 ${att.refute ?? 0}${f.length ? `（断念 ${f.length} 件は墓場を参照）` : ""}</div>`;
   }
   svg.addEventListener("click", (e) => { const g = e.target.closest(".node"); if (g) show(g.dataset.id); });
   svg.addEventListener("keydown", (e) => { const g = e.target.closest(".node"); if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); show(g.dataset.id); } });
-  show(main.id);
+  if (main) show(main.id);
 
   // 台帳
   $("board").innerHTML = nodes.map((n) => {
     const a = accBy["Proofs." + n.id];
-    return `<tr data-id="${n.id}"><td class="num">${esc(label(n))}${n.goal ? "" : ""}</td><td class="num">${n.tier === "Tinf" ? "T∞" : n.tier}${n.goal ? "" : " 補題"}</td>
+    const att = n.attempts || { prove: 0, decompose: 0, refute: 0 };
+    return `<tr data-id="${esc(n.id)}"><td class="num">${esc(label(n))}</td><td class="num">${n.tier === "Tinf" ? "T∞" : esc(n.tier)}${n.goal ? "" : " 補題"}</td>
       <td style="min-width:240px">${esc(n.informal)}</td><td>${pill(stateOf(n))}</td>
-      <td class="num">${n.attempts.prove}/${n.attempts.decompose}/${n.attempts.refute}</td>
+      <td class="num">${att.prove ?? 0}/${att.decompose ?? 0}/${att.refute ?? 0}</td>
       <td class="num">${a ? esc(a.agent) + "<br>" + fmtTime(a.accepted_at) : "—"}</td></tr>`;
   }).join("");
   $("board").addEventListener("click", (e) => { const tr = e.target.closest("tr"); if (tr) { show(tr.dataset.id); $("map").scrollIntoView({ behavior: "smooth", block: "center" }); } });
 
   // 経過
   const feed = [];
-  D.events.filter((e) => e.kind === "targets_approved").forEach((e) => feed.push({ t: e.created_at, c: "--accent", h: `研究対象の定義を承認（${esc(e.agent)}）` }));
-  D.accepted.forEach((a) => {
+  events.filter((e) => e.kind === "targets_approved").forEach((e) => feed.push({ t: e.created_at, c: "--accent", h: `研究対象の定義を承認（${esc(e.agent)}）` }));
+  accepted.forEach((a) => {
     const n = byId[a.node];
-    const what = a.kind === "reduction" ? `帰着 <span class="mono">${a.module.replace("Proofs.", "")}</span> を受理: ${esc(label(n))} を子補題に分解`
-      : a.kind === "refutation" ? `<b>${esc(label(n))}</b> を反証` : `<b>${esc(label(n))}</b> を証明: ${esc((n.informal || "").replace(/（.*$/, ""))}`;
+    const nodeName = n ? label(n) : (a.node || "");
+    const what = a.kind === "reduction" ? `帰着 <span class="mono">${esc((a.module || "").replace("Proofs.", ""))}</span> を受理: ${esc(nodeName)} を子補題に分解`
+      : a.kind === "refutation" ? `<b>${esc(nodeName)}</b> を反証` : `<b>${esc(nodeName)}</b> を証明: ${esc(((n && n.informal) || "").replace(/（.*$/, ""))}`;
     feed.push({ t: a.accepted_at, c: a.kind === "refutation" ? "--bad" : a.kind === "reduction" ? "--accent" : "--ok", h: `${what}（${esc(a.agent)}）` });
   });
-  feed.sort((a, b) => b.t - a.t);
+  feed.sort((a, b) => (b.t || 0) - (a.t || 0));
   $("feed").innerHTML = feed.map((f) => `<li style="--c:var(${f.c})"><time>${fmtTime(f.t)}</time>${f.h}</li>`).join("");
 
   // 墓場（ノードごと）
   $("grave").innerHTML = Object.entries(failsBy).sort((a, b) => b[1].length - a[1].length).map(([id, fs]) => {
     const n = byId[id];
-    return `<details><summary><span class="mono">${esc(n ? label(n) : id)}</span>${n ? pill(stateOf(n)) : ""}<span>${esc(n ? n.informal.replace(/（.*$/, "") : "")}</span><span class="who">${fs.length} 件</span></summary>
-      ${fs.map((f) => `<p><span class="who">${esc(f.ts.slice(5, 16).replace("T", " "))} · ${esc(f.agent)} · ${f.task === "prove" ? "証明" : f.task === "refute" ? "反証" : f.task === "decompose" ? "分解" : esc(f.task)}${f.outcome === "no_submission" ? "（中断）" : ""}</span><br>${esc(f.reason)}</p>`).join("")}</details>`;
+    return `<details><summary><span class="mono">${esc(n ? label(n) : id)}</span>${n ? pill(stateOf(n)) : ""}<span>${esc(n ? (n.informal || "").replace(/（.*$/, "") : "")}</span><span class="who">${fs.length} 件</span></summary>
+      ${fs.map((f) => `<p><span class="who">${esc(fmtTs(f.ts))} · ${esc(f.agent)} · ${f.task === "prove" ? "証明" : f.task === "refute" ? "反証" : f.task === "decompose" ? "分解" : esc(f.task)}${f.outcome === "no_submission" ? "（中断）" : ""}</span><br>${esc(f.reason)}</p>`).join("")}</details>`;
   }).join("") + `<p class="lede" style="font-size:.82rem">理由は AI 自身が書いたメモです。検証済みの事実ではありません。</p>`;
 
   // エージェント
   const ROLE = { architect: "分解役", prover: "証明役", redteam: "反証・監査役" };
-  $("agents").innerHTML = D.spend.map((s) => {
-    const rows = D.attempts.filter((a) => a.agent === s.agent);
-    const cnt = (o) => rows.filter((r) => r.outcome === o).reduce((x, r) => x + r.n, 0);
-    const role = s.agent.split("-")[0];
+  $("agents").innerHTML = spend.map((s) => {
+    const rows = attempts.filter((a) => a.agent === s.agent);
+    const cnt = (o) => rows.filter((r) => r.outcome === o).reduce((x, r) => x + Number(r.n || 0), 0);
+    const role = String(s.agent || "").split("-")[0];
     return `<div class="agent"><b>${esc(s.agent)}</b><span style="font-size:.82rem;color:var(--ink-2)">${ROLE[role] || ""}</span>
-      <dl><dt>セッション</dt><dd>${s.n}</dd><dt>受理</dt><dd>${cnt("accepted")}</dd><dt>断念・中断</dt><dd>${cnt("gave_up") + cnt("no_submission")}</dd>
-      ${cnt("reported") ? `<dt>監査報告</dt><dd>${cnt("reported")}</dd>` : ""}<dt>費用</dt><dd>$${s.usd.toFixed(2)}</dd></dl></div>`;
+      <dl><dt>セッション</dt><dd>${s.n ?? 0}</dd><dt>受理</dt><dd>${cnt("accepted")}</dd><dt>断念・中断</dt><dd>${cnt("gave_up") + cnt("no_submission")}</dd>
+      ${cnt("reported") ? `<dt>監査報告</dt><dd>${cnt("reported")}</dd>` : ""}<dt>費用</dt><dd>$${Number(s.usd || 0).toFixed(2)}</dd></dl></div>`;
   }).join("");
 
   $("foot").innerHTML = `<span>データ: ${esc(D.generated_at)} 時点（親機が sync のたびに <span class="mono">status/site.json</span> を更新。開き直すと最新になります）。本日の支出 $${Number(D.spent_today || 0).toFixed(2)}。</span>
-    <span>定義の承認ハッシュ <span class="mono">${esc(String(D.targets_hash).slice(0, 16))}…</span> · 受理条件: Lean カーネル検査、ロック済み命題との型一致、公理は propext / Classical.choice / Quot.sound のみ。</span>
+    <span>定義の承認ハッシュ <span class="mono">${esc(String(D.targets_hash || "").slice(0, 16))}…</span> · 受理条件: Lean カーネル検査、ロック済み命題との型一致、公理は propext / Classical.choice / Quot.sound のみ。</span>
     <span>リポジトリ: <a href="https://github.com/ruca-maths/nickel" target="_blank" rel="noopener">github.com/ruca-maths/nickel</a></span>`;
 }
 
-fetch("status/site.json", { cache: "no-store" })
-  .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
-  .then(render)
+async function loadSiteJson() {
+  const candidates = [
+    "./status/site.json",
+    "https://raw.githubusercontent.com/ruca-maths/nickel/main/status/site.json"
+  ];
+  const errors = [];
+  for (const url of candidates) {
+    try {
+      const r = await fetch(url, { cache: "no-store" });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return await r.json();
+    } catch (e) {
+      errors.push(`${url}: ${e.message || e}`);
+    }
+  }
+  throw new Error(errors.join(" / "));
+}
+
+loadSiteJson()
+  .then((data) => {
+    try {
+      render(data);
+    } catch (e) {
+      console.error("Render error:", e);
+      document.getElementById("verdict").innerHTML =
+        `<span class="pill s-refuted">描画エラー</span><span>データは取得できましたが、表示処理でエラーが発生しました（${esc(String(e))}）。</span>`;
+    }
+  })
   .catch((e) => {
+    console.error("Fetch error:", e);
     document.getElementById("verdict").innerHTML =
-      `<span class="pill s-refuted">データを読めません</span><span>status/site.json を取得できませんでした（${String(e)}）。少し待って開き直してください。</span>`;
+      `<span class="pill s-refuted">データを読めません</span><span>status/site.json を取得できませんでした（${esc(String(e))}）。少し待って開き直してください。</span>`;
   });
 </script>
-</body>
-</html>
