@@ -1,6 +1,11 @@
 import Mathlib.Order.Interval.Set.Basic
 import Mathlib.Logic.Relation
 import Mathlib.Topology.Constructions
+import Mathlib.Data.PNat.Basic
+import Mathlib.Data.List.Lex
+import Mathlib.Data.Nat.Pairing
+import Mathlib.Data.Nat.Nth
+import Mathlib.Data.Nat.Count
 import Defs.D_0003
 import Defs.D_0005
 import Defs.D_0007
@@ -411,5 +416,501 @@ theorem Hx_inter_eq_singleton (T : Tree2 α) (q : ℕ ≃ α) (x : ℕ → α) :
     exact mem_Hx T q (n + 1) x
 
 end Construction32
+
+section Prop33And35
+
+variable {α : Type} [LinearOrder α]
+
+/-- Chen–Wang Proposition 3.3.8 (laminar property of `𝒢_n`):
+If `c₁ < c₂` and `r₁, r₂` lie in `QStar (scale n c₁)` / `QStar (scale n c₂)`, then
+`gsub c₁ r₁` and `gsub c₂ r₂` are either disjoint or `gsub c₂ r₂ ⊆ gsub c₁ r₁`. -/
+theorem gsub_laminar {T : Tree2 α} {q : ℕ ≃ α} (E : Tree2Enum T q)
+    {n : ℕ} (hn : 0 < n) {c₁ c₂ : ℕ} (hcc : c₁ < c₂)
+    (r₁ : Fin (c₁ + 1) → { p : α // T.QStar (scale n c₁) p })
+    (r₂ : Fin (c₂ + 1) → { p : α // T.QStar (scale n c₂) p }) :
+    Disjoint (gsub T q n hn c₁ (fun j => (r₁ j).1)) (gsub T q n hn c₂ (fun j => (r₂ j).1)) ∨
+      gsub T q n hn c₂ (fun j => (r₂ j).1) ⊆ gsub T q n hn c₁ (fun j => (r₁ j).1) := by
+  by_cases hd : Disjoint (gsub T q n hn c₁ (fun j => (r₁ j).1)) (gsub T q n hn c₂ (fun j => (r₂ j).1))
+  · exact Or.inl hd
+  · right
+    obtain ⟨w, hw1, hw2⟩ := Set.not_disjoint_iff.mp hd
+    have ha : 0 < scale n c₁ := scale_pos n c₁
+    have hab : scale n c₁ ≤ scale n c₂ := by unfold scale; omega
+    intro z hz
+    constructor
+    · intro k hk
+      have hidx : q.symm (prefixPt q n hn c₁ k) < scale n c₁ := prefixPt_idx_lt_scale q hn c₁ hk
+      have h3 := prop_3_2_3 E (i := q.symm (prefixPt q n hn c₁ k))
+        (j := q.symm (prefixPt q n hn c₂ k)) ha hab hidx
+      simp only [Equiv.apply_symm_apply] at h3
+      rcases h3 with hdisj | hsub
+      · exact (Set.disjoint_left.mp hdisj (hw1.1 k hk) (hw2.1 k hk)).elim
+      · exact hsub (hz.1 k hk)
+    · intro j
+      let j₂ : Fin (c₂ + 1) := ⟨j.1, by omega⟩
+      rcases prop_2_2_5 T ha hab (r₁ j).2 (r₂ j₂).2 with hdisj | hsub
+      · exact (Set.disjoint_left.mp hdisj (hw1.2 j) (hw2.2 j₂)).elim
+      · exact hsub (hz.2 j₂)
+
+/-- Chen–Wang Proposition 3.3.6 (strong form):
+If `c₁ < c₂`, then `H q n c₁` is disjoint from `Iblock T q n hn c₂` (and hence from `⋃ 𝒢(n, c₂)`). -/
+theorem H_disjoint_Iblock_of_lt {T : Tree2 α} {q : ℕ ≃ α} (E : Tree2Enum T q)
+    {n : ℕ} (hn : 0 < n) {c₁ c₂ : ℕ} (hcc : c₁ < c₂) :
+    Disjoint (H q n c₁) (Iblock T q n hn c₂) := by
+  rw [Set.disjoint_left]
+  intro x hx1 hx2
+  have hne : ∃ k < n, prefixPt q n hn c₁ k ≠ prefixPt q n hn c₂ k := by
+    by_contra hall
+    push Not at hall
+    have hw1 := (H_nonempty q n hn c₁).choose_spec
+    have hw2 := (H_nonempty q n hn c₂).choose_spec
+    have heq : c₁ = c₂ := by
+      have hsame : (H_nonempty q n hn c₁).choose ∈
+          H q n (code n (fun k => q.symm ((H_nonempty q n hn c₂).choose k))) :=
+        (mem_H_iff_same q n hn _ _).mpr (fun k hk => hall k hk)
+      have h1 : code n (fun k => q.symm ((H_nonempty q n hn c₁).choose k)) = c₁ := hw1
+      have h2 : code n (fun k => q.symm ((H_nonempty q n hn c₂).choose k)) = c₂ := hw2
+      have h3 : code n (fun k => q.symm ((H_nonempty q n hn c₁).choose k)) =
+                code n (fun k => q.symm ((H_nonempty q n hn c₂).choose k)) := hsame
+      omega
+    omega
+  obtain ⟨k, hk, hkne⟩ := hne
+  have hxk : x k = prefixPt q n hn c₁ k := (prefixPt_eq q hn hx1 hk).symm
+  have hxI : prefixPt q n hn c₁ k ∈ Set.Ico (prefixPt q n hn c₂ k)
+      (T.child (prefixPt q n hn c₂ k) (scale n c₂)) := by
+    rw [← hxk]; exact hx2 k hk
+  have hIoo : q (q.symm (prefixPt q n hn c₁ k)) ∈ Set.Ioo (q (q.symm (prefixPt q n hn c₂ k)))
+      (T.child (q (q.symm (prefixPt q n hn c₂ k))) (scale n c₂)) := by
+    simp only [Equiv.apply_symm_apply]
+    exact ⟨lt_of_le_of_ne hxI.1 hkne.symm, hxI.2⟩
+  have hgt : scale n c₂ < q.symm (prefixPt q n hn c₁ k) :=
+    (prop_3_2_1 E (scale_pos n c₂) Nat.one_pos hIoo).2.1
+  have hlt : q.symm (prefixPt q n hn c₁ k) < scale n c₁ :=
+    prefixPt_idx_lt_scale q hn c₁ hk
+  unfold scale at hgt hlt
+  omega
+
+/-- Chen–Wang Proposition 3.3.6 for `gsub`. -/
+theorem H_disjoint_gsub_of_lt {T : Tree2 α} {q : ℕ ≃ α} (E : Tree2Enum T q)
+    {n : ℕ} (hn : 0 < n) {c₁ c₂ : ℕ} (hcc : c₁ < c₂) (r₂ : Fin (c₂ + 1) → α) :
+    Disjoint (H q n c₁) (gsub T q n hn c₂ r₂) :=
+  (H_disjoint_Iblock_of_lt E hn hcc).mono_right Set.inter_subset_left
+
+/-- Chen–Wang Proposition 3.3.6':
+If `Hx n y ∩ gx n z` is nonempty and `Hx n y ≠ Hx n z`, then `code n z < code n y`. -/
+theorem code_lt_of_Hx_inter_gx {T : Tree2 α} {q : ℕ ≃ α} (E : Tree2Enum T q)
+    {n : ℕ} (hn : 0 < n) {y z : ℕ → α}
+    (hinter : (Hx T q n y ∩ gx T q n hn z).Nonempty)
+    (hne : Hx T q n y ≠ Hx T q n z) :
+    code n (fun k => q.symm (z k)) < code n (fun k => q.symm (y k)) := by
+  obtain ⟨w, hwy, hwz⟩ := hinter
+  by_contra hnot
+  rcases lt_or_eq_of_le (not_lt.mp hnot) with hlt | heq
+  · exact Set.disjoint_left.mp (H_disjoint_gsub_of_lt E hn hlt _) hwy.1 hwz
+  · have hwH : w ∈ H q n (code n (fun k => q.symm (z k))) := heq ▸ hwy.1
+    have hwHz : w ∈ Hx T q n z := by
+      rw [← gx_inter_H T q hn z]
+      exact ⟨hwz, hwH⟩
+    have e1 := (Hx_gx_eq_of_mem T q hn hwy).1
+    have e2 := (Hx_gx_eq_of_mem T q hn hwHz).1
+    exact hne (e1.symm.trans e2)
+
+/-- Chen–Wang Proposition 3.3.4 (transitivity of `gx`):
+If `y ∈ gx n x`, then `gx n y ⊆ gx n x`. -/
+theorem gx_subset_of_mem_gx {T : Tree2 α} {q : ℕ ≃ α} (E : Tree2Enum T q)
+    {n : ℕ} (hn : 0 < n) {x y : ℕ → α} (hy : y ∈ gx T q n hn x) :
+    gx T q n hn y ⊆ gx T q n hn x := by
+  by_cases hH : y ∈ Hx T q n x
+  · rw [(Hx_gx_eq_of_mem T q hn hH).2]
+  · have hne : Hx T q n y ≠ Hx T q n x := fun h => hH (h ▸ mem_Hx T q n y)
+    have hlt : code n (fun k => q.symm (x k)) < code n (fun k => q.symm (y k)) :=
+      code_lt_of_Hx_inter_gx E hn ⟨y, mem_Hx T q n y, hy⟩ hne
+    rcases gsub_laminar E hn hlt (rOf T q n x) (rOf T q n y) with hdisj | hsub
+    · exact (Set.disjoint_left.mp hdisj hy (mem_gx T q hn y)).elim
+    · exact hsub
+
+/-- Chen–Wang Proposition 3.3.5 (monotonicity of `gx` in `n`):
+For `0 < n`, `gx (n + 1) x ⊆ gx n x`. -/
+theorem gx_succ_subset {T : Tree2 α} {q : ℕ ≃ α} (E : Tree2Enum T q)
+    {n : ℕ} (hn : 0 < n) (x : ℕ → α) :
+    gx T q (n + 1) (Nat.succ_pos n) x ⊆ gx T q n hn x := by
+  set c₁ := code n (fun k => q.symm (x k))
+  set c₂ := code (n + 1) (fun k => q.symm (x k))
+  have hc : c₁ ≤ c₂ := code_mono n hn (fun k => q.symm (x k)) (n + 1) (Nat.le_succ n)
+  have ha : 0 < scale n c₁ := scale_pos n c₁
+  have hb : 0 < scale (n + 1) c₂ := scale_pos (n + 1) c₂
+  have hab : scale n c₁ ≤ scale (n + 1) c₂ := by unfold scale; omega
+  intro z hz
+  constructor
+  · intro k hk
+    have hp1 : prefixPt q n hn c₁ k = x k := prefixPt_eq q hn rfl hk
+    have hp2 : prefixPt q (n + 1) (Nat.succ_pos n) c₂ k = x k :=
+      prefixPt_eq q (Nat.succ_pos n) rfl (Nat.lt_succ_of_lt hk)
+    have hzk := hz.1 k (Nat.lt_succ_of_lt hk)
+    rw [hp1]
+    rw [hp2] at hzk
+    exact Set.Ico_subset_Ico_right (child_le_child T (x k) ha hab) hzk
+  · intro j
+    by_cases hj0 : j.1 = 0
+    · -- Coordinate `n`: `z n ∈ [x n, child (x n) b)`, while `x n ∈ [r₁ 0, child (r₁ 0) a)`
+      have hzn : z (n + j.1) ∈ Set.Ico (x n) (T.child (x n) (scale (n + 1) c₂)) := by
+        rw [hj0, Nat.add_zero]
+        have hp2 : prefixPt q (n + 1) (Nat.succ_pos n) c₂ n = x n :=
+          prefixPt_eq q (Nat.succ_pos n) rfl (Nat.lt_succ_self n)
+        have h0 := hz.1 n (Nat.lt_succ_self n)
+        rw [hp2] at h0
+        exact h0
+      have hxn : x n ∈ Set.Ico (rOf T q n x j).1 (T.child (rOf T q n x j).1 (scale n c₁)) := by
+        have h0 := (mem_Hsub_rOf T q n x).2 j
+        simpa only [hj0, Nat.add_zero] using h0
+      rcases eq_or_lt_of_le hxn.1 with heq | hlt
+      · rw [← heq] at hzn
+        exact Set.Ico_subset_Ico_right (child_le_child T _ ha hab) hzn
+      · have hIoo : q (q.symm (x n)) ∈ Set.Ioo (q (q.symm (rOf T q n x j).1))
+            (T.child (q (q.symm (rOf T q n x j).1)) (scale n c₁)) := by
+          simp only [Equiv.apply_symm_apply]
+          exact ⟨hlt, hxn.2⟩
+        have hsub := (prop_3_2_1 E ha hb hIoo).2.2
+        simp only [Equiv.apply_symm_apply] at hsub
+        exact Set.Ioo_subset_Ico_self (hsub hzn)
+    · -- Coordinates `n + 1 .. n + c₁`: covered by `Jblock (n + 1) c₂ (rOf (n + 1) x)`
+      let j₂ : Fin (c₂ + 1) := ⟨j.1 - 1, by omega⟩
+      have hcoord : n + j.1 = (n + 1) + j₂.1 := by show n + j.1 = (n + 1) + (j.1 - 1); omega
+      have h1 : x (n + j.1) ∈ Set.Ico (rOf T q n x j).1 (T.child (rOf T q n x j).1 (scale n c₁)) :=
+        (mem_Hsub_rOf T q n x).2 j
+      have h2 : x (n + j.1) ∈ Set.Ico (rOf T q (n + 1) x j₂).1
+          (T.child (rOf T q (n + 1) x j₂).1 (scale (n + 1) c₂)) := by
+        rw [hcoord]
+        exact (mem_Hsub_rOf T q (n + 1) x).2 j₂
+      rcases prop_2_2_5 T ha hab (rOf T q n x j).2 (rOf T q (n + 1) x j₂).2 with hdisj | hsub
+      · exact (Set.disjoint_left.mp hdisj h1 h2).elim
+      · rw [hcoord]
+        exact hsub (hz.2 j₂)
+
+/-- Chen–Wang Proposition 3.5.3 (nested `H`-chain convergence, used in Proposition 9.5):
+If `n : ℕ → ℕ` is strictly increasing with `0 < n 0`, and `Hx (n (i + 1)) (y (i + 1)) ⊆ Hx (n i) (y i)`
+for all `i`, then there exists a unique `t : ℕ → α` such that `⋂ i, Hx (n i) (y i) = {t}`. -/
+theorem Hx_chain_inter_eq_singleton (T : Tree2 α) (q : ℕ ≃ α)
+    (n : ℕ → ℕ) (hn_pos : ∀ i, 0 < n i) (hn_mono : StrictMono n)
+    (y : ℕ → (ℕ → α)) (hchain : ∀ i, Hx T q (n (i + 1)) (y (i + 1)) ⊆ Hx T q (n i) (y i)) :
+    ∃ t : ℕ → α, (⋂ i : ℕ, Hx T q (n i) (y i)) = {t} := by
+  have hsub : ∀ {i j : ℕ}, i ≤ j → Hx T q (n j) (y j) ⊆ Hx T q (n i) (y i) := by
+    intro i j hij
+    induction hij with
+    | refl => exact Subset.rfl
+    | @step m _ ih => exact (hchain m).trans ih
+  have hn_ge : ∀ k, k ≤ n k := fun k => hn_mono.id_le k
+  have hagree : ∀ {i j k : ℕ}, i ≤ j → k < n i → y j k = y i k := by
+    intro i j k hij hk
+    have hyj : y j ∈ Hx T q (n i) (y i) := hsub hij (mem_Hx T q (n j) (y j))
+    exact (mem_H_iff_same q (n i) (hn_pos i) (y j) (y i)).mp hyj.1 k hk
+  let t : ℕ → α := fun k => y (k + 1) k
+  refine ⟨t, ?_⟩
+  ext w
+  simp only [Set.mem_iInter, Set.mem_singleton_iff]
+  constructor
+  · intro hw
+    funext k
+    have hlt : k < n (k + 1) := lt_of_lt_of_le (Nat.lt_succ_self k) (hn_ge (k + 1))
+    exact (mem_H_iff_same q (n (k + 1)) (hn_pos (k + 1)) w (y (k + 1))).mp (hw (k + 1)).1 k hlt
+  · intro hw i
+    rw [hw]
+    let ci := code (n i) (fun k => q.symm (y i k))
+    let m := max i (n i + ci + 1)
+    have him : i ≤ m := le_max_left _ _
+    have hym : y m ∈ Hx T q (n i) (y i) := hsub him (mem_Hx T q (n m) (y m))
+    have ht_eq : ∀ k < n i + ci + 1, t k = y m k := by
+      intro k hk
+      have hkm : k + 1 ≤ m := by omega
+      have hkn : k < n (k + 1) := lt_of_lt_of_le (Nat.lt_succ_self k) (hn_ge (k + 1))
+      exact (hagree hkm hkn).symm
+    constructor
+    · show t ∈ H q (n i) ci
+      have h1 : ∀ k < n i, t k = y m k := fun k hk => ht_eq k (by omega)
+      have h2 : y m ∈ H q (n i) (code (n i) (fun k => q.symm (y i k))) := hym.1
+      have h3 := (mem_H_iff_same q (n i) (hn_pos i) (y m) (y i)).mp h2
+      exact (mem_H_iff_same q (n i) (hn_pos i) t (y i)).mpr (fun k hk => (h1 k hk).trans (h3 k hk))
+    · intro j
+      have hjlt : n i + j.1 < n i + ci + 1 := by omega
+      rw [ht_eq (n i + j.1) hjlt]
+      exact hym.2 j
+
+end Prop33And35
+
+section ConcreteQTreeEnum
+
+/-- Concrete countable linear order realizing Chen–Wang's tree `Q`. -/
+abbrev QTree : Type := List (OrderDual ℕ+)
+
+private theorem list_lex_lt_append_singleton {β : Type*} [LinearOrder β] (u : List β) (x : β) :
+    u < u ++ [x] := by
+  induction u with
+  | nil => exact List.Lex.nil
+  | cons a as ih => exact List.Lex.cons ih
+
+private theorem list_lex_nil_le {β : Type*} [LinearOrder β] (u : List β) :
+    ([] : List β) ≤ u := by
+  cases u with
+  | nil => exact le_rfl
+  | cons a as => exact le_of_lt List.Lex.nil
+
+private theorem list_lex_append_lt_append {β : Type*} [LinearOrder β]
+    (p : List β) {x y : β} (hxy : x < y) (v w : List β) :
+    p ++ x :: v < p ++ y :: w := by
+  induction p with
+  | nil => exact List.Lex.rel hxy
+  | cons a as ih => exact List.Lex.cons ih
+
+private theorem list_lex_prefix_of_lt_append {β : Type*} [LinearOrder β]
+    {p q : List β} {x : β} (h1 : p < q) (h2 : q < p ++ [x]) :
+    ∃ r, q = p ++ r ∧ r ≠ [] := by
+  induction p generalizing q with
+  | nil =>
+    cases q with
+    | nil => exact absurd h1 (lt_irrefl _)
+    | cons b bs => exact ⟨b :: bs, rfl, List.cons_ne_nil _ _⟩
+  | cons a as ih =>
+    cases q with
+    | nil => exact absurd h1 (not_lt.mpr (list_lex_nil_le _))
+    | cons b bs =>
+      rcases lt_trichotomy a b with hab | rfl | hba
+      · exact absurd (lt_trans h2 (List.Lex.rel hab)) (lt_irrefl _)
+      · have h1' : as < bs := by
+          cases h1 with
+          | rel h => exact absurd h (lt_irrefl _)
+          | cons h => exact h
+        have h2' : bs < as ++ [x] := by
+          cases h2 with
+          | rel h => exact absurd h (lt_irrefl _)
+          | cons h => exact h
+        obtain ⟨r, rfl, hr⟩ := ih h1' h2'
+        exact ⟨r, rfl, hr⟩
+      · exact absurd (lt_trans h1 (List.Lex.rel hba)) (lt_irrefl _)
+
+instance : NoMaxOrder QTree where
+  exists_gt u := ⟨u ++ [OrderDual.toDual 1], list_lex_lt_append_singleton u _⟩
+
+/-- Concrete `Defs.D_0003.Tree2` structure on `QTree`. -/
+def qtreeTree2 : Tree2 QTree where
+  lev u := u.length
+  C p c := ∃ j : ℕ+, c = p ++ [OrderDual.toDual j]
+  idx u := match u.getLast? with
+    | none => 0
+    | some x => (OrderDual.ofDual x).val
+  lev_child := by rintro p _ ⟨j, rfl⟩; simp
+  lt_child := by rintro p _ ⟨j, rfl⟩; exact list_lex_lt_append_singleton p _
+  gap := by
+    rintro p _ q ⟨j, rfl⟩ hlev ⟨h1, h2⟩
+    obtain ⟨r, rfl, hr⟩ := list_lex_prefix_of_lt_append h1 h2
+    have hpos : 0 < r.length := List.length_pos_iff.mpr hr
+    simp only [List.length_append] at hlev
+    omega
+  idx_pos := by rintro p _ ⟨j, rfl⟩; simp [j.pos]
+  child_anti := by
+    rintro p _ _ ⟨j, rfl⟩ ⟨j', rfl⟩ hlt
+    simp only [List.getLast?_append_of_ne_nil _ (List.cons_ne_nil _ _),
+      List.getLast?_singleton, OrderDual.ofDual_toDual] at hlt
+    exact list_lex_append_lt_append p (show OrderDual.toDual j' < OrderDual.toDual j from hlt) [] []
+  child_inj := by
+    rintro p _ _ ⟨j, rfl⟩ ⟨j', rfl⟩ heq
+    simp only [List.getLast?_append_of_ne_nil _ (List.cons_ne_nil _ _),
+      List.getLast?_singleton, OrderDual.ofDual_toDual] at heq
+    have : j = j' := PNat.eq heq
+    rw [this]
+  root := []
+  child p j := if h : 0 < j then p ++ [OrderDual.toDual ⟨j, h⟩] else []
+  C_child := by
+    intro p j hj
+    simp only [hj, ↓reduceDIte]
+    exact ⟨⟨j, hj⟩, rfl⟩
+  idx_child := by
+    intro p j
+    by_cases hj : 0 < j
+    · simp only [hj, ↓reduceDIte, List.getLast?_append_of_ne_nil _ (List.cons_ne_nil _ _),
+        List.getLast?_singleton]
+      rfl
+    · have : j = 0 := by omega
+      subst this
+      simp
+  root_le := list_lex_nil_le
+  connected := by
+    intro u
+    induction u using List.reverseRecOn with
+    | nil => exact ReflTransGen.refl
+    | append_singleton p x ih => exact ih.tail ⟨OrderDual.ofDual x, rfl⟩
+  desc_lt := by
+    intro p j r hj hdesc
+    have hpref : ∀ w, ReflTransGen (fun a b : QTree => ∃ k : ℕ+, b = a ++ [OrderDual.toDual k])
+        (p ++ [OrderDual.toDual ⟨j + 1, Nat.succ_pos j⟩]) w →
+        ∃ v, w = p ++ OrderDual.toDual ⟨j + 1, Nat.succ_pos j⟩ :: v := by
+      intro w hw
+      induction hw with
+      | refl => exact ⟨[], by simp⟩
+      | @tail b c _ hbc ih =>
+        obtain ⟨v, rfl⟩ := ih
+        obtain ⟨k, rfl⟩ := hbc
+        exact ⟨v ++ [OrderDual.toDual k], by simp [List.append_assoc]⟩
+    simp only [Nat.succ_pos, hj, ↓reduceDIte] at hdesc ⊢
+    obtain ⟨v, rfl⟩ := hpref r hdesc
+    have hlt : OrderDual.toDual (⟨j + 1, Nat.succ_pos j⟩ : ℕ+) < OrderDual.toDual (⟨j, hj⟩ : ℕ+) :=
+      show (⟨j, hj⟩ : ℕ+) < ⟨j + 1, Nat.succ_pos j⟩ from Nat.lt_succ_self j
+    exact list_lex_append_lt_append p hlt v []
+
+/-- Prefix-compatible injective encoding `QTree → ℕ`. -/
+def encodeQTree (u : QTree) : ℕ :=
+  u.foldl (fun acc x => Nat.pair (OrderDual.ofDual x).val acc + 1) 0
+
+theorem encodeQTree_nil : encodeQTree [] = 0 := rfl
+
+theorem encodeQTree_append_singleton (p : QTree) (x : OrderDual ℕ+) :
+    encodeQTree (p ++ [x]) = Nat.pair (OrderDual.ofDual x).val (encodeQTree p) + 1 := by
+  simp [encodeQTree]
+
+theorem encodeQTree_injective : Function.Injective encodeQTree := by
+  intro u v h
+  induction u using List.reverseRecOn generalizing v with
+  | nil =>
+    cases v using List.reverseRecOn with
+    | nil => rfl
+    | append_singleton p x =>
+      rw [encodeQTree_nil, encodeQTree_append_singleton] at h
+      omega
+  | append_singleton p x ih =>
+    cases v using List.reverseRecOn with
+    | nil =>
+      rw [encodeQTree_nil, encodeQTree_append_singleton] at h
+      omega
+    | append_singleton q y =>
+      rw [encodeQTree_append_singleton, encodeQTree_append_singleton] at h
+      have hpair : Nat.pair (OrderDual.ofDual x).val (encodeQTree p) =
+                   Nat.pair (OrderDual.ofDual y).val (encodeQTree q) := by omega
+      have ⟨h1, h2⟩ := Nat.pair_eq_pair.mp hpair
+      have hxy : x = y := OrderDual.ofDual.injective (PNat.eq h1)
+      rw [ih h2, hxy]
+
+private theorem nat_pair_lt_of_lt_left {a a' b : ℕ} (h : a < a') :
+    Nat.pair a b < Nat.pair a' b := by
+  unfold Nat.pair
+  split_ifs with h1 h2 h3
+  · omega
+  · have hmul : b * b ≤ a' * a' := Nat.mul_le_mul (by omega) (by omega)
+    omega
+  · omega
+  · have hmul : a * a ≤ a' * a' := Nat.mul_le_mul (by omega) (by omega)
+    omega
+
+private theorem nat_pair_ge_right (a b : ℕ) : b ≤ Nat.pair a b := by
+  unfold Nat.pair
+  split_ifs with h
+  · have hsq : b ≤ b * b := Nat.le_mul_self b
+    omega
+  · omega
+
+theorem encodeQTree_range_infinite : (Set.range encodeQTree).Infinite := by
+  apply Set.infinite_of_injective_forall_mem
+    (f := fun k : ℕ => encodeQTree [OrderDual.toDual ⟨k + 1, Nat.succ_pos k⟩])
+  · intro a b hab
+    have h1 := encodeQTree_injective hab
+    have h2 : (OrderDual.toDual (⟨a + 1, Nat.succ_pos a⟩ : ℕ+)) =
+              OrderDual.toDual (⟨b + 1, Nat.succ_pos b⟩ : ℕ+) := (List.cons.inj h1).1
+    have h3 := congrArg (fun z => (OrderDual.ofDual z).val) h2
+    simp only [OrderDual.ofDual_toDual] at h3
+    omega
+  · intro k
+    exact ⟨_, rfl⟩
+
+open scoped Classical in
+/-- Order-preserving bijection `ℕ ≃ QTree` induced by `encodeQTree`. -/
+noncomputable def qtreeEnum : ℕ ≃ QTree :=
+  { toFun := fun m => (Nat.nth_mem_of_infinite encodeQTree_range_infinite m).choose
+    invFun := fun u => Nat.count (· ∈ Set.range encodeQTree) (encodeQTree u)
+    left_inv := fun m => by
+      dsimp only
+      have hspec : encodeQTree (Nat.nth_mem_of_infinite encodeQTree_range_infinite m).choose =
+          Nat.nth (· ∈ Set.range encodeQTree) m :=
+        (Nat.nth_mem_of_infinite encodeQTree_range_infinite m).choose_spec
+      rw [hspec]
+      exact Nat.count_nth_of_infinite encodeQTree_range_infinite m
+    right_inv := fun u => by
+      dsimp only
+      apply encodeQTree_injective
+      have hspec : encodeQTree (Nat.nth_mem_of_infinite encodeQTree_range_infinite
+          (Nat.count (· ∈ Set.range encodeQTree) (encodeQTree u))).choose =
+          Nat.nth (· ∈ Set.range encodeQTree)
+            (Nat.count (· ∈ Set.range encodeQTree) (encodeQTree u)) :=
+        (Nat.nth_mem_of_infinite encodeQTree_range_infinite _).choose_spec
+      rw [hspec]
+      exact Nat.nth_count (p := (· ∈ Set.range encodeQTree)) ⟨u, rfl⟩ }
+
+/-- Concrete kernel-verified proof that `(QTree, qtreeTree2, qtreeEnum)` satisfies `Tree2Enum`. -/
+theorem qtreeTree2Enum : Tree2Enum qtreeTree2 qtreeEnum := by
+  classical
+  have hinv : ∀ u : QTree,
+      qtreeEnum.symm u = Nat.count (· ∈ Set.range encodeQTree) (encodeQTree u) := by
+    intro u
+    change Nat.count (· ∈ Set.range encodeQTree) (encodeQTree u) = _
+    rfl
+  constructor
+  · rintro p _ ⟨j, rfl⟩
+    rw [hinv p, hinv (p ++ [OrderDual.toDual j])]
+    have hlt : encodeQTree p < encodeQTree (p ++ [OrderDual.toDual j]) := by
+      rw [encodeQTree_append_singleton, OrderDual.ofDual_toDual]
+      have := nat_pair_ge_right j.val (encodeQTree p)
+      omega
+    exact Nat.count_strict_mono (p := (· ∈ Set.range encodeQTree)) ⟨p, rfl⟩ hlt
+  · rintro p _ ⟨j, rfl⟩
+    rw [hinv (p ++ [OrderDual.toDual j])]
+    have hidx : qtreeTree2.idx (p ++ [OrderDual.toDual j]) = j.val := by
+      simp [qtreeTree2]
+    rw [hidx]
+    -- Construct `j.val` distinct elements of `Set.range encodeQTree` strictly below `encodeQTree (p ++ [j])`
+    let f : ℕ → ℕ := fun k =>
+      if hk : k = 0 then encodeQTree p
+      else encodeQTree (p ++ [OrderDual.toDual ⟨k, Nat.pos_of_ne_zero hk⟩])
+    have hf_inj : Set.InjOn f (Finset.range j.val : Set ℕ) := by
+      intro a ha b hb hab
+      simp only [Finset.mem_coe, Finset.mem_range] at ha hb
+      by_cases ha0 : a = 0 <;> by_cases hb0 : b = 0
+      · omega
+      · simp only [f, ha0, hb0, ↓reduceDIte] at hab
+        have heq := encodeQTree_injective hab
+        have hlen := congrArg List.length heq
+        simp at hlen
+      · simp only [f, ha0, hb0, ↓reduceDIte] at hab
+        have heq := encodeQTree_injective hab
+        have hlen := congrArg List.length heq
+        simp at hlen
+      · simp only [f, ha0, hb0, ↓reduceDIte] at hab
+        have heq := encodeQTree_injective hab
+        have hlast := congrArg List.getLast? heq
+        simp only [List.getLast?_append_of_ne_nil _ (List.cons_ne_nil _ _),
+          List.getLast?_singleton, Option.some.injEq] at hlast
+        exact congrArg (fun z => (OrderDual.ofDual z).val) hlast
+    have hf_sub : (Finset.range j.val).image f ⊆
+        (Finset.range (encodeQTree (p ++ [OrderDual.toDual j]))).filter
+          (· ∈ Set.range encodeQTree) := by
+      intro m hm
+      rw [Finset.mem_image] at hm
+      obtain ⟨k, hk, rfl⟩ := hm
+      rw [Finset.mem_range] at hk
+      rw [Finset.mem_filter, Finset.mem_range]
+      by_cases hk0 : k = 0
+      · simp only [f, hk0, ↓reduceDIte]
+        refine ⟨?_, ⟨p, rfl⟩⟩
+        rw [encodeQTree_append_singleton, OrderDual.ofDual_toDual]
+        have := nat_pair_ge_right j.val (encodeQTree p)
+        omega
+      · simp only [f, hk0, ↓reduceDIte]
+        refine ⟨?_, ⟨_, rfl⟩⟩
+        rw [encodeQTree_append_singleton, encodeQTree_append_singleton]
+        show Nat.pair k (encodeQTree p) + 1 < Nat.pair j.val (encodeQTree p) + 1
+        have := nat_pair_lt_of_lt_left (b := encodeQTree p) hk
+        omega
+    rw [Nat.count_eq_card_filter_range]
+    have hcard : ((Finset.range j.val).image f).card = j.val := by
+      rw [Finset.card_image_of_injOn hf_inj, Finset.card_range]
+    exact hcard ▸ Finset.card_le_card hf_sub
+
+end ConcreteQTreeEnum
 
 end Research.ChenWangSec32
