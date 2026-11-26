@@ -2879,4 +2879,179 @@ theorem Tinf_iff_every_M3_point_hasSigmaCPOpenLocalBase :
           rw [hEq]; simp
       · intro U _ _; exact ⟨0, ∅, mem_singleton _, empty_subset U⟩
 
+/-- Helper: Every `T3Space` with a countable open basis is an `M₁`-space. -/
+theorem M1_of_countable_basis (X : Type) [TopologicalSpace X] [T3Space X]
+    (𝓑 : Set (Set X)) (h𝓑_basis : IsTopologicalBasis 𝓑) (h𝓑_cnt : 𝓑.Countable) :
+    MSpace.IsM1 X := by
+  classical
+  rcases 𝓑.eq_empty_or_nonempty with rfl | hne
+  · refine ⟨inferInstance, ∅, h𝓑_basis, fun _ => ∅, fun _ 𝓖 h𝓖 => ?_, by simp⟩
+    have hG : 𝓖 = ∅ := subset_empty_iff.mp h𝓖
+    subst hG; simp
+  · obtain ⟨f, hf⟩ := h𝓑_cnt.exists_eq_range hne
+    refine ⟨inferInstance, 𝓑, h𝓑_basis, fun n => {f n}, ?_, ?_⟩
+    · intro n 𝓖 h𝓖
+      rcases 𝓖.eq_empty_or_nonempty with rfl | ⟨S, hS⟩
+      · simp
+      · have hEq : 𝓖 = {f n} := by
+          ext T
+          constructor
+          · intro hT; exact h𝓖 hT
+          · intro hT
+            rw [mem_singleton_iff] at hT
+            have hS' := h𝓖 hS
+            rw [mem_singleton_iff] at hS'
+            exact hT.symm ▸ hS'.symm ▸ hS
+        rw [hEq, sUnion_singleton, image_singleton, sUnion_singleton]
+    · rw [hf]
+      ext S
+      simp [Set.mem_range]
+
+/-- Theorem 31: Every compact `M₃`-space admits a countable open basis and is
+therefore an `M₁`-space. -/
+theorem compact_M3_is_M1 (X : Type) [TopologicalSpace X] [CompactSpace X]
+    (hM3 : MSpace.IsM3 X) :
+    MSpace.IsM1 X := by
+  classical
+  have : T3Space X := hM3.1
+  have hstrat : MSpace.IsStratifiable X := (Proofs.L_0004.main X).mp hM3
+  have : NormalSpace X := (Proofs.L_0006.main X hstrat).1
+  obtain ⟨𝓕, h𝓕_closed, h𝓕_disc, h𝓕_net⟩ := M3_is_sigma_space X hM3
+  -- Each discrete family 𝓕 m in a compact space has only finitely many nonempty members
+  have h𝓕_fin : ∀ m, { H ∈ 𝓕 m | H.Nonempty }.Finite := by
+    intro m
+    choose O hO_open hO_mem hO_uniq using h𝓕_disc m
+    have hcov : (univ : Set X) ⊆ ⋃ y : X, O y := fun y _ => mem_iUnion.mpr ⟨y, hO_mem y⟩
+    obtain ⟨s, hs⟩ := isCompact_univ.elim_finite_subcover O hO_open hcov
+    -- Map each nonempty H ∈ 𝓕 m to some y ∈ s whose O y meets H; this map is injective
+    have hpick : ∀ H : { H ∈ 𝓕 m | H.Nonempty }, ∃ y ∈ s, (O y ∩ H.1).Nonempty := by
+      intro H
+      obtain ⟨w, hwH⟩ := H.2.2
+      have hw : w ∈ ⋃ y ∈ s, O y := hs (mem_univ w)
+      obtain ⟨y, hys, hwy⟩ := mem_iUnion₂.mp hw
+      exact ⟨y, hys, w, hwy, hwH⟩
+    choose y_of hy_mem hy_hit using hpick
+    have hinj : Function.Injective y_of := by
+      intro H₁ H₂ hEq
+      have h1 := hy_hit H₁
+      have h2 := hy_hit H₂
+      rw [hEq] at h1
+      exact Subtype.ext (hO_uniq (y_of H₂) H₁.1 H₁.2.1 H₂.1 H₂.2.1 h1 h2)
+    have hfin_sub : Finite { H ∈ 𝓕 m | H.Nonempty } :=
+      Finite.of_injective (fun H => (⟨y_of H, hy_mem H⟩ : ↥(s : Set X)))
+        (fun H₁ H₂ h => hinj (congrArg Subtype.val h))
+    exact Set.toFinite _
+  -- Collect all nonempty members into a countable closed network 𝓝₀
+  let 𝓝₀ : Set (Set X) := ⋃ m, { H ∈ 𝓕 m | H.Nonempty }
+  have h𝓝_cnt : 𝓝₀.Countable := Set.countable_iUnion fun m => (h𝓕_fin m).countable
+  have h𝓝_closed : ∀ H ∈ 𝓝₀, IsClosed H := by
+    intro H hH
+    obtain ⟨m, hHm, _⟩ := mem_iUnion.mp hH
+    exact h𝓕_closed m H hHm
+  -- For each disjoint pair (H, K) ∈ 𝓝₀ × 𝓝₀, pick disjoint open separating sets U, V
+  let Pairs : Set (Set X × Set X) := { p ∈ 𝓝₀ ×ˢ 𝓝₀ | Disjoint p.1 p.2 }
+  have hPairs_cnt : Pairs.Countable := (h𝓝_cnt.prod h𝓝_cnt).mono fun _ h => h.1
+  have hsep : ∀ p : Pairs, ∃ U V : Set X, IsOpen U ∧ IsOpen V ∧
+      p.1.1 ⊆ U ∧ p.1.2 ⊆ V ∧ Disjoint U V := fun p =>
+    normal_separation (h𝓝_closed p.1.1 p.2.1.1) (h𝓝_closed p.1.2 p.2.1.2) p.2.2
+  choose U_of V_of hU_open hV_open hU_sub hV_sub hUV_disj using hsep
+  -- Basis 𝓑 = finite intersections of {U_of p | p : Pairs}
+  let 𝓢 : Set (Set X) := Set.range U_of
+  have h𝓢_cnt : 𝓢.Countable := by
+    have : Countable Pairs := hPairs_cnt.to_subtype
+    exact Set.countable_range U_of
+  let 𝓑 : Set (Set X) := { B : Set X | ∃ t : Finset (Set X), (↑t : Set (Set X)) ⊆ 𝓢 ∧ B = ⋂₀ (↑t : Set (Set X)) }
+  have h𝓑_cnt : 𝓑.Countable := by
+    have : Countable 𝓢 := h𝓢_cnt.to_subtype
+    have hfin_cnt : (Set.range (fun t : Finset 𝓢 => ⋂₀ (Subtype.val '' (t : Set 𝓢)))).Countable :=
+      Set.countable_range _
+    refine hfin_cnt.mono ?_
+    rintro B ⟨t, ht𝓢, rfl⟩
+    let t' : Finset ↥𝓢 := t.attach.map
+      ⟨fun (s : ↥t) => (⟨s.1, ht𝓢 s.2⟩ : ↥𝓢),
+       fun a b h => Subtype.ext (congrArg (Subtype.val : ↥𝓢 → Set X) h)⟩
+    refine ⟨t', ?_⟩
+    have hEq : Subtype.val '' (t' : Set ↥𝓢) = (t : Set (Set X)) := by
+      ext S
+      simp only [mem_image, Finset.mem_coe, Finset.mem_map, Finset.mem_attach, true_and,
+        Subtype.exists, t']
+      constructor
+      · rintro ⟨S', _, ⟨A, hAt, hAeq⟩, rfl⟩
+        have h1 : A = S' := congrArg Subtype.val hAeq
+        exact h1 ▸ hAt
+      · intro hSt
+        exact ⟨S, ht𝓢 hSt, ⟨S, hSt, rfl⟩, rfl⟩
+    dsimp only
+    rw [hEq]
+  refine M1_of_countable_basis X 𝓑 ?_ h𝓑_cnt
+  have hopen : ∀ B ∈ 𝓑, IsOpen B := by
+    rintro B ⟨t, ht𝓢, rfl⟩
+    refine t.finite_toSet.isOpen_sInter fun S hS => ?_
+    obtain ⟨p, rfl⟩ := ht𝓢 hS
+    exact hU_open p
+  refine isTopologicalBasis_of_isOpen_of_nhds hopen ?_
+  intro x W hxW hW_open
+  -- For each y ∈ Wᶜ, pick disjoint H y, K y ∈ 𝓝 separating x and y
+  have hy_sep : ∀ y ∈ Wᶜ, ∃ p : Pairs, x ∈ U_of p ∧ y ∈ V_of p := by
+    intro y hyW
+    have hxy : x ≠ y := fun h => hyW (h ▸ hxW)
+    obtain ⟨O₁, O₂, hO₁, hO₂, hxO₁, hyO₂, hO₁₂⟩ := t2_separation hxy
+    obtain ⟨m₁, H, hHm₁, hxH, hHO₁⟩ := h𝓕_net x O₁ hO₁ hxO₁
+    obtain ⟨m₂, K, hKm₂, hyK, hKO₂⟩ := h𝓕_net y O₂ hO₂ hyO₂
+    have hH𝓝 : H ∈ 𝓝₀ := mem_iUnion.mpr ⟨m₁, hHm₁, x, hxH⟩
+    have hK𝓝 : K ∈ 𝓝₀ := mem_iUnion.mpr ⟨m₂, hKm₂, y, hyK⟩
+    have hHK : Disjoint H K := hO₁₂.mono hHO₁ hKO₂
+    let p : Pairs := ⟨(H, K), ⟨hH𝓝, hK𝓝⟩, hHK⟩
+    exact ⟨p, hU_sub p hxH, hV_sub p hyK⟩
+  have hWc_comp : IsCompact (Wᶜ : Set X) := hW_open.isClosed_compl.isCompact
+  have hcov : (Wᶜ : Set X) ⊆ ⋃ (p : { p : Pairs // x ∈ U_of p }), V_of p.1 := by
+    intro y hyW
+    obtain ⟨p, hxp, hyp⟩ := hy_sep y hyW
+    exact mem_iUnion.mpr ⟨⟨p, hxp⟩, hyp⟩
+  obtain ⟨t, ht⟩ := hWc_comp.elim_finite_subcover
+    (fun p : { p : Pairs // x ∈ U_of p } => V_of p.1) (fun p => hV_open p.1) hcov
+  let tU : Finset (Set X) := t.image (fun p => U_of p.1)
+  refine ⟨⋂₀ (↑tU : Set (Set X)), ⟨tU, ?_, rfl⟩, ?_, ?_⟩
+  · intro S hS
+    obtain ⟨p, _, rfl⟩ := Finset.mem_image.mp (Finset.mem_coe.mp hS)
+    exact ⟨p.1, rfl⟩
+  · intro S hS
+    obtain ⟨p, _, rfl⟩ := Finset.mem_image.mp (Finset.mem_coe.mp hS)
+    exact p.2
+  · intro z hz
+    by_contra hzW
+    have hz_cov : z ∈ ⋃ p ∈ t, V_of p.1 := ht hzW
+    obtain ⟨p, hpt, hzp⟩ := mem_iUnion₂.mp hz_cov
+    have hzu : z ∈ U_of p.1 := hz (U_of p.1) (Finset.mem_coe.mpr (Finset.mem_image_of_mem _ hpt))
+    exact Set.disjoint_left.mp (hUV_disj p.1) hzu hzp
+
+/-- Theorem 32: Every locally compact `M₃`-space (every point has a compact
+neighborhood) is an `M₁`-space. -/
+theorem locally_compact_M3_is_M1 (X : Type) [TopologicalSpace X]
+    (hM3 : MSpace.IsM3 X)
+    (hlc : ∀ x : X, ∃ K : Set X, IsCompact K ∧ K ∈ 𝓝 x) :
+    MSpace.IsM1 X := by
+  have : T3Space X := hM3.1
+  have hpara : ParacompactSpace X :=
+    Proofs.L_0005.main X ⟨inferInstance, Proofs.L_0010.main X hM3⟩
+  refine M1_of_locally_M1 X fun x => ?_
+  obtain ⟨K, hK_comp, hK_nhds⟩ := hlc x
+  obtain ⟨U, hUK, hU_open, hxU⟩ := mem_nhds_iff.mp hK_nhds
+  have : CompactSpace ↥K := isCompact_iff_compactSpace.mp hK_comp
+  have hK_M3 : MSpace.IsM3 ↥K := M3_subspace X hM3 K
+  have hK_M1 : MSpace.IsM1 ↥K := compact_M3_is_M1 ↥K hK_M3
+  let U' : Set ↥K := Subtype.val ⁻¹' U
+  have hU'_open : IsOpen U' := hU_open.preimage continuous_subtype_val
+  have hU'_M1 : MSpace.IsM1 ↥U' := M1_open_subspace ↥K hK_M1 U' hU'_open
+  -- Homeomorphism ↥U' ≃ₜ ↥U transfers IsM1
+  let e : ↥U' ≃ₜ ↥U :=
+    { toFun := fun z => ⟨z.1.1, z.2⟩
+      invFun := fun z => ⟨⟨z.1, hUK z.2⟩, z.2⟩
+      left_inv := fun ⟨⟨_, _⟩, _⟩ => rfl
+      right_inv := fun ⟨_, _⟩ => rfl
+      continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+      continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _ }
+  refine ⟨U, hU_open, hxU, ?_⟩
+  exact M1_of_isClosedMap_isOpenMap_surjective hU'_M1 e.continuous e.isClosedMap e.isOpenMap e.surjective
+
 end Research.M3M1

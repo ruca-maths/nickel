@@ -50,6 +50,7 @@
 31. **`Tinf_of_every_M3_point_hasCPOpenLocalBase`（`Tinf` の点局所化帰着）**: 任意の M₃ 空間の各点が CP 開近傍基を持つならば `MSpace.Goals.Tinf_M3_imp_M1` が成り立つ（閉集合縮約商 `Collapse X F` + Borges 閉写像定理 + Gruenhage–Ito 特徴付けの合成）。
 32. **`M3_sigma`**: M₃ 空間の任意直和 $\bigoplus_{i \in \iota} X_i$ は M₃ 空間である。
 33. **`Tinf_iff_every_M3_point_hasSigmaCPOpenLocalBase`（`Tinf` の無条件点局所同値定理）**: `MSpace.Goals.Tinf_M3_imp_M1` は「任意の M₃ 空間の各点が $\sigma$-CP 開近傍基を持つ」ことと完全に同値である。
+34. **`compact_M3_is_M1` / `locally_compact_M3_is_M1`**: 任意のコンパクト M₃ 空間は第二可算かつ M₁ 空間であり、さらに任意の局所コンパクト M₃ 空間は M₁ 空間である。
 
 ## 2. 棄却された単純構成と反例
 
