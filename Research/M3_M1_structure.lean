@@ -1199,4 +1199,204 @@ theorem M3_is_M1_of_countable_closed_cover_with_cp_outer_bases
         exact hhit ⟨A, z, hzN, subset_closure (hVO hzV)⟩
     · exact sUnion_subset (by rintro _ ⟨V, hV, rfl⟩; exact closure_mono (subset_sUnion_of_mem hV))
 
+/-- Helper (Ceder 1961): The product `{B ×ˢ C | B ∈ 𝓑, C ∈ 𝓒}` of two
+closure-preserving families is closure-preserving in `X × Y`. -/
+theorem closurePreserving_prod {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y]
+    {𝓑 : Set (Set X)} {𝓒 : Set (Set Y)}
+    (h𝓑 : MSpace.ClosurePreserving 𝓑) (h𝓒 : MSpace.ClosurePreserving 𝓒) :
+    MSpace.ClosurePreserving { S : Set (X × Y) | ∃ B ∈ 𝓑, ∃ C ∈ 𝓒, S = B ×ˢ C } := by
+  intro 𝓖 h𝓖
+  apply Subset.antisymm
+  · rintro ⟨x, y⟩ hxy
+    let 𝓟 : Set (Set X × Set Y) :=
+      { p : Set X × Set Y | p.1 ∈ 𝓑 ∧ p.2 ∈ 𝓒 ∧ p.1 ×ˢ p.2 ∈ 𝓖 }
+    let 𝓟_in : Set (Set X × Set Y) := { p ∈ 𝓟 | x ∈ closure p.1 }
+    let 𝓟_out : Set (Set X × Set Y) := { p ∈ 𝓟 | x ∉ closure p.1 }
+    let 𝓑_out : Set (Set X) := Prod.fst '' 𝓟_out
+    have h𝓑_out_sub : 𝓑_out ⊆ 𝓑 := by rintro _ ⟨p, hp, rfl⟩; exact hp.1.1
+    have hx_not_cl : x ∉ closure (⋃₀ 𝓑_out) := by
+      rw [h𝓑 𝓑_out h𝓑_out_sub]
+      rintro ⟨_, ⟨B, ⟨p, hp, rfl⟩, rfl⟩, hxB⟩
+      exact hp.2 hxB
+    let Ux : Set X := (closure (⋃₀ 𝓑_out))ᶜ
+    have hUx_open : IsOpen Ux := isClosed_closure.isOpen_compl
+    have hxUx : x ∈ Ux := hx_not_cl
+    let 𝓒_in : Set (Set Y) := Prod.snd '' 𝓟_in
+    have h𝓒_in_sub : 𝓒_in ⊆ 𝓒 := by rintro _ ⟨p, hp, rfl⟩; exact hp.1.2.1
+    have hy_cl : y ∈ closure (⋃₀ 𝓒_in) := by
+      rw [mem_closure_iff]
+      intro V hV hyV
+      have hopen : IsOpen (Ux ×ˢ V) := hUx_open.prod hV
+      obtain ⟨⟨x', y'⟩, ⟨hx'Ux, hy'V⟩, hzG⟩ :=
+        mem_closure_iff.mp hxy (Ux ×ˢ V) hopen ⟨hxUx, hyV⟩
+      obtain ⟨S, hS𝓖, hx'y'S⟩ := hzG
+      obtain ⟨B, hB, C, hC, rfl⟩ := h𝓖 hS𝓖
+      have hp_mem : (B, C) ∈ 𝓟 := ⟨hB, hC, hS𝓖⟩
+      have hxB : x ∈ closure B := by
+        by_contra hnot
+        have hBout : B ∈ 𝓑_out := ⟨(B, C), ⟨hp_mem, hnot⟩, rfl⟩
+        exact hx'Ux (subset_closure ⟨B, hBout, hx'y'S.1⟩)
+      exact ⟨y', hy'V, C, ⟨(B, C), ⟨hp_mem, hxB⟩, rfl⟩, hx'y'S.2⟩
+    rw [h𝓒 𝓒_in h𝓒_in_sub] at hy_cl
+    obtain ⟨_, ⟨C, ⟨p, hp, rfl⟩, rfl⟩, hyC⟩ := hy_cl
+    refine ⟨closure (p.1 ×ˢ p.2), mem_image_of_mem _ hp.1.2.2, ?_⟩
+    rw [closure_prod_eq]
+    exact ⟨hp.2, hyC⟩
+  · exact sUnion_subset (by rintro _ ⟨S, hS, rfl⟩; exact closure_mono (subset_sUnion_of_mem hS))
+
+/-- Theorem 13 (Ceder 1961): The product of two `M₁`-spaces is an `M₁`-space. -/
+theorem M1_prod (X Y : Type) [TopologicalSpace X] [TopologicalSpace Y]
+    (hX : MSpace.IsM1 X) (hY : MSpace.IsM1 Y) :
+    MSpace.IsM1 (X × Y) := by
+  have : T3Space X := hX.1
+  have : T3Space Y := hY.1
+  obtain ⟨_, 𝓑, h𝓑_basis, 𝓑', h𝓑'_cp, h𝓑_eq⟩ := hX
+  obtain ⟨_, 𝓒, h𝓒_basis, 𝓒', h𝓒'_cp, h𝓒_eq⟩ := hY
+  let 𝓓' : ℕ → Set (Set (X × Y)) := fun r =>
+    { S : Set (X × Y) | ∃ B ∈ 𝓑' (Nat.unpair r).1, ∃ C ∈ 𝓒' (Nat.unpair r).2, S = B ×ˢ C }
+  refine ⟨inferInstance, ⋃ r, 𝓓' r, ?_, 𝓓', ?_, rfl⟩
+  · have hopen : ∀ S ∈ ⋃ r, 𝓓' r, IsOpen S := by
+      intro S hS
+      obtain ⟨r, B, hB, C, hC, rfl⟩ := mem_iUnion.mp hS
+      have hBo : IsOpen B := h𝓑_basis.isOpen (h𝓑_eq.symm ▸ mem_iUnion.mpr ⟨_, hB⟩)
+      have hCo : IsOpen C := h𝓒_basis.isOpen (h𝓒_eq.symm ▸ mem_iUnion.mpr ⟨_, hC⟩)
+      exact hBo.prod hCo
+    refine isTopologicalBasis_of_isOpen_of_nhds hopen ?_
+    rintro ⟨x, y⟩ W hxyW hW_open
+    obtain ⟨U, V, hU_open, hV_open, hxU, hyV, hUV⟩ :=
+      isOpen_prod_iff.mp hW_open x y hxyW
+    obtain ⟨B, hB𝓑, hxB, hBU⟩ := h𝓑_basis.exists_subset_of_mem_open hxU hU_open
+    obtain ⟨C, hC𝓒, hyC, hCV⟩ := h𝓒_basis.exists_subset_of_mem_open hyV hV_open
+    rw [h𝓑_eq, mem_iUnion] at hB𝓑
+    rw [h𝓒_eq, mem_iUnion] at hC𝓒
+    obtain ⟨m, hBm⟩ := hB𝓑
+    obtain ⟨n, hCn⟩ := hC𝓒
+    refine ⟨B ×ˢ C, mem_iUnion.mpr ⟨Nat.pair m n, ?_⟩, ⟨hxB, hyC⟩,
+      (prod_mono hBU hCV).trans hUV⟩
+    dsimp only [𝓓']; rw [Nat.unpair_pair]
+    exact ⟨B, hBm, C, hCn, rfl⟩
+  · intro r
+    exact closurePreserving_prod (h𝓑'_cp (Nat.unpair r).1) (h𝓒'_cp (Nat.unpair r).2)
+
+/-- Theorem 14: Closure-preserving open neighborhood bases are preserved under
+finite products. -/
+theorem hasCPOpenLocalBase_prod {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y]
+    {x : X} {y : Y} (hx : HasCPOpenLocalBase x) (hy : HasCPOpenLocalBase y) :
+    HasCPOpenLocalBase (x, y) := by
+  obtain ⟨𝓤, h𝓤_open, h𝓤_base, h𝓤_cp⟩ := hx
+  obtain ⟨𝓥, h𝓥_open, h𝓥_base, h𝓥_cp⟩ := hy
+  refine ⟨{ S : Set (X × Y) | ∃ U ∈ 𝓤, ∃ V ∈ 𝓥, S = U ×ˢ V }, ?_, ?_,
+    closurePreserving_prod h𝓤_cp h𝓥_cp⟩
+  · rintro _ ⟨U, hU, V, hV, rfl⟩
+    exact ⟨(h𝓤_open U hU).1.prod (h𝓥_open V hV).1, (h𝓤_open U hU).2, (h𝓥_open V hV).2⟩
+  · intro W hW hxyW
+    obtain ⟨U₀, V₀, hU₀, hV₀, hxU₀, hyV₀, hUV₀⟩ := isOpen_prod_iff.mp hW x y hxyW
+    obtain ⟨U, hU, hUU₀⟩ := h𝓤_base U₀ hU₀ hxU₀
+    obtain ⟨V, hV, hVV₀⟩ := h𝓥_base V₀ hV₀ hyV₀
+    exact ⟨U ×ˢ V, ⟨U, hU, V, hV, rfl⟩, (prod_mono hUU₀ hVV₀).trans hUV₀⟩
+
+/-- Theorem 15 (Countable Sum Theorem for `Ind = 0` on `σ`-closed-discrete normal spaces):
+Every normal space `X` that is a countable union of closed discrete subsets `D n`
+is strongly zero-dimensional: every closed `A` and open `U ⊇ A` are separated by
+a clopen set `C` with `A ⊆ C ⊆ U`. -/
+theorem sigma_closed_discrete_normal_is_strongly_zero_dim
+    (X : Type) [TopologicalSpace X] [NormalSpace X]
+    (D : ℕ → Set X) (hD_disc : ∀ n, ∀ S ⊆ D n, IsClosed S)
+    (hD_cover : ⋃ n, D n = univ)
+    (A U : Set X) (hA : IsClosed A) (hU : IsOpen U) (hAU : A ⊆ U) :
+    ∃ C : Set X, IsClopen C ∧ A ⊆ C ∧ C ⊆ U := by
+  classical
+  -- Inductively build pairs of disjoint closed sets (A n, B n) with separating open (G n, H n)
+  have hstep : ∀ (n : ℕ) (P Q : Set X), IsClosed P → IsClosed Q → Disjoint P Q →
+      ∃ G H : Set X, IsOpen G ∧ IsOpen H ∧
+        P ∪ (D n \ Q) ⊆ G ∧ Q ∪ (D n ∩ Q) ⊆ H ∧ Disjoint (closure G) (closure H) := by
+    intro n P Q hP hQ hPQ
+    have h1 : IsClosed (P ∪ (D n \ Q)) := hP.union (hD_disc n (D n \ Q) sdiff_subset)
+    have h2 : IsClosed (Q ∪ (D n ∩ Q)) := hQ.union (hD_disc n (D n ∩ Q) inter_subset_left)
+    have hdisj : Disjoint (P ∪ (D n \ Q)) (Q ∪ (D n ∩ Q)) := by
+      rw [Set.disjoint_left]
+      rintro z (hzP | ⟨_, hzQ⟩) (hzQ' | ⟨_, hzQ'⟩)
+      · exact Set.disjoint_left.mp hPQ hzP hzQ'
+      · exact Set.disjoint_left.mp hPQ hzP hzQ'
+      · exact hzQ hzQ'
+      · exact hzQ hzQ'
+    obtain ⟨G₁, H₁, hG₁, hH₁, hsub1, hsub2, hGH₁⟩ := normal_separation h1 h2 hdisj
+    -- Shrink to get disjoint closures via normality
+    obtain ⟨G, G', hG, hG', hsubG, hsubG', hGG'⟩ :=
+      normal_separation h1 hG₁.isClosed_compl (disjoint_compl_right_iff.mpr hsub1)
+    have hclG_sub : closure G ⊆ G₁ :=
+      (hG'.isClosed_compl.closure_subset_iff.mpr (hGG'.subset_compl_right)).trans
+        (compl_subset_comm.mp hsubG')
+    obtain ⟨H, H', hH, hH', hsubH, hsubH', hHH'⟩ :=
+      normal_separation h2 hH₁.isClosed_compl (disjoint_compl_right_iff.mpr hsub2)
+    have hclH_sub : closure H ⊆ H₁ :=
+      (hH'.isClosed_compl.closure_subset_iff.mpr (hHH'.subset_compl_right)).trans
+        (compl_subset_comm.mp hsubH')
+    exact ⟨G, H, hG, hH, hsubG, hsubH, hGH₁.mono hclG_sub hclH_sub⟩
+  -- Define the inductive sequence of states
+  let State : Type := { s : Set X × Set X // IsClosed s.1 ∧ IsClosed s.2 ∧ Disjoint s.1 s.2 }
+  let nextState : ℕ → State → State := fun n s =>
+    let h := hstep n s.1.1 s.1.2 s.2.1 s.2.2.1 s.2.2.2
+    ⟨(closure h.choose, closure h.choose_spec.choose),
+      isClosed_closure, isClosed_closure, h.choose_spec.choose_spec.2.2.2.2⟩
+  let st : ℕ → State := fun n =>
+    Nat.rec ⟨(A, Uᶜ), hA, hU.isClosed_compl, disjoint_compl_right_iff.mpr hAU⟩ nextState n
+  let G : ℕ → Set X := fun n => (hstep n (st n).1.1 (st n).1.2 (st n).2.1 (st n).2.2.1 (st n).2.2.2).choose
+  let H : ℕ → Set X := fun n =>
+    (hstep n (st n).1.1 (st n).1.2 (st n).2.1 (st n).2.2.1 (st n).2.2.2).choose_spec.choose
+  have hspec : ∀ n, IsOpen (G n) ∧ IsOpen (H n) ∧
+      (st n).1.1 ∪ (D n \ (st n).1.2) ⊆ G n ∧
+      (st n).1.2 ∪ (D n ∩ (st n).1.2) ⊆ H n ∧
+      Disjoint (closure (G n)) (closure (H n)) := fun n =>
+    (hstep n (st n).1.1 (st n).1.2 (st n).2.1 (st n).2.2.1 (st n).2.2.2).choose_spec.choose_spec
+  have hst_succ_1 : ∀ n, (st (n + 1)).1.1 = closure (G n) := fun _ => rfl
+  have hst_succ_2 : ∀ n, (st (n + 1)).1.2 = closure (H n) := fun _ => rfl
+  have hG_mono : ∀ m n, m ≤ n → G m ⊆ G n := by
+    intro m n hmn
+    induction hmn with
+    | refl => exact Subset.rfl
+    | @step k _ ih =>
+      exact ih.trans (subset_closure.trans ((hst_succ_1 k).symm ▸ subset_union_left.trans (hspec (k + 1)).2.2.1))
+  have hH_mono : ∀ m n, m ≤ n → H m ⊆ H n := by
+    intro m n hmn
+    induction hmn with
+    | refl => exact Subset.rfl
+    | @step k _ ih =>
+      exact ih.trans (subset_closure.trans ((hst_succ_2 k).symm ▸ subset_union_left.trans (hspec (k + 1)).2.2.2.1))
+  let C : Set X := ⋃ n, G n
+  let C' : Set X := ⋃ n, H n
+  have hC_open : IsOpen C := isOpen_iUnion fun n => (hspec n).1
+  have hC'_open : IsOpen C' := isOpen_iUnion fun n => (hspec n).2.1
+  have hCC'_disj : Disjoint C C' := by
+    rw [Set.disjoint_left]
+    intro z hzC hzC'
+    obtain ⟨m, hzm⟩ := mem_iUnion.mp hzC
+    obtain ⟨n, hzn⟩ := mem_iUnion.mp hzC'
+    have hzm' : z ∈ G (max m n) := hG_mono m (max m n) (le_max_left m n) hzm
+    have hzn' : z ∈ H (max m n) := hH_mono n (max m n) (le_max_right m n) hzn
+    exact Set.disjoint_left.mp (hspec (max m n)).2.2.2.2 (subset_closure hzm') (subset_closure hzn')
+  have hCC'_cover : C ∪ C' = univ := by
+    refine eq_univ_of_forall fun z => ?_
+    have hzD : z ∈ ⋃ n, D n := hD_cover.symm ▸ mem_univ z
+    obtain ⟨n, hzn⟩ := mem_iUnion.mp hzD
+    by_cases hQ : z ∈ (st n).1.2
+    · exact Or.inr (mem_iUnion.mpr ⟨n, (hspec n).2.2.2.1 (Or.inr ⟨hzn, hQ⟩)⟩)
+    · exact Or.inl (mem_iUnion.mpr ⟨n, (hspec n).2.2.1 (Or.inr ⟨hzn, hQ⟩)⟩)
+  have hC_eq_compl : C = C'ᶜ := by
+    ext z
+    constructor
+    · intro hzC hzC'; exact Set.disjoint_left.mp hCC'_disj hzC hzC'
+    · intro hznot
+      have h := hCC'_cover.symm ▸ mem_univ z
+      rcases h with hzC | hzC'
+      · exact hzC
+      · exact (hznot hzC').elim
+  refine ⟨C, ⟨hC_eq_compl ▸ hC'_open.isClosed_compl, hC_open⟩, ?_, ?_⟩
+  · intro z hzA
+    exact mem_iUnion.mpr ⟨0, (hspec 0).2.2.1 (Or.inl hzA)⟩
+  · intro z hzC
+    by_contra hznotU
+    have hzC' : z ∈ C' := mem_iUnion.mpr ⟨0, (hspec 0).2.2.2.1 (Or.inl hznotU)⟩
+    exact Set.disjoint_left.mp hCC'_disj hzC hzC'
+
 end Research.M3M1
