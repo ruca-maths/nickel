@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0011`）に向けた **Lean 4 カーネル検証済みモジュール 14 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0011`）に向けた **Lean 4 カーネル検証済みモジュール 15 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -73,3 +73,9 @@
 - **`closurePreserving_iff_sUnion_isClosed_of_clopen` / `isM1_of_clopen_basis_sUnion_closed`**: 開閉集合族の closure-preserving 性が「任意部分和が閉」と同値であり、$\sigma$-部分和閉な開閉開基を持つ $T_1$ 空間は自動的に $T_3$ かつ $M_1$。
 - **`isM1_of_countable_clopen_M1_cover` / `isM1_of_clopen_shells_and_hasCPOuterBase`**: 可算個の開閉 $M_1$ 部分空間で覆われる $T_3$ 空間は $M_1$。特に開閉殻 `clopenShell W n`（$W_0^c, W_n \setminus W_{n+1}$）がすべて $M_1$ で $y_0$ が `HasCPOuterBase y₀` を持てば全体が $M_1$。
 - **`L0031_or_shell_not_isM1`**: 開閉 $G_\delta$ 点 $y_0$ を持つ非 $M_1$ stratifiable 空間は、$(Y, y_0)$ 自身が `Specs.L_0031.stmt` の証人となるか、ある開閉殻 `clopenShell W n` が既に非 $M_1$ であるかの二分法を満たす。
+
+## 14. [Stratifiable_Sigma_And_Wedge.lean](Stratifiable_Sigma_And_Wedge.lean)（任意濃度直和 `Sigma` および基点付きウェッジ `Wedge` の永続性）
+- **`isStratifiable_sigma` / `isM1_sigma`**: 任意濃度の直和 $\Sigma_{i \in \iota} X_i$ は `IsStratifiable` および `IsM1` を保存。
+- **`Wedge X x₀` / `wedge_isStratifiable`**: 任意濃度 $\iota$（可算・非可算を問わず）の基点付きウェッジ（一般化扇 $S_\omega, S_{\omega_1}, S_{\mathfrak{c}}$ を含む）が常に stratifiable であることを証明。
+- **`wedge_hasCPOuterBase_iff`**: `HasCPOuterBase (none : Wedge X x₀) ↔ ∀ i, HasCPOuterBase (x₀ i)`。
+- **`wedge_isM1_of_isM1_and_hasCPOuterBase`**: 各枝が $M_1$ で基点が CP 開外基を持てば、任意濃度のウェッジ全体が $M_1$（よって任意濃度の点列扇 $S_\kappa$ はすべて $M_1$）。
