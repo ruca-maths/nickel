@@ -26,12 +26,12 @@ class Git:
         self.base = base
 
     def run(self, *args: str, check: bool = True, env: dict | None = None,
-            input: bytes | None = None) -> str:
+            input: bytes | None = None, timeout: float | None = None) -> str:
         e = dict(os.environ)
         if env:
             e.update(env)
         p = subprocess.run(["git", *args], cwd=self.root, env=e, input=input,
-                           capture_output=True)
+                           capture_output=True, timeout=timeout)
         out = p.stdout.decode("utf-8", "replace").strip()
         if check and p.returncode != 0:
             raise GitError(f"git {' '.join(args)} に失敗: {p.stderr.decode('utf-8', 'replace').strip()}")

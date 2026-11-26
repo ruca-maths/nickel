@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 import time
 from pathlib import Path
@@ -96,10 +97,42 @@ def render_md(desk, g: dict) -> str:
     return "\n".join(L) + "\n"
 
 
-def build_site(desk, g: dict) -> dict:
-    """公開用の進捗ページ（index.html）が読むデータ。AI の文章は短く切って載せる。"""
-    import re
+def remote_activity(git, ttl: float, prefix: str | None = None) -> dict:
+    """親機が fetch した確保・提出ブランチから子機の担当を読む。"""
+    now = time.time()
+    prefix = prefix or f"refs/remotes/{git.remote}/"
+    refs = git.run("for-each-ref", "--format=%(refname)%09%(committerdate:unix)%09%(subject)",
+                   prefix + "claim", prefix + "proof")
+    submitted = []
+    claims = []
+    for line in refs.splitlines():
+        ref, stamp, subject = line.split("\t", 2)
+        branch = ref.removeprefix(prefix)
+        proof = re.fullmatch(r"proof/([LN])_([0-9]+)-([^/]+)", branch)
+        if proof:
+            kind, number, agent = proof.groups()
+            submitted.append({"agent": agent, "node": f"L_{number}",
+                              "task": "prove" if kind == "L" else "refute", "branch": branch})
+            continue
+        claim = re.fullmatch(r"claim/((prove|refute)-(L_[0-9]+))", branch)
+        if claim:
+            name, task, node = claim.groups()
+            owner = re.fullmatch(rf"claim {name} by (\S+) at [0-9]+", subject)
+            expires = int(stamp) + ttl
+            if owner and expires > now:
+                claims.append({"agent": owner[1], "node": node, "task": task, "expires_at": expires})
+    pending = {(row["task"], row["node"]) for row in submitted}
+    return {"observed_at": now, "submitted": submitted,
+            "claims": [row for row in claims if (row["task"], row["node"]) not in pending]}
 
+
+def configured_workers(cfg: dict) -> list[dict]:
+    return [{"id": a["id"], "machine": a.get("machine") or (a["id"] if a.get("remote") else "親機")}
+            for a in cfg.get("agents", [])]
+
+
+def build_site(desk, g: dict, activity: dict | None = None) -> dict:
+    """公開用の進捗ページ（index.html）が読むデータ。AI の文章は短く切って載せる。"""
     db = desk.db
     uses = {}
     for f in sorted((desk.root / "Proofs").glob("*.lean")):
@@ -121,19 +154,29 @@ def build_site(desk, g: dict) -> dict:
                                     "('checked','refuted','goal_closed','targets_approved') ORDER BY id")]
     spend = [dict(r) for r in db.q("SELECT agent, ROUND(SUM(usd),3) usd, COUNT(*) n FROM spend GROUP BY agent")]
     attempts = [dict(r) for r in db.q("SELECT agent,task,outcome,COUNT(*) n FROM attempts GROUP BY agent,task,outcome")]
-    running = [{"agent": r["agent"], "task": r["task"], "node": r["node"]} for r in db.active_leases()]
+    running = [{"agent": r["agent"], "task": r["task"], "node": r["node"], "expires_at": r["expires_at"]}
+               for r in db.active_leases()]
     return {"generated_at": g["generated_at"], "targets_hash": g["targets_hash"], "nodes": nodes,
             "reductions": g["reductions"], "uses": uses, "accepted": accepted, "failures": fails[-200:],
             "events": events, "spend": spend, "sessions": sum(s["n"] for s in spend), "attempts": attempts,
-            "running": running, "spent_today": round(db.spent_today(), 2)}
+            "running": running, "remote_activity": activity,
+            "claim_ttl_sec": float((desk.cfg.get("git") or {}).get("claim_ttl_sec", 7200)),
+            "workers": configured_workers(desk.cfg),
+            "spent_today": round(db.spent_today(), 2)}
 
 
-def generate(desk) -> None:
+def generate(desk, activity: dict | None = None) -> None:
     g = build_graph(desk)
     out = desk.root / "status"
     out.mkdir(exist_ok=True)
     (out / "graph.json").write_text(json.dumps(g, ensure_ascii=False, indent=2), encoding="utf-8")
-    (out / "site.json").write_text(json.dumps(build_site(desk, g), ensure_ascii=False), encoding="utf-8")
+    site = out / "site.json"
+    if activity is None and (desk.cfg.get("git") or {}).get("mode") == "github" and site.exists():
+        try:
+            activity = json.loads(site.read_text(encoding="utf-8")).get("remote_activity")
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            pass
+    site.write_text(json.dumps(build_site(desk, g, activity), ensure_ascii=False), encoding="utf-8")
     (desk.root / "STATUS.md").write_text(render_md(desk, g), encoding="utf-8")
 
 

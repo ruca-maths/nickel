@@ -96,11 +96,13 @@ agents:
   # ---- 子機（別 PC）で動かすエージェント。子機で python core/remote.py --agents <id> を実行 ----
   - id: prover-pc2
     role: prover
+    machine: PC 2
     remote: true                    # 親機のオーケストレータでは起動しない
     model: claude-opus-5-5
     max_turns: 60
   - id: gemini-pc2
     role: prover
+    machine: PC 2
     remote: true
     runner: gemini
     model: null                     # 未指定なら Gemini CLI の既定モデル
