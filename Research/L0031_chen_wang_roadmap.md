@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0011`）に向けた **Lean 4 カーネル検証済みモジュール 7 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0011`）に向けた **Lean 4 カーネル検証済みモジュール 8 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -34,3 +34,8 @@
 - **`delta_system_of_card_eq` / `exists_infinite_delta_system`**: 非可算有限集合族に対する有限 $\Delta$-系補題の純 ZFC 証明。
 - **`cantorCube_not_hasCPOuterBase`**: 任意の非可算添字集合 $I$ に対し、Cantor 立方体 $I \to \mathrm{Bool}$ の零点が `¬ Defs.D_0001.HasCPOuterBase` を満たすことを証明。
 - **`BoxFan I := Option (ℕ × (I → Bool))`**: `Specs.L_0031` の stratifiability 以外の**全条件**を具体的に満たす 0 次元 $T_3$ 空間を構成し、`boxFan_t3Space`・`boxFan_W_clopen`・`boxFan_W_inter`（$\bigcap_n W_n = \{\mathrm{none}\}$）・`boxFan_not_hasCPOuterBase`・`boxFan_not_hasSigmaCPLocalBase`（`Proofs.L_0032` 経由）・`boxFan_not_isM1`（`Proofs.L_0029` 経由）をすべてカーネル検証済みで証明。
+
+## 7. [ChenWang_Refinement_Stratifiable.lean](ChenWang_Refinement_Stratifiable.lean)（細分位相の Stratifiability 定理と `xtop` 部分空間直結帰着）
+- **`isStratifiable_of_refinement` / `isStratifiable_of_refinement_g`**: stratifiable 位相 $\tau_0$ の任意の細分 $\tau \le \tau_0$ に対し、単調 $\tau$-開作用素 $R_n(F)$（または $\tau$-開 $g$-関数 $g_n(y)$）が $\tau$-閉集合 $F$ とその **$\tau_0$-境界 $\overline{F}^{\tau_0} \setminus F$** のみを分離すれば $(Y, \tau)$ が stratifiable になることを証明（$\tau_0$-閉包の外側は $\tau_0$ が自動分離）。
+- **`isStratifiable_of_laminar_clopen_partition` / `xtop_isStratifiable` / `xtop_subtype_isStratifiable`**: `Defs.D_0011.xtop α` およびその任意の部分空間 $Y \subseteq \mathbb{N} \to \alpha$ が stratifiable であること。
+- **`xtop_subtype_refinement_L0031` / `xtop_subtype_refinement_not_Tinf`**: 任意の部分空間 $Y \subseteq \mathbb{N} \to \alpha$ 上の細分位相 $\tau \le \mathrm{xtop}_Y$ に対し、境界分離 $g$-関数と `¬ HasCPOuterBase y₀` から `Specs.L_0031.stmt` および `¬ MSpace.Goals.Tinf_M3_imp_M1` を直接導出。
