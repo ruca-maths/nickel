@@ -1,6 +1,8 @@
 import Mathlib.Data.Nat.Pairing
 import Mathlib.Topology.Compactness.Paracompact
 import Targets
+import Proofs.L_0003
+import Proofs.L_0004
 import Proofs.L_0005
 import Proofs.L_0008
 import Proofs.L_0010
@@ -2096,5 +2098,212 @@ theorem M1_sigma {ι : Type} (X : ι → Type) [∀ i, TopologicalSpace (X i)]
       refine ⟨closure (Sigma.mk i '' B), mem_image_of_mem _ hB𝓖, ?_⟩
       exact image_closure_subset_closure_image continuous_sigmaMk ⟨x, hxB, rfl⟩
     · exact sUnion_subset (by rintro _ ⟨S, hS, rfl⟩; exact closure_mono (subset_sUnion_of_mem hS))
+
+/-- Theorem 23 (Borges 1966): Every subspace of an `M₃`-space is an `M₃`-space. -/
+theorem M3_subspace (X : Type) [TopologicalSpace X] (hM3 : MSpace.IsM3 X) (Y : Set X) :
+    MSpace.IsM3 ↥Y := by
+  have : T3Space X := hM3.1
+  obtain ⟨G, hG_open, hG_sub, hG_inter, hG_mono⟩ := Proofs.L_0010.main X hM3
+  let GY : ℕ → Set ↥Y → Set ↥Y := fun n H =>
+    Subtype.val ⁻¹' G n (closure (Subtype.val '' H))
+  refine (Proofs.L_0004.main ↥Y).mpr ⟨inferInstance, GY, ?_, ?_, ?_, ?_⟩
+  · intro n H _
+    exact (hG_open n _ isClosed_closure).preimage continuous_subtype_val
+  · intro n H _ y hyH
+    exact hG_sub n _ isClosed_closure (subset_closure ⟨y, hyH, rfl⟩)
+  · intro H hH
+    apply Subset.antisymm
+    · intro y hy
+      rw [mem_iInter] at hy
+      have hy_clX : (y : X) ∈ ⋂ n, closure (G n (closure (Subtype.val '' H))) := by
+        rw [mem_iInter]
+        intro n
+        have h1 : (y : X) ∈ Subtype.val '' closure (GY n H) := ⟨y, hy n, rfl⟩
+        have h2 := image_closure_subset_closure_image continuous_subtype_val h1
+        exact closure_mono (image_preimage_subset _ _) h2
+      rw [hG_inter _ isClosed_closure] at hy_clX
+      rw [← hH.closure_eq, mem_closure_iff]
+      intro O hO hyO
+      obtain ⟨W, hW_open, rfl⟩ := isOpen_induced_iff.mp hO
+      obtain ⟨z, hzW, ⟨w, hwH, rfl⟩⟩ := mem_closure_iff.mp hy_clX W hW_open hyO
+      exact ⟨w, hzW, hwH⟩
+    · intro y hyH
+      rw [mem_iInter]
+      intro n
+      exact subset_closure (hG_sub n _ isClosed_closure (subset_closure ⟨y, hyH, rfl⟩))
+  · intro n H K _ _ hHK
+    exact preimage_mono (hG_mono n _ _ isClosed_closure isClosed_closure
+      (closure_mono (image_mono hHK)))
+
+/-- Theorem 24 (Borges 1966): Every countable product `(i : ℕ) → X i` of
+`M₃`-spaces is an `M₃`-space. -/
+theorem M3_countable_pi (X : ℕ → Type) [∀ i, TopologicalSpace (X i)]
+    (hM3 : ∀ i, MSpace.IsM3 (X i)) :
+    MSpace.IsM3 (∀ i : ℕ, X i) := by
+  have hT3 : ∀ i, T3Space (X i) := fun i => (hM3 i).1
+  have hM2 : ∀ i, MSpace.IsM2 (X i) := fun i => Proofs.L_0008.main (X i) (hM3 i)
+  -- Extract a monotone σ-CP quasi-base 𝓑' i containing univ at every level
+  have hqb : ∀ i : ℕ, ∃ 𝓑' : ℕ → Set (Set (X i)),
+      (∀ n, MSpace.ClosurePreserving (𝓑' n)) ∧
+      (∀ n, 𝓑' n ⊆ 𝓑' (n + 1)) ∧
+      (∀ n, univ ∈ 𝓑' n) ∧
+      MSpace.IsQuasiBase (⋃ n, 𝓑' n) := by
+    intro i
+    obtain ⟨_, 𝓑, h𝓑qb, 𝓑₀, h𝓑₀cp, h𝓑eq⟩ := hM2 i
+    let 𝓑' : ℕ → Set (Set (X i)) := fun n => insert univ (⋃ k ≤ n, 𝓑₀ k)
+    refine ⟨𝓑', ?_, ?_, fun _ => mem_insert _ _, ?_⟩
+    · intro n 𝓖 h𝓖
+      apply Subset.antisymm
+      · intro y hy
+        by_cases huniv : univ ∈ 𝓖
+        · exact ⟨closure univ, mem_image_of_mem _ huniv, by simp⟩
+        · have hsub : 𝓖 ⊆ ⋃ k ≤ n, 𝓑₀ k := fun S hS =>
+            (mem_insert_iff.mp (h𝓖 hS)).resolve_left (fun h => huniv (h ▸ hS))
+          have hcp_le : MSpace.ClosurePreserving (⋃ k ≤ n, 𝓑₀ k) := by
+            intro 𝓗 h𝓗
+            apply Subset.antisymm
+            · intro z hz
+              have hsplit : ⋃₀ 𝓗 ⊆ ⋃ k ∈ Iic n, ⋃₀ (𝓗 ∩ 𝓑₀ k) := by
+                rintro w ⟨B, hB𝓗, hwB⟩
+                obtain ⟨k, hk, hBk⟩ := mem_iUnion₂.mp (h𝓗 hB𝓗)
+                exact mem_iUnion₂.mpr ⟨k, hk, B, ⟨hB𝓗, hBk⟩, hwB⟩
+              have hz' := closure_mono hsplit hz
+              rw [(finite_Iic n).closure_biUnion] at hz'
+              obtain ⟨k, _, hzk⟩ := mem_iUnion₂.mp hz'
+              rw [h𝓑₀cp k (𝓗 ∩ 𝓑₀ k) inter_subset_right] at hzk
+              obtain ⟨_, ⟨B, hB, rfl⟩, hzB⟩ := hzk
+              exact ⟨closure B, mem_image_of_mem _ hB.1, hzB⟩
+            · exact sUnion_subset (by rintro _ ⟨B, hB, rfl⟩; exact closure_mono (subset_sUnion_of_mem hB))
+          rw [hcp_le 𝓖 hsub] at hy
+          exact hy
+      · exact sUnion_subset (by rintro _ ⟨S, hS, rfl⟩; exact closure_mono (subset_sUnion_of_mem hS))
+    · intro n S hS
+      rcases mem_insert_iff.mp hS with rfl | hS'
+      · exact mem_insert _ _
+      · right
+        obtain ⟨k, hk, hSk⟩ := mem_iUnion₂.mp hS'
+        exact mem_iUnion₂.mpr ⟨k, Nat.le_succ_of_le hk, hSk⟩
+    · intro x U hU hxU
+      obtain ⟨B, hB𝓑, hxintB, hBU⟩ := h𝓑qb x U hU hxU
+      rw [h𝓑eq, mem_iUnion] at hB𝓑
+      obtain ⟨n, hBn⟩ := hB𝓑
+      exact ⟨B, mem_iUnion.mpr ⟨n, Or.inr (mem_iUnion₂.mpr ⟨n, le_rfl, hBn⟩)⟩, hxintB, hBU⟩
+  choose 𝓑' h𝓑'_cp h𝓑'_mono h𝓑'_univ h𝓑'_qb using hqb
+  have h𝓑'_le : ∀ i {m n : ℕ}, m ≤ n → 𝓑' i m ⊆ 𝓑' i n := by
+    intro i m n hmn
+    induction hmn with
+    | refl => exact Subset.rfl
+    | step _ ih => exact ih.trans (h𝓑'_mono i _)
+  let π : ∀ k : ℕ, (∀ i : ℕ, X i) → (∀ i : Fin k, X i.1) := fun k f i => f i.1
+  have hπ_cont : ∀ k, Continuous (π k) := fun k => continuous_pi fun i => continuous_apply i.1
+  have hπ_open : ∀ k, IsOpenMap (π k) := by
+    intro k U hU
+    rw [isOpen_iff_forall_mem_open]
+    rintro g ⟨f, hfU, rfl⟩
+    obtain ⟨I, t, ht_all, htU⟩ := isOpen_pi_iff.mp hU f hfU
+    let V : Set (∀ i : Fin k, X i.1) :=
+      Set.univ.pi fun i => if i.1 ∈ I then t i.1 else univ
+    refine ⟨V, ?_, isOpen_set_pi Set.finite_univ fun i _ => ?_, ?_⟩
+    · intro h hh
+      let f' : ∀ i : ℕ, X i := fun j => if hj : j < k then h ⟨j, hj⟩ else f j
+      refine ⟨f', htU ?_, ?_⟩
+      · intro j hjI
+        dsimp only [f']
+        split_ifs with hjk
+        · have hmem := hh ⟨j, hjk⟩ (mem_univ _)
+          dsimp only at hmem
+          have hjI' : j ∈ I := Finset.mem_coe.mp hjI
+          split_ifs at hmem
+          exact hmem
+        · exact (ht_all j hjI).2
+      · funext i
+        dsimp only [π, f']
+        simp [i.2]
+    · split_ifs with hi
+      · exact (ht_all i.1 hi).1
+      · exact isOpen_univ
+    · intro i _
+      dsimp only [π]
+      split_ifs with hi
+      · exact (ht_all i.1 hi).2
+      · exact mem_univ _
+  let 𝓒' : ℕ → ℕ → Set (Set (∀ i : ℕ, X i)) := fun k n =>
+    (fun S => π k ⁻¹' S) ''
+      { S : Set (∀ i : Fin k, X i.1) |
+        ∃ B : ∀ i : Fin k, Set (X i.1), (∀ i, B i ∈ 𝓑' i.1 n) ∧ S = Set.univ.pi B }
+  let 𝓓' : ℕ → Set (Set (∀ i : ℕ, X i)) := fun r =>
+    𝓒' (Nat.unpair r).1 (Nat.unpair r).2
+  refine Proofs.L_0003.main (∀ i : ℕ, X i) ⟨inferInstance, ⋃ r, 𝓓' r, ?_, 𝓓', ?_, rfl⟩
+  · intro f U hU_open hfU
+    obtain ⟨I, t, ht_all, htU⟩ := isOpen_pi_iff.mp hU_open f hfU
+    have hpick : ∀ i : ℕ, ∃ n : ℕ, ∃ B ∈ 𝓑' i n, f i ∈ interior B ∧ (i ∈ I → B ⊆ t i) := by
+      intro i
+      by_cases hi : i ∈ I
+      · obtain ⟨B, hB, hfiB, hBt⟩ := h𝓑'_qb i (f i) (t i) (ht_all i hi).1 (ht_all i hi).2
+        obtain ⟨n, hBn⟩ := mem_iUnion.mp hB
+        exact ⟨n, B, hBn, hfiB, fun _ => hBt⟩
+      · exact ⟨0, univ, h𝓑'_univ i 0, by simp, fun h => (hi h).elim⟩
+    choose n_of B_of hB_mem hB_f hB_sub using hpick
+    let k : ℕ := I.sup id + 1
+    let N : ℕ := (Finset.range k).sup n_of
+    let B : ∀ i : Fin k, Set (X i.1) := fun i => B_of i.1
+    have hB_in : ∀ i : Fin k, B i ∈ 𝓑' i.1 N := fun i =>
+      h𝓑'_le i.1 (Finset.le_sup (f := n_of) (Finset.mem_range.mpr i.2)) (hB_mem i.1)
+    refine ⟨π k ⁻¹' Set.univ.pi B, mem_iUnion.mpr ⟨Nat.pair k N, ?_⟩, ?_, ?_⟩
+    · dsimp only [𝓓', 𝓒']; rw [Nat.unpair_pair]
+      exact ⟨Set.univ.pi B, ⟨B, hB_in, rfl⟩, rfl⟩
+    · have hO_open : IsOpen (π k ⁻¹' Set.univ.pi (fun i : Fin k => interior (B i))) :=
+        (isOpen_set_pi Set.finite_univ fun i _ => isOpen_interior).preimage (hπ_cont k)
+      have hO_sub : π k ⁻¹' Set.univ.pi (fun i : Fin k => interior (B i)) ⊆ π k ⁻¹' Set.univ.pi B :=
+        fun g hg i _ => interior_subset (hg i (mem_univ _))
+      exact interior_maximal hO_sub hO_open (fun i _ => hB_f i.1)
+    · intro g hg
+      refine htU fun j hjI => ?_
+      have hjk : j < k := Nat.lt_succ_of_le (Finset.le_sup (f := id) hjI)
+      exact hB_sub j hjI (hg ⟨j, hjk⟩ (mem_univ _))
+  · intro r
+    exact closurePreserving_preimage_of_isOpenMap (hπ_cont _) (hπ_open _)
+      (closurePreserving_fin_pi X (fun i => 𝓑' i (Nat.unpair r).2)
+        (fun i => h𝓑'_cp i (Nat.unpair r).2) (Nat.unpair r).1)
+
+/-- Theorem 25 (Heath–Lutzer–Zenor 1973): Every `M₃`-space is monotonically normal. -/
+theorem M3_monotone_normality (X : Type) [TopologicalSpace X] (hM3 : MSpace.IsM3 X) :
+    ∃ H : Set X → Set X → Set X,
+      (∀ A B, IsOpen (H A B)) ∧
+      (∀ A B, Disjoint (closure A) B → Disjoint A (closure B) → A ⊆ H A B) ∧
+      (∀ A B, Disjoint (H A B) (H B A)) ∧
+      (∀ A₁ A₂ B₁ B₂, A₁ ⊆ A₂ → B₂ ⊆ B₁ → H A₁ B₁ ⊆ H A₂ B₂) := by
+  obtain ⟨G, hG, hG_dec⟩ := exists_monotone_stratification X hM3
+  have hG_anti : ∀ {m n : ℕ} {F : Set X}, IsClosed F → m ≤ n → G n F ⊆ G m F := by
+    intro m n F hF hmn
+    induction hmn with
+    | refl => exact Subset.rfl
+    | step _ ih => exact (hG_dec _ F hF).trans ih
+  let H : Set X → Set X → Set X := fun A B =>
+    ⋃ n : ℕ, G n (closure A) \ closure (G n (closure B))
+  refine ⟨H, ?_, ?_, ?_, ?_⟩
+  · intro A B
+    exact isOpen_iUnion fun n => (hG.1 n _ isClosed_closure).sdiff isClosed_closure
+  · intro A B _ hAB x hxA
+    have hx_not : x ∉ ⋂ n, closure (G n (closure B)) := by
+      rw [hG.2.2.1 _ isClosed_closure]
+      exact Set.disjoint_left.mp hAB hxA
+    rw [mem_iInter] at hx_not
+    push Not at hx_not
+    obtain ⟨n, hxn⟩ := hx_not
+    exact mem_iUnion.mpr ⟨n, hG.2.1 n _ isClosed_closure (subset_closure hxA), hxn⟩
+  · intro A B
+    rw [Set.disjoint_left]
+    intro z hzAB hzBA
+    obtain ⟨m, hzmA, hzmB⟩ := mem_iUnion.mp hzAB
+    obtain ⟨n, hznB, hznA⟩ := mem_iUnion.mp hzBA
+    rcases le_total m n with hmn | hnm
+    · exact hzmB (subset_closure (hG_anti isClosed_closure hmn hznB))
+    · exact hznA (subset_closure (hG_anti isClosed_closure hnm hzmA))
+  · intro A₁ A₂ B₁ B₂ hA hB z hz
+    obtain ⟨n, hzA, hzB⟩ := mem_iUnion.mp hz
+    refine mem_iUnion.mpr ⟨n, hG.2.2.2 n _ _ isClosed_closure isClosed_closure (closure_mono hA) hzA, ?_⟩
+    intro h
+    exact hzB (closure_mono (hG.2.2.2 n _ _ isClosed_closure isClosed_closure (closure_mono hB)) h)
 
 end Research.M3M1

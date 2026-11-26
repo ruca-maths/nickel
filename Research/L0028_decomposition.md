@@ -42,6 +42,9 @@
 23. **`M3_is_M1_of_closed_discrete_sigmaCP_and_M1_compl`**: M₃ 空間 $X$ において閉離散集合 $D$ の各点が $\sigma$-CP 開局所基を持ち、補空間 $X \setminus D$ が M₁ ならば $X$ は M₁ 空間である。
 24. **`M1_countable_pi`（Ceder 1961）**: M₁ 空間の可算直積 $\prod_{i \in \mathbb{N}} X_i$ は M₁ 空間である。
 25. **`M1_sigma`**: M₁ 空間の任意の直和（位相和）$\bigoplus_{i \in \iota} X_i$ は M₁ 空間である。
+26. **`M3_subspace`（Borges 1966）**: M₃ 空間の任意の部分空間は M₃ 空間である（遺伝性）。
+27. **`M3_countable_pi`（Borges 1966）**: M₃ 空間の可算直積 $\prod_{i \in \mathbb{N}} X_i$ は M₃ 空間である。
+28. **`M3_monotone_normality`（Heath–Lutzer–Zenor 1973）**: 任意の M₃ 空間は単調正規（monotonically normal）である。
 
 ## 2. 棄却された単純構成と反例
 
