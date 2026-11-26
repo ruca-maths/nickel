@@ -4,6 +4,8 @@ import Mathlib.Order.Filter.AtTopBot.Basic
 import Mathlib.Order.Zorn
 import Mathlib.Basic.Countable.Basic
 import Mathlib.Data.Nat.Pairing
+import Targets
+import Defs.D_0001
 
 /-!
 # ZFC Repair of Chen–Wang Proposition 9.1 (Unbounded MAD Families)
@@ -259,5 +261,51 @@ theorem prop_9_1_repaired (ℳ : Set (Set ℕ)) (hunb : ¬ IsBoundedFamily ℳ)
     Finset.le_sup (f := fun j => g j k)
       (Finset.mem_range.mpr (Nat.lt_succ_of_le (le_trans (le_max_right N i) hk)))
   exact le_trans h1 h2
+
+/-- Theorem 4: If `𝒜` is unbounded in `(ℕ^ℕ, ≤*)`, then for every bound
+`b : ℕ → ℕ` there exists `A ∈ 𝒜` whose enumeration `Nat.nth (· ∈ A)` exceeds `b`
+infinitely often (`∀ N, ∃ k ≥ N, b k < Nat.nth (· ∈ A) k`). -/
+theorem unbounded_exists_frequently_gt (𝒜 : Set (Set ℕ)) (hunb : ¬ IsBoundedFamily 𝒜)
+    (b : ℕ → ℕ) :
+    ∃ A ∈ 𝒜, ∀ N : ℕ, ∃ k ≥ N, b k < Nat.nth (· ∈ A) k := by
+  by_contra hall
+  push Not at hall
+  refine hunb ⟨b, fun A hA => ?_⟩
+  rw [Filter.eventually_atTop]
+  exact hall A hA
+
+/-- Theorem 5 (Section 9 Unbounded-Partition Escape Criterion):
+Given any unbounded family `ℳ` on `ℕ` (e.g., from `exists_unbounded_MAD`), if
+for every open neighborhood base `𝓥` at `y₀ : Y` there is a map `V_of : ℳ → Set Y`
+into `𝓥` and a countable partition `part : ℳ → ℕ` such that every unbounded layer
+`i` admits an escape witness `z ∈ closure (⋃₀ 𝒢) \ ⋃_{V ∈ 𝒢} closure V`, then
+`¬ Defs.D_0001.HasCPOuterBase y₀`. -/
+theorem not_hasCPOuterBase_of_unbounded_partition_escape
+    (Y : Type) [TopologicalSpace Y] (y₀ : Y)
+    (ℳ : Set (Set ℕ)) (hunb : ¬ IsBoundedFamily ℳ)
+    (hesc : ∀ 𝓥 : Set (Set Y),
+      (∀ V ∈ 𝓥, IsOpen V ∧ y₀ ∈ V) →
+      (∀ U : Set Y, IsOpen U → y₀ ∈ U → ∃ V ∈ 𝓥, V ⊆ U) →
+      ∃ (V_of : ↥ℳ → Set Y) (part : ↥ℳ → ℕ),
+        (∀ A : ↥ℳ, V_of A ∈ 𝓥) ∧
+        ∀ i : ℕ,
+          ¬ IsBoundedFamily { A : Set ℕ | ∃ h : A ∈ ℳ, part ⟨A, h⟩ = i } →
+          ∃ 𝒢 ⊆ { V : Set Y | ∃ A : ↥ℳ, part A = i ∧ V = V_of A },
+            ∃ z : Y, z ∈ closure (⋃₀ 𝒢) ∧ ∀ V ∈ 𝒢, z ∉ closure V) :
+    ¬ Defs.D_0001.HasCPOuterBase y₀ := by
+  rintro ⟨𝓥, h𝓥_open, h𝓥_base, h𝓥_cp⟩
+  obtain ⟨V_of, part, hV_mem, hlayer⟩ := hesc 𝓥 h𝓥_open h𝓥_base
+  let ℳ_i : ℕ → Set (Set ℕ) := fun i => { A : Set ℕ | ∃ h : A ∈ ℳ, part ⟨A, h⟩ = i }
+  have hcov : ℳ ⊆ ⋃ i, ℳ_i i := fun A hA =>
+    mem_iUnion.mpr ⟨part ⟨A, hA⟩, hA, rfl⟩
+  obtain ⟨i₀, hi₀_unb⟩ := prop_9_1_repaired ℳ hunb ℳ_i hcov
+  obtain ⟨𝒢, h𝒢sub, z, hz_cl, hz_not⟩ := hlayer i₀ hi₀_unb
+  have h𝒢𝓥 : 𝒢 ⊆ 𝓥 := by
+    intro V hV
+    obtain ⟨A, _, rfl⟩ := h𝒢sub hV
+    exact hV_mem A
+  rw [h𝓥_cp 𝒢 h𝒢𝓥] at hz_cl
+  obtain ⟨_, ⟨V, hV𝒢, rfl⟩, hzV⟩ := hz_cl
+  exact hz_not V hV𝒢 hzV
 
 end Research.ChenWangUnboundedMAD
