@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0011`）に向けた **Lean 4 カーネル検証済みモジュール 9 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0011`）に向けた **Lean 4 カーネル検証済みモジュール 10 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -48,3 +48,8 @@
 - **`L0020_iff_L0031` / `L0020_iff_L0030` / `L0030_iff_L0031`**: 親機の 3 つの反例仕様 `L_0020`・`L_0030`・`L_0031` がすべて ZFC で完全に同値であることを確立。
 - **`L0020_imp_not_Tinf` / `Tinf_imp_L0019`**: Mizokami (2004) / `L_0019` / `L_0028` を一切経由せずに `Specs.L_0020.stmt → ¬ MSpace.Goals.Tinf_M3_imp_M1`（および対偶 `Tinf → L_0019`）を直接導出。
 - **`boxFanGen_isM1_iff`**: `MSpace.IsM1 (BoxFanGen Z) ↔ MSpace.IsM1 Z ∧ Defs.D_0001.HasCPOuterBase z₀`（`BoxFanGen` が `L_0019` の関手的テストベッドであることの完全特徴付け）。
+
+## 9. [ChenWang_OuterBase_Permanence.lean](ChenWang_OuterBase_Permanence.lean)（`HasCPOuterBase` の永続性・障害定理）
+- **`hasCPOuterBase_of_decreasing_base` / `hasCPOuterBase_of_firstCountable`**: 任意の $T_3$ 空間で第 1 可算点（近傍フィルターが可算生成）は常に `HasCPOuterBase` を持つ（したがって `L_0020` / `L_0030` / `L_0031` の反例点 $y_0$ は非第 1 可算）。
+- **`hasCPOuterBase_of_compact_nhd_gDelta` / `stratifiable_no_compact_nhd_of_not_hasCPOuterBase`**: 任意の stratifiable 空間でコンパクト近傍を持つ点は第 1 可算かつ `HasCPOuterBase` を満たす（よって反例点 $y_0$ はコンパクト近傍を持たない）。
+- **`hasCPOuterBase_prod` / `hasCPOuterBase_of_isClosedMap_isOpenMap`**: `HasCPOuterBase` は有限直積および連続開閉写像で保存される。
