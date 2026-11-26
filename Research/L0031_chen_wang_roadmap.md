@@ -9,6 +9,7 @@
 - **`rho_t1Space` / `rho_t3Space` / `xtop_le_rhoProd`**: 半開区間位相 $\rho'$ の $T_3$ 性と $\rho \le \rho'^{\mathbb{N}}$。
 - **`ICyl_clopen` / `ICyl_coD` / `ICyl_laminar` / `H_subset_unique_ICyl`**: 多座標柱状ブロック `ICyl T n a p` が c.o.D 層状細分をなし、各 `H q n c` が一意な `ICyl T n a p` に含まれること（第2〜3節と第4節 $L_n$ 被覆の橋渡し）。
 - **`qtree_mem_QStar` / `qtree_Ico_shrink` / `qtree_I_isTopologicalBasis` / `qtree_ICyl_isTopologicalBasis` / `qtree_rhoProd_inter_eq_singleton`**: `QTree` 上で区間族 $\{[p, p_a)\}$ と多座標柱状族 `ICyl` がそれぞれ $\rho'$・$\rho'^{\mathbb{N}}$ の開閉開基をなし、単調減少な開閉柱状列の交わりが 1 点 $\{x\}$ に収束すること。
+- **`Env` / `Env_clopen` / `Env_mono_of_H_subset` / `Env_succ_subset` / `qtree_Env_inter_eq_singleton`**: `Defs.D_0007.H_sub_index`（Prop 3.1.4）と `Defs.D_0005.prop_2_2_5` を合成し、各 $H(n, c)$ の標準 `ICyl` 包絡 `Env T q n c` が包含関係を保存し、任意の点 $x$ に沿って $\{x\}$ へ縮小することを証明。
 
 ## 2. [ChenWang_UnboundedMAD.lean](ChenWang_UnboundedMAD.lean)（第9節 Proposition 9.1 の ZFC 修正と非有界分割脱出）
 - **`exists_unbounded_AD` / `exists_unbounded_MAD`**: ZFC で $(\mathbb{N}^\mathbb{N}, \le^*)$ における非有界 MAD 族が存在すること（`List ℕ ↪ ℕ` の枝族 + Zorn の補題）。

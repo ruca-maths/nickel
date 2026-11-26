@@ -663,4 +663,113 @@ theorem qtree_rhoProd_inter_eq_singleton (x : ℕ → QTree) :
 
 end QTreeBasisAndShrinking
 
+section CanonicalEnvelope
+
+open Defs.D_0003 Defs.D_0003.Tree2 Defs.D_0007 Defs.D_0009
+
+variable {α : Type} [LinearOrder α]
+
+/-- Canonical `ICyl` parameter for `H q n c` at refinement level `max n (c + 1) > 0`. -/
+noncomputable def envP (T : Tree2 α) (q : ℕ ≃ α) (n : ℕ) (hn : 0 < n) (c : ℕ) :
+    { p : Fin n → α // ∀ i, T.QStar (max n (c + 1)) (p i) } :=
+  Classical.choose (H_subset_unique_ICyl T q hn (fun _ => max n (c + 1))
+    (fun _ => lt_of_lt_of_le (Nat.succ_pos c) (le_max_right n (c + 1))) c)
+
+/-- Canonical `ICyl` envelope of `H q n c` in `(ℕ → α, rhoProd α)`. -/
+noncomputable def Env (T : Tree2 α) (q : ℕ ≃ α) (n : ℕ) (hn : 0 < n) (c : ℕ) : Set (ℕ → α) :=
+  ICyl T n (fun _ => max n (c + 1)) (envP T q n hn c).1
+
+/-- Every `H q n c` is contained in its canonical `ICyl` envelope `Env T q n hn c`. -/
+theorem H_subset_Env (T : Tree2 α) (q : ℕ ≃ α) (n : ℕ) (hn : 0 < n) (c : ℕ) :
+    H q n c ⊆ Env T q n hn c :=
+  (Classical.choose_spec (H_subset_unique_ICyl T q hn (fun _ => max n (c + 1))
+    (fun _ => lt_of_lt_of_le (Nat.succ_pos c) (le_max_right n (c + 1))) c)).1
+
+/-- Every canonical envelope `Env T q n hn c` is clopen in `rhoProd α` (and hence in `xtop α`). -/
+theorem Env_clopen [NoMaxOrder α] (T : Tree2 α) (q : ℕ ≃ α) (n : ℕ) (hn : 0 < n) (c : ℕ) :
+    @IsOpen (ℕ → α) (rhoProd α) (Env T q n hn c) ∧
+    @IsClosed (ℕ → α) (rhoProd α) (Env T q n hn c) :=
+  ICyl_clopen T n (fun _ => max n (c + 1)) (envP T q n hn c).1
+
+/-- **Envelope Monotonicity (Proposition 3.1.4 + Proposition 2.2.5):**
+Whenever `H q n' c' ⊆ H q n c`, the canonical `ICyl` envelopes satisfy
+`Env T q n' hn' c' ⊆ Env T q n hn c`. -/
+theorem Env_mono_of_H_subset (T : Tree2 α) (q : ℕ ≃ α) (hα : ∃ a b : α, a ≠ b)
+    {n n' : ℕ} (hn : 0 < n) (hn' : 0 < n') {c c' : ℕ}
+    (hsub : H q n' c' ⊆ H q n c) :
+    Env T q n' hn' c' ⊆ Env T q n hn c := by
+  obtain ⟨hnn, hcc⟩ := H_sub_index q hα hn hn' hsub
+  obtain ⟨x₀, hx₀'⟩ := H_nonempty q n' hn' c'
+  have hx₀ : x₀ ∈ H q n c := hsub hx₀'
+  have hx₀E : x₀ ∈ Env T q n hn c := H_subset_Env T q n hn c hx₀
+  have hx₀E' : x₀ ∈ Env T q n' hn' c' := H_subset_Env T q n' hn' c' hx₀'
+  have ha : 0 < max n (c + 1) := lt_of_lt_of_le (Nat.succ_pos c) (le_max_right n (c + 1))
+  have hab : max n (c + 1) ≤ max n' (c' + 1) := max_le_max hnn (Nat.succ_le_succ hcc)
+  intro y hy i
+  let i' : Fin n' := ⟨i.1, lt_of_lt_of_le i.2 hnn⟩
+  rcases Defs.D_0005.prop_2_2_5 T ha hab ((envP T q n hn c).2 i) ((envP T q n' hn' c').2 i') with
+    hdisj | hIsub
+  · exact (Set.disjoint_left.mp hdisj (hx₀E i) (hx₀E' i')).elim
+  · exact hIsub (hy i')
+
+/-- Parent-child monotonicity of canonical envelopes along `delta c j`. -/
+theorem Env_succ_subset (T : Tree2 α) (q : ℕ ≃ α) (hα : ∃ a b : α, a ≠ b)
+    {n : ℕ} (hn : 0 < n) (c j : ℕ) :
+    Env T q (n + 1) (Nat.succ_pos n) (delta c j) ⊆ Env T q n hn c :=
+  Env_mono_of_H_subset T q hα hn (Nat.succ_pos n) (H_succ_sub q n hn c j)
+
+/-- On `QTree`, the canonical envelopes along any point `x : ℕ → QTree` shrink to `{x}`. -/
+theorem qtree_Env_inter_eq_singleton (q : ℕ ≃ QTree) (x : ℕ → QTree) :
+    (⋂ n : ℕ, Env qtreeTree2 q (n + 1) (Nat.succ_pos n)
+      (code (n + 1) (fun k => q.symm (x k)))) = {x} := by
+  ext y
+  simp only [Set.mem_iInter, Set.mem_singleton_iff]
+  constructor
+  · intro hy
+    funext k
+    by_contra hne
+    rcases lt_or_gt_of_ne hne with hlt | hgt
+    · obtain ⟨a, ha, hyQ, hchild_lt⟩ := qtree_Ico_shrink hlt
+      let n : ℕ := max k a
+      let c : ℕ := code (n + 1) (fun j => q.symm (x j))
+      have hkn : k < n + 1 := Nat.lt_succ_of_le (le_max_left k a)
+      have han : a ≤ max (n + 1) (c + 1) :=
+        le_trans (le_trans (le_max_right k a) (Nat.le_succ n)) (le_max_left _ _)
+      let i : Fin (n + 1) := ⟨k, hkn⟩
+      have hx_in : x k ∈ Set.Ico ((envP qtreeTree2 q (n + 1) (Nat.succ_pos n) c).1 i)
+          (qtreeTree2.child ((envP qtreeTree2 q (n + 1) (Nat.succ_pos n) c).1 i) (max (n + 1) (c + 1))) :=
+        H_subset_Env qtreeTree2 q (n + 1) (Nat.succ_pos n) c rfl i
+      have hy_in : y k ∈ Set.Ico ((envP qtreeTree2 q (n + 1) (Nat.succ_pos n) c).1 i)
+          (qtreeTree2.child ((envP qtreeTree2 q (n + 1) (Nat.succ_pos n) c).1 i) (max (n + 1) (c + 1))) :=
+        hy n i
+      have hy_a : y k ∈ Set.Ico (y k) (qtreeTree2.child (y k) a) :=
+        ⟨le_rfl, qtreeTree2.lt_child _ _ (qtreeTree2.C_child _ a ha)⟩
+      rcases Defs.D_0005.prop_2_2_5 qtreeTree2 ha han hyQ
+          ((envP qtreeTree2 q (n + 1) (Nat.succ_pos n) c).2 i) with hdisj | hIsub
+      · exact Set.disjoint_left.mp hdisj hy_a hy_in
+      · exact not_lt_of_ge (le_of_lt hchild_lt) (hIsub hx_in).2
+    · obtain ⟨a, ha, hxQ, hchild_lt⟩ := qtree_Ico_shrink hgt
+      let n : ℕ := max k a
+      let c : ℕ := code (n + 1) (fun j => q.symm (x j))
+      have hkn : k < n + 1 := Nat.lt_succ_of_le (le_max_left k a)
+      have han : a ≤ max (n + 1) (c + 1) :=
+        le_trans (le_trans (le_max_right k a) (Nat.le_succ n)) (le_max_left _ _)
+      let i : Fin (n + 1) := ⟨k, hkn⟩
+      have hx_in : x k ∈ Set.Ico ((envP qtreeTree2 q (n + 1) (Nat.succ_pos n) c).1 i)
+          (qtreeTree2.child ((envP qtreeTree2 q (n + 1) (Nat.succ_pos n) c).1 i) (max (n + 1) (c + 1))) :=
+        H_subset_Env qtreeTree2 q (n + 1) (Nat.succ_pos n) c rfl i
+      have hy_in : y k ∈ Set.Ico ((envP qtreeTree2 q (n + 1) (Nat.succ_pos n) c).1 i)
+          (qtreeTree2.child ((envP qtreeTree2 q (n + 1) (Nat.succ_pos n) c).1 i) (max (n + 1) (c + 1))) :=
+        hy n i
+      have hx_a : x k ∈ Set.Ico (x k) (qtreeTree2.child (x k) a) :=
+        ⟨le_rfl, qtreeTree2.lt_child _ _ (qtreeTree2.C_child _ a ha)⟩
+      rcases Defs.D_0005.prop_2_2_5 qtreeTree2 ha han hxQ
+          ((envP qtreeTree2 q (n + 1) (Nat.succ_pos n) c).2 i) with hdisj | hIsub
+      · exact Set.disjoint_left.mp hdisj hx_a hx_in
+      · exact not_lt_of_ge (le_of_lt hchild_lt) (hIsub hy_in).2
+  · rintro rfl n
+    exact H_subset_Env qtreeTree2 q (n + 1) (Nat.succ_pos n) _ rfl
+
+end CanonicalEnvelope
+
 end Research.ChenWangTree
