@@ -78,6 +78,26 @@ python core/orchestrator.py              # mode: github なら sync_interval_sec
 * 子機での失敗メモは子機の `memory/failures.jsonl` に残るだけで、親機には届かない。
 * 子機の作業ツリーは毎回 `origin/main` に合わせ直すので、子機では追跡ファイルを編集しないこと。
 
+### Google Colab の子機（LeanDojo-v2）
+GPU のある Colab で、LeanDojo-v2 の証明モデル（既定は DeepSeek-Prover-V2-7B）を子機として動かせます。
+
+1. [`notebooks/leandojo_colab.ipynb`](notebooks/leandojo_colab.ipynb) を Colab で開きます。
+   GitHub から開く場合は「ファイル → ノートブックを開く → GitHub」で、このリポジトリを指定します。
+2. ランタイムに GPU を選び、シークレットに `GH_TOKEN` を登録します。
+   このリポジトリだけを対象にした fine-grained トークンで、Contents と Pull requests の書き込み権限が必要です。
+3. セルを上から実行します。
+
+エージェント ID は `leandojo-colab` です（`config.yaml` の `runner: leandojo`）。
+
+- **扱うタスク:** prove だけです。
+- **検証の流れ:**
+  - 候補は Colab 上で `desk check` を通します。
+  - 通ったものだけを PR にします。
+  - そのあと CI と親機でもう一度検証します。
+- **設定:** 生成の方式は `LEANDOJO_BACKEND` で選びます（`whole` / `external` / `search`）。
+  - ほかの設定項目は [`tools/leandojo_agent.py`](tools/leandojo_agent.py) の冒頭にあります。
+- **注意:** このモデルが得意なのは、短いタクティク列で閉じる補題です。研究の核心にあたる補題は、Architect が分解した後の細かい子補題で効果が出ます。
+
 ### 親機・子機の作業状況
 進捗ページの「親機・子機の作業状況」で、PC ごとのエージェントと担当ノードを確認できます。同じ PC の
 エージェントには `config.yaml` で同じ `machine: PC 2` のような表示名を付けます。

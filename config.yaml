@@ -62,6 +62,12 @@ runners:
     cmd: ["gemini", "--output-format", "json", "--yolo", "--model", "{model}"]
     cost_field: null                # Gemini CLI はコストを出さないので下の見積もり額で予算を数える
     cost_estimate_usd: 0.5
+  leandojo:
+    # LeanDojo-v2 の証明モデルを使う子機用エージェント（Colab など GPU のある Linux 向け）。
+    # 設定は環境変数 LEANDOJO_BACKEND / LEANDOJO_CKPT など（tools/leandojo_agent.py の冒頭を参照）。
+    cmd: ["python3", "tools/leandojo_agent.py"]
+    cost_field: total_cost_usd      # 自前の GPU なので 0 を報告する
+    session_timeout_sec: 5400
 
 retriever:
   backend: simple                   # simple / command（LeanDojo-v2 等の外部前提検索器）
@@ -107,3 +113,10 @@ agents:
     runner: gemini
     model: null                     # 未指定なら Gemini CLI の既定モデル
     max_turns: 60
+  - id: leandojo-colab
+    role: prover
+    machine: Colab
+    remote: true                    # Google Colab の子機（notebooks/leandojo_colab.ipynb）で動かす
+    runner: leandojo
+    model: null
+    max_turns: 1
