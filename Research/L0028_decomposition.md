@@ -31,6 +31,9 @@
 12. **`closed_cp_outer_base_of_pointwise_cp_and_dense_trace`（Ito の拡張補題）**: 任意の M₃ 空間において、部分集合 $F$ が CP 閉近傍基 $\mathcal{K}$ を持ち、さらに各点が CP 開近傍基を持つ $\sigma$-閉離散集合 $E = \bigcup_k E_k$ がすべての $K \in \mathcal{K}$ に対し $K \subseteq \overline{\operatorname{int} K \cup (K \cap E)}$ を満たすならば、$F$ は CP 開外基を持つ。
 13. **`M3_is_M1_of_pointwise_cp_and_dense_trace`**: 上記の条件がすべての閉集合 $F$ で成り立つ M₃ 空間は M₁ である。
 14. **`L0028_of_boundary_cp_trace` / `L0028_of_sigma_closed_discrete_firstCountable_compl`**: `Specs.L_0028` への条件付き帰着（境界トレースが $\sigma$-閉離散 CP 点集合で覆われる場合、特に $X \setminus \{x\}$ が第一可算点の $\sigma$-閉離散和である任意の M₃ 空間で `L_0028` の結論が成り立つ）。
+15. **`M1_has_sigma_cp_regular_open_basis`**: 任意の M₁ 空間は正則開集合（$\operatorname{int}(\overline{R}) = R$）からなる $\sigma$-CP 開基を持つ。
+16. **`M1_open_subspace`**: M₁ 空間の任意の開部分空間は M₁ 空間である。
+17. **`M3_is_M1_of_countable_closed_cover_with_cp_outer_bases`**: 可算個の閉集合 $F_k$ で覆われ、各 $F_k$ に含まれる任意の閉集合が $X$ 内で CP 開外基を持つ M₃ 空間は M₁ 空間である（Mizokami 2004 の可算閉和定理の帰着骨格）。
 
 ## 2. 棄却された単純構成と反例
 
