@@ -135,10 +135,17 @@ footer a { color: var(--accent); }
     </div>
     <h1 style="font-size:1.35rem;font-weight:600">任意の M₃ 空間（stratifiable 空間）は M₁ 空間か　— Ceder, 1961</h1>
     <div class="verdict" id="verdict"></div>
-    <p class="lede">4 台の AI（分解役・証明役 2・反証役）がこの問いと周辺定理に取り組んでいます。成果は Lean カーネルと公理検査を通ったものだけで、AI の自己申告は数えません。</p>
+    <p class="lede">親機と子機がこの問いと周辺定理に取り組んでいます。成果は Lean カーネルと公理検査を通ったものを数えます。</p>
   </header>
 
   <div class="tally" id="tally"></div>
+
+  <section aria-labelledby="machines-heading">
+    <h2 id="machines-heading">親機・子機の作業状況</h2>
+    <p class="lede" id="live-state" role="status" hidden></p>
+    <p class="lede" id="activity-time"></p>
+    <div class="agents" id="machines"></div>
+  </section>
 
   <section>
     <div><div class="eyebrow">段階ごとの到達点</div><h2>どこまで来たか</h2></div>
@@ -184,6 +191,8 @@ footer a { color: var(--accent); }
 <script>
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
+let selectedNode;
+
 function render(D) {
   const $ = (id) => document.getElementById(id);
   const STATE = {
@@ -202,7 +211,11 @@ function render(D) {
   const events = D.events || [];
   const attempts = D.attempts || [];
 
-  const busy = new Set((D.running || []).map((r) => r.node));
+  const activity = D.remote_activity;
+  const now = Date.now() / 1000;
+  const active = [...(D.running || []), ...(activity?.claims || [])]
+    .filter((r) => r.expires_at == null || r.expires_at > now);
+  const busy = new Set(active.map((r) => r.node));
   const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
   const stateOf = (n) => (!n ? "open" : n.status !== "open" ? n.status : busy.has(n.id) ? "work" : n.exhausted ? "exhausted" : "open");
   const pill = (st) => `<span class="pill ${(STATE[st] || STATE.open).cls}">${(STATE[st] || STATE.open).label}</span>`;
@@ -225,10 +238,42 @@ function render(D) {
   const byId = Object.fromEntries(nodes.map((n) => [n.id, n]));
   const label = (n) => (!n ? "" : n.goal ? (n.goal === "Tinf" ? "T∞" : n.goal) : n.id);
 
+  const submitted = (activity?.submitted || []).filter((r) => byId[r.node]?.status === "open");
+  const taskNames = { prove: "証明", refute: "反証", decompose: "分解", audit: "監査" };
+  const machines = new Map();
+  const workers = new Map((D.workers || []).map((w) => [w.id, w.machine]));
+  for (const { agent } of D.running || []) {
+    if (!workers.has(agent)) workers.set(agent, "親機");
+  }
+  for (const { agent } of [...active, ...submitted]) {
+    if (!workers.has(agent)) workers.set(agent, agent);
+  }
+  for (const [agent, machine] of workers) {
+    if (!machines.has(machine)) machines.set(machine, []);
+    machines.get(machine).push(agent);
+  }
+  $("activity-time").textContent = activity
+    ? `子機の確認時刻 ${fmtTime(activity.observed_at)}。${D.live ? "GitHub の確保情報です。" : "担当は親機の同期時点の確保情報です。"}`
+    : D.live ? "子機の確保情報を取得中です。" : "子機の担当情報は親機の次回同期後に表示されます。";
+  $("machines").innerHTML = [...machines].map(([machine, agents]) => {
+    const rows = agents.map((agent) => {
+      const describe = (r) => {
+        const n = byId[r.node];
+        const target = n?.goal ? `${label(n)} / ${r.node}` : r.node === "-" ? "" : r.node;
+        return esc([taskNames[r.task] || r.task, target].filter(Boolean).join(" "));
+      };
+      const tasks = active.filter((r) => r.agent === agent).map((r) => `確保中 · ${describe(r)}`);
+      const proofs = submitted.filter((r) => r.agent === agent).map((r) => `提出ブランチあり · ${describe(r)}`);
+      return `<dt>${esc(agent)}</dt><dd>${[...tasks, ...proofs].join("<br>") || "担当の記録なし"}</dd>`;
+    });
+    return `<article class="agent"><h3>${esc(machine)}</h3><dl>${rows.join("")}</dl></article>`;
+  }).join("");
+
   // 判定
   const main = nodes.find((n) => n.goal === "Tinf") || nodes[0];
   const goals = nodes.filter((n) => n.goal);
-  $("verdict").innerHTML = `${pill(stateOf(main))}<span>本題は未解決。周辺の目標は ${goals.filter((n) => n.status === "checked").length} / ${goals.length} 件が証明済み。</span>`;
+  const resolved = goals.filter((n) => ["checked", "refuted"].includes(n.status)).length;
+  $("verdict").innerHTML = `${pill(stateOf(main))}<span>全目標 ${goals.length} 件のうち ${resolved} 件を検証済み。</span>`;
 
   // 件数
   const gaveUp = failures.filter((f) => f.outcome === "gave_up").length;
@@ -236,6 +281,8 @@ function render(D) {
   const tallies = [
     [nodes.filter((n) => n.status === "checked").length, "証明済みの命題"],
     [nodes.filter((n) => n.status === "refuted").length, "反証された命題"],
+    [active.length, "確保中の担当"],
+    [submitted.length, "提出ブランチあり"],
     [gaveUp, "断念した試み"],
     [reductions.filter((r) => r.status !== "dead").length, "受理された帰着"],
     [D.sessions ?? 0, "AI のセッション"],
@@ -322,6 +369,7 @@ function render(D) {
   function show(id) {
     const n = byId[id];
     if (!n) return;
+    selectedNode = id;
     const st = stateOf(n), a = accBy["Proofs." + id];
     const used = edges.filter((e) => e.to === id).map((e) => label(byId[e.from])).filter(Boolean);
     const needs = edges.filter((e) => e.from === id).map((e) => label(byId[e.to])).filter(Boolean);
@@ -334,9 +382,9 @@ function render(D) {
         ${needs.length ? `使っている結果: ${needs.map(esc).join(", ")}<br>` : ""}${used.length ? `使われている先: ${used.map(esc).join(", ")}<br>` : ""}
         試行: 証明 ${att.prove ?? 0} / 分解 ${att.decompose ?? 0} / 反証 ${att.refute ?? 0}${f.length ? `（断念 ${f.length} 件は墓場を参照）` : ""}</div>`;
   }
-  svg.addEventListener("click", (e) => { const g = e.target.closest(".node"); if (g) show(g.dataset.id); });
-  svg.addEventListener("keydown", (e) => { const g = e.target.closest(".node"); if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); show(g.dataset.id); } });
-  if (main) show(main.id);
+  svg.onclick = (e) => { const g = e.target.closest(".node"); if (g) show(g.dataset.id); };
+  svg.onkeydown = (e) => { const g = e.target.closest(".node"); if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); show(g.dataset.id); } };
+  if (main) show(byId[selectedNode] ? selectedNode : main.id);
 
   // 台帳
   $("board").innerHTML = nodes.map((n) => {
@@ -347,7 +395,7 @@ function render(D) {
       <td class="num">${att.prove ?? 0}/${att.decompose ?? 0}/${att.refute ?? 0}</td>
       <td class="num">${a ? esc(a.agent) + "<br>" + fmtTime(a.accepted_at) : "—"}</td></tr>`;
   }).join("");
-  $("board").addEventListener("click", (e) => { const tr = e.target.closest("tr"); if (tr) { show(tr.dataset.id); $("map").scrollIntoView({ behavior: "smooth", block: "center" }); } });
+  $("board").onclick = (e) => { const tr = e.target.closest("tr"); if (tr) { show(tr.dataset.id); $("map").scrollIntoView({ behavior: "smooth", block: "center" }); } };
 
   // 経過
   const feed = [];
@@ -380,7 +428,7 @@ function render(D) {
       ${cnt("reported") ? `<dt>監査報告</dt><dd>${cnt("reported")}</dd>` : ""}<dt>費用</dt><dd>$${Number(s.usd || 0).toFixed(2)}</dd></dl></div>`;
   }).join("");
 
-  $("foot").innerHTML = `<span>データ: ${esc(D.generated_at)} 時点（親機が sync のたびに <span class="mono">status/site.json</span> を更新。開き直すと最新になります）。本日の支出 $${Number(D.spent_today || 0).toFixed(2)}。</span>
+  $("foot").innerHTML = `<span>データ: ${esc(D.generated_at)} 時点（親機が sync のたびに <span class="mono">status/site.json</span> を更新。再読み込みで確認できます）。本日の支出 $${Number(D.spent_today || 0).toFixed(2)}。</span>
     <span>定義の承認ハッシュ <span class="mono">${esc(String(D.targets_hash || "").slice(0, 16))}…</span> · 受理条件: Lean カーネル検査、ロック済み命題との型一致、公理は propext / Classical.choice / Quot.sound のみ。</span>
     <span>リポジトリ: <a href="https://github.com/ruca-maths/nickel" target="_blank" rel="noopener">github.com/ruca-maths/nickel</a></span>`;
 }
@@ -393,7 +441,7 @@ async function loadSiteJson() {
   const errors = [];
   for (const url of candidates) {
     try {
-      const r = await fetch(url, { cache: "no-store" });
+      const r = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(5000) });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       return await r.json();
     } catch (e) {
@@ -403,7 +451,113 @@ async function loadSiteJson() {
   throw new Error(errors.join(" / "));
 }
 
-loadSiteJson()
+const githubAPI = "https://api.github.com/repos/ruca-maths/nickel";
+const commitCache = new Map();
+let publishedActivity;
+let githubRetryAt = 0;
+
+async function githubJSON(path) {
+  const response = await fetch(githubAPI + path, {signal: AbortSignal.timeout(10000)});
+  if (!response.ok) {
+    if (response.status === 403 || response.status === 429) {
+      const retry = Number(response.headers.get("retry-after")) || 75;
+      const reset = Number(response.headers.get("x-ratelimit-reset")) * 1000;
+      githubRetryAt = Math.max(Date.now() + retry * 1000, reset);
+    }
+    throw new Error(`GitHub HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+async function publicActivity(ttl) {
+  if (Date.now() < githubRetryAt) throw new Error("GitHub retry pending");
+  const refs = await githubJSON("/git/matching-refs/heads/");
+  const claims = [];
+  const submitted = [];
+  const seen = new Set();
+  for (const {ref, object} of refs) {
+    const proof = /^refs\/heads\/proof\/([LN])_([0-9]+)-([^/]+)$/.exec(ref);
+    if (proof) {
+      submitted.push({agent: proof[3], node: "L_" + proof[2], task: proof[1] === "L" ? "prove" : "refute"});
+      continue;
+    }
+    const claim = /^refs\/heads\/claim\/((prove|refute)-(L_[0-9]+))$/.exec(ref);
+    if (!claim) continue;
+    const sha = object.sha;
+    seen.add(sha);
+    if (!commitCache.has(sha)) {
+      commitCache.set(sha, await githubJSON("/git/commits/" + encodeURIComponent(sha)));
+    }
+    const commit = commitCache.get(sha);
+    const subject = commit.message.split("\n", 1)[0];
+    const parts = /^claim (\S+) by (\S+) at [0-9]+$/.exec(subject);
+    const expires_at = Date.parse(commit.committer.date) / 1000 + ttl;
+    if (parts?.[1] === claim[1] && expires_at > Date.now() / 1000) {
+      claims.push({agent: parts[2], task: claim[2], node: claim[3], expires_at});
+    }
+  }
+  for (const sha of commitCache.keys()) {
+    if (!seen.has(sha)) commitCache.delete(sha);
+  }
+  const pending = new Set(submitted.map((r) => r.task + ":" + r.node));
+  return {observed_at: Date.now() / 1000, submitted,
+    claims: claims.filter((r) => !pending.has(r.task + ":" + r.node))};
+}
+
+async function loadPublicStatus() {
+  const response = await fetch("https://raw.githubusercontent.com/ruca-maths/nickel/main/status/site.json",
+    {cache: "no-cache", signal: AbortSignal.timeout(10000)});
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const data = await response.json();
+  let connection = "GitHub 接続中";
+  try {
+    publishedActivity = await publicActivity(data.claim_ttl_sec ?? 7200);
+  } catch (error) {
+    console.error(error);
+    connection = "子機情報の取得待ち";
+  }
+  return {...data, remote_activity: publishedActivity || data.remote_activity,
+    live: {interval: 75, connection, published: true}};
+}
+
+async function followLive(load, initialDelay) {
+  const banner = document.getElementById("live-state");
+  banner.hidden = false;
+  let delay = initialDelay;
+  let lastKey;
+  const timeLabel = (ts) => new Date(ts * 1000).toLocaleTimeString("ja-JP");
+  async function update() {
+    try {
+      const data = await load();
+      delay = data.live.interval;
+      const {observed_at, ...activity} = data.remote_activity || {};
+      const now = Date.now() / 1000;
+      const key = JSON.stringify({...data, remote_activity: activity,
+        running: (data.running || []).filter((r) => r.expires_at > now),
+        activeClaims: (activity.claims || []).filter((r) => r.expires_at > now)});
+      if (key !== lastKey) {
+        render(data);
+        lastKey = key;
+      }
+      document.getElementById("activity-time").textContent = observed_at
+        ? `GitHub 最終確認 ${timeLabel(observed_at)}`
+        : "GitHub の確認記録なし";
+      banner.textContent = `${delay} 秒ごとに自動更新 · ${data.live.connection}${data.live.parent_db ? " · 親機 DB" : data.live.published ? " · 全体進捗は GitHub 公開分" : " · 全体進捗は保存済みデータ"}`;
+    } catch (error) {
+      console.error(error);
+      banner.textContent = "進捗データに接続できません。再接続中";
+    } finally {
+      setTimeout(update, delay * 1000);
+    }
+  }
+  await update();
+}
+
+if (document.body.hasAttribute("data-live")) {
+  followLive(loadSiteJson, 5);
+} else if (location.hostname === "ruca-maths.github.io") {
+  followLive(loadPublicStatus, 75);
+} else loadSiteJson()
   .then((data) => {
     try {
       render(data);

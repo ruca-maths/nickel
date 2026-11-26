@@ -494,7 +494,10 @@ class Desk:
             rel = f.relative_to(self.root).as_posix()
             if rel not in known:
                 results[rel] = self.ingest(rel)
-        self.regen()
+        from core.status_gen import remote_activity
+
+        activity = remote_activity(g, float(gcfg.get("claim_ttl_sec", 7200)))
+        self.regen(activity=activity)
         commit_state(f"sync: 状態更新（取り込み {sum(1 for r in results.values() if r.get('ok') and 'module' in r)} 件）")
         pushed = False
         if push:
@@ -616,12 +619,12 @@ class Desk:
             self._end_lease(ls)
         return {"expired": len(expired)}
 
-    def regen(self, commit_msg: str | None = None) -> None:
+    def regen(self, commit_msg: str | None = None, *, activity: dict | None = None) -> None:
         from core import status_gen
 
         if not self.cfg.get("status_enabled", True):
             return  # 子機: 追跡ファイル（STATUS.md 等）は書かない
-        status_gen.generate(self)
+        status_gen.generate(self, activity)
         if commit_msg and (self.cfg.get("git") or {}).get("autocommit"):
             paths = ["Specs", "Proofs", "STATUS.md", "status", "memory"]
             subprocess.run(["git", "add", "--", *paths], cwd=self.root, capture_output=True)
