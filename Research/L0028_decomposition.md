@@ -45,6 +45,8 @@
 26. **`M3_subspace`（Borges 1966）**: M₃ 空間の任意の部分空間は M₃ 空間である（遺伝性）。
 27. **`M3_countable_pi`（Borges 1966）**: M₃ 空間の可算直積 $\prod_{i \in \mathbb{N}} X_i$ は M₃ 空間である。
 28. **`M3_monotone_normality`（Heath–Lutzer–Zenor 1973）**: 任意の M₃ 空間は単調正規（monotonically normal）である。
+29. **`M3_of_isClosedMap_surjective`（Borges 1966 閉写像定理）**: M₃ 空間の任意の $T_1$ 閉連続全射像は M₃ 空間である。
+30. **`M3_prod` / `M3_has_GDelta_diagonal`（Borges 1966 / Ceder 1961）**: M₃ 空間の有限積は M₃ であり、任意の M₃ 空間は $G_\delta$-対角線を持つ。
 
 ## 2. 棄却された単純構成と反例
 

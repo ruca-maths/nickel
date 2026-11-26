@@ -4,6 +4,7 @@ import Targets
 import Proofs.L_0003
 import Proofs.L_0004
 import Proofs.L_0005
+import Proofs.L_0006
 import Proofs.L_0008
 import Proofs.L_0010
 
@@ -2305,5 +2306,134 @@ theorem M3_monotone_normality (X : Type) [TopologicalSpace X] (hM3 : MSpace.IsM3
     refine mem_iUnion.mpr ⟨n, hG.2.2.2 n _ _ isClosed_closure isClosed_closure (closure_mono hA) hzA, ?_⟩
     intro h
     exact hzB (closure_mono (hG.2.2.2 n _ _ isClosed_closure isClosed_closure (closure_mono hB)) h)
+
+/-- Theorem 26 (Borges 1966, Closed-Map Theorem for `M₃`-spaces):
+Every `T₁` closed continuous surjective image of an `M₃`-space is an `M₃`-space. -/
+theorem M3_of_isClosedMap_surjective
+    {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y] [T1Space Y]
+    (hM3 : MSpace.IsM3 X) {f : X → Y}
+    (hf_cont : Continuous f) (hf_closed : IsClosedMap f) (hf_surj : Function.Surjective f) :
+    MSpace.IsM3 Y := by
+  obtain ⟨G, hG, _⟩ := exists_monotone_stratification X hM3
+  obtain ⟨HX, hHX_open, hHX_sub, hHX_disj, hHX_mono⟩ := M3_monotone_normality X hM3
+  -- Step 1: Semi-stratification S on Y
+  let S : ℕ → Set Y → Set Y := fun n H => (f '' (G n (f ⁻¹' H))ᶜ)ᶜ
+  have hS_open : ∀ n H, IsClosed H → IsOpen (S n H) := fun n H hH =>
+    (hf_closed _ (hG.1 n (f ⁻¹' H) (hH.preimage hf_cont)).isClosed_compl).isOpen_compl
+  have hS_sub : ∀ n H, IsClosed H → H ⊆ S n H := by
+    intro n H hH y hyH ⟨x, hxnotG, hfx⟩
+    subst hfx
+    exact hxnotG (hG.2.1 n (f ⁻¹' H) (hH.preimage hf_cont) hyH)
+  have hS_inter : ∀ H, IsClosed H → ⋂ n, S n H = H := by
+    intro H hH
+    apply Subset.antisymm
+    · intro y hy
+      rw [mem_iInter] at hy
+      obtain ⟨x, rfl⟩ := hf_surj y
+      have hx : x ∈ ⋂ n, closure (G n (f ⁻¹' H)) := by
+        rw [mem_iInter]
+        intro n
+        by_contra hnot
+        exact hy n ⟨x, fun h => hnot (subset_closure h), rfl⟩
+      rw [hG.2.2.1 (f ⁻¹' H) (hH.preimage hf_cont)] at hx
+      exact hx
+    · intro y hyH
+      rw [mem_iInter]
+      exact fun n => hS_sub n H hH hyH
+  have hS_mono : ∀ n H K, IsClosed H → IsClosed K → H ⊆ K → S n H ⊆ S n K := by
+    intro n H K hH hK hHK y hy ⟨x, hxnotG, hfx⟩
+    exact hy ⟨x, fun hxGH => hxnotG (hG.2.2.2 n _ _ (hH.preimage hf_cont)
+      (hK.preimage hf_cont) (preimage_mono hHK) hxGH), hfx⟩
+  -- Step 2: Monotone normality operator MY on disjoint closed sets of Y
+  let MY : Set Y → Set Y → Set Y := fun A B => (f '' (HX (f ⁻¹' A) (f ⁻¹' B))ᶜ)ᶜ
+  have hMY_open : ∀ A B, IsOpen (MY A B) := fun A B =>
+    (hf_closed _ (hHX_open (f ⁻¹' A) (f ⁻¹' B)).isClosed_compl).isOpen_compl
+  have hMY_sub : ∀ A B, IsClosed A → IsClosed B → Disjoint A B → A ⊆ MY A B := by
+    intro A B hA hB hAB y hyA ⟨x, hxnotH, hfx⟩
+    subst hfx
+    have hpreA : IsClosed (f ⁻¹' A) := hA.preimage hf_cont
+    have hpreB : IsClosed (f ⁻¹' B) := hB.preimage hf_cont
+    have hdisj : Disjoint (f ⁻¹' A) (f ⁻¹' B) := hAB.preimage f
+    have hsub := hHX_sub (f ⁻¹' A) (f ⁻¹' B)
+      (hpreA.closure_eq.symm ▸ hdisj) (hpreB.closure_eq.symm ▸ hdisj)
+    exact hxnotH (hsub hyA)
+  have hMY_disj : ∀ A B, Disjoint (MY A B) (MY B A) := by
+    intro A B
+    rw [Set.disjoint_left]
+    intro y hy1 hy2
+    obtain ⟨x, rfl⟩ := hf_surj y
+    have hx1 : x ∈ HX (f ⁻¹' A) (f ⁻¹' B) := by
+      by_contra hnot; exact hy1 ⟨x, hnot, rfl⟩
+    have hx2 : x ∈ HX (f ⁻¹' B) (f ⁻¹' A) := by
+      by_contra hnot; exact hy2 ⟨x, hnot, rfl⟩
+    exact Set.disjoint_left.mp (hHX_disj (f ⁻¹' A) (f ⁻¹' B)) hx1 hx2
+  have hMY_mono : ∀ A₁ A₂ B₁ B₂, A₁ ⊆ A₂ → B₂ ⊆ B₁ → MY A₁ B₁ ⊆ MY A₂ B₂ := by
+    intro A₁ A₂ B₁ B₂ hA hB y hy ⟨x, hxnot, hfx⟩
+    exact hy ⟨x, fun hx => hxnot (hHX_mono _ _ _ _ (preimage_mono hA) (preimage_mono hB) hx), hfx⟩
+  -- Step 3: Stratification GY n H := MY H (S n H)ᶜ
+  let GY : ℕ → Set Y → Set Y := fun n H => MY H (S n H)ᶜ
+  refine (Proofs.L_0004.main Y).mpr ⟨inferInstance, GY, ?_, ?_, ?_, ?_⟩
+  · intro n H _
+    exact hMY_open H (S n H)ᶜ
+  · intro n H hH
+    exact hMY_sub H (S n H)ᶜ hH (hS_open n H hH).isClosed_compl
+      (disjoint_compl_right_iff.mpr (hS_sub n H hH))
+  · intro H hH
+    apply Subset.antisymm
+    · intro y hy
+      rw [← hS_inter H hH, mem_iInter]
+      rw [mem_iInter] at hy
+      intro n
+      have hcl_sub : closure (GY n H) ⊆ (MY (S n H)ᶜ H)ᶜ :=
+        (hMY_open (S n H)ᶜ H).isClosed_compl.closure_subset_iff.mpr
+          (hMY_disj H (S n H)ᶜ).subset_compl_right
+      have hsub_S : (MY (S n H)ᶜ H)ᶜ ⊆ S n H := by
+        intro z hz
+        by_contra hnot
+        exact hz (hMY_sub (S n H)ᶜ H (hS_open n H hH).isClosed_compl hH
+          (disjoint_compl_left_iff.mpr (hS_sub n H hH)) hnot)
+      exact hsub_S (hcl_sub (hy n))
+    · intro y hyH
+      rw [mem_iInter]
+      intro n
+      exact subset_closure (hMY_sub H (S n H)ᶜ hH (hS_open n H hH).isClosed_compl
+        (disjoint_compl_right_iff.mpr (hS_sub n H hH)) hyH)
+  · intro n H K hH hK hHK
+    exact hMY_mono H K (S n H)ᶜ (S n K)ᶜ hHK (compl_subset_compl.mpr (hS_mono n H K hH hK hHK))
+
+/-- Helper: Binary product of two `M₃`-spaces is an `M₃`-space. -/
+theorem M3_prod (X Y : Type) [TopologicalSpace X] [TopologicalSpace Y]
+    (hX : MSpace.IsM3 X) (hY : MSpace.IsM3 Y) :
+    MSpace.IsM3 (X × Y) := by
+  have : T3Space X := hX.1
+  have : T3Space Y := hY.1
+  obtain ⟨_, 𝓑, h𝓑qb, 𝓑', h𝓑'cp, h𝓑eq⟩ := Proofs.L_0008.main X hX
+  obtain ⟨_, 𝓒, h𝓒qb, 𝓒', h𝓒'cp, h𝓒eq⟩ := Proofs.L_0008.main Y hY
+  let 𝓓' : ℕ → Set (Set (X × Y)) := fun r =>
+    { S : Set (X × Y) | ∃ B ∈ 𝓑' (Nat.unpair r).1, ∃ C ∈ 𝓒' (Nat.unpair r).2, S = B ×ˢ C }
+  refine Proofs.L_0003.main (X × Y) ⟨inferInstance, ⋃ r, 𝓓' r, ?_, 𝓓', ?_, rfl⟩
+  · rintro ⟨x, y⟩ W hW_open hxyW
+    obtain ⟨U, V, hU_open, hV_open, hxU, hyV, hUV⟩ := isOpen_prod_iff.mp hW_open x y hxyW
+    obtain ⟨B, hB𝓑, hxintB, hBU⟩ := h𝓑qb x U hU_open hxU
+    obtain ⟨C, hC𝓒, hyintC, hCV⟩ := h𝓒qb y V hV_open hyV
+    rw [h𝓑eq, mem_iUnion] at hB𝓑
+    rw [h𝓒eq, mem_iUnion] at hC𝓒
+    obtain ⟨m, hBm⟩ := hB𝓑
+    obtain ⟨n, hCn⟩ := hC𝓒
+    refine ⟨B ×ˢ C, mem_iUnion.mpr ⟨Nat.pair m n, ?_⟩, ?_, (prod_mono hBU hCV).trans hUV⟩
+    · dsimp only [𝓓']; rw [Nat.unpair_pair]
+      exact ⟨B, hBm, C, hCn, rfl⟩
+    · rw [interior_prod_eq]
+      exact ⟨hxintB, hyintC⟩
+  · intro r
+    exact closurePreserving_prod (h𝓑'cp (Nat.unpair r).1) (h𝓒'cp (Nat.unpair r).2)
+
+/-- Theorem 27 (Borges 1966 / Ceder 1961): Every `M₃`-space has a `Gδ`-diagonal. -/
+theorem M3_has_GDelta_diagonal (X : Type) [TopologicalSpace X] (hM3 : MSpace.IsM3 X) :
+    IsGδ (Set.diagonal X) := by
+  have : T3Space X := hM3.1
+  have hprod : MSpace.IsM3 (X × X) := M3_prod X X hM3 hM3
+  have hstrat : MSpace.IsStratifiable (X × X) := (Proofs.L_0004.main (X × X)).mp hprod
+  exact (Proofs.L_0006.main (X × X) hstrat).2 (Set.diagonal X) isClosed_diagonal
 
 end Research.M3M1
