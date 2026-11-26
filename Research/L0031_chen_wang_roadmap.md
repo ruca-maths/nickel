@@ -40,8 +40,10 @@
 - **`isStratifiable_of_laminar_clopen_partition` / `xtop_isStratifiable` / `xtop_subtype_isStratifiable`**: `Defs.D_0011.xtop α` およびその任意の部分空間 $Y \subseteq \mathbb{N} \to \alpha$ が stratifiable であること。
 - **`xtop_subtype_refinement_L0031` / `xtop_subtype_refinement_not_Tinf`**: 任意の部分空間 $Y \subseteq \mathbb{N} \to \alpha$ 上の細分位相 $\tau \le \mathrm{xtop}_Y$ に対し、境界分離 $g$-関数と `¬ HasCPOuterBase y₀` から `Specs.L_0031.stmt` および `¬ MSpace.Goals.Tinf_M3_imp_M1` を直接導出。
 
-## 8. [ChenWang_BoxFan_Equiv.lean](ChenWang_BoxFan_Equiv.lean)（`BoxFanGen` による厳密同値 `Specs.L_0030.stmt ↔ Specs.L_0031.stmt`）
+## 8. [ChenWang_BoxFan_Equiv.lean](ChenWang_BoxFan_Equiv.lean)（`BoxFanGen` による厳密同値 `L_0020 ↔ L_0031 ↔ L_0030`・`L_0019` 迂回定理）
 - **`BoxFanGen Z := Option (ℕ × Z)`**（基点 $z_0 \in Z$ に対する一般化ボックス扇）を構成し、`boxFanGen_isStratifiable`（Heath–Lutzer–Zenor 単調正規性作用素を経由して、**任意の** stratifiable 空間 $Z$ に対し `BoxFanGen Z` が常に stratifiable になること）を証明。
 - **`boxFanGen_W_clopen` / `boxFanGen_W_inter`**: 頂点 `none` は常に減少開閉近傍列 $\bigcap_n W_n = \{\mathrm{none}\}$ を持つ。
-- **`hasSigmaCPLocalBase_of_boxFanGen_hasCPOuterBase`**: `none` の単層 CP 開外基は各層 $k$ への切断により $z_0 \in Z$ の $\sigma$-CP 開局所基を誘導する。
-- **`L0030_imp_L0031` / `L0030_iff_L0031`**: 親機の `R_0010` + `L_0032` の**完全な逆**を示し、`Specs.L_0030.stmt ↔ Specs.L_0031.stmt` を確立（`L_0031` の開閉 $G_\delta$ 点条件は一般性を全く失わない）。
+- **`boxFanGen_hasCPOuterBase_iff`**: 対角化議論により、**任意の位相空間 $(Z, z_0)$ について** `HasCPOuterBase (none : BoxFanGen Z) ↔ HasCPOuterBase z₀` が厳密に成り立つことを証明。
+- **`L0020_iff_L0031` / `L0020_iff_L0030` / `L0030_iff_L0031`**: 親機の 3 つの反例仕様 `L_0020`・`L_0030`・`L_0031` がすべて ZFC で完全に同値であることを確立。
+- **`L0020_imp_not_Tinf` / `Tinf_imp_L0019`**: Mizokami (2004) / `L_0019` / `L_0028` を一切経由せずに `Specs.L_0020.stmt → ¬ MSpace.Goals.Tinf_M3_imp_M1`（および対偶 `Tinf → L_0019`）を直接導出。
+- **`boxFanGen_isM1_iff`**: `MSpace.IsM1 (BoxFanGen Z) ↔ MSpace.IsM1 Z ∧ Defs.D_0001.HasCPOuterBase z₀`（`BoxFanGen` が `L_0019` の関手的テストベッドであることの完全特徴付け）。
