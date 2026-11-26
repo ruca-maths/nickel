@@ -36,6 +36,8 @@
 17. **`M3_is_M1_of_countable_closed_cover_with_cp_outer_bases`**: 可算個の閉集合 $F_k$ で覆われ、各 $F_k$ に含まれる任意の閉集合が $X$ 内で CP 開外基を持つ M₃ 空間は M₁ 空間である（Mizokami 2004 の可算閉和定理の帰着骨格）。
 18. **`M1_prod` / `hasCPOpenLocalBase_prod`（Ceder 1961）**: M₁ 空間の有限積は M₁ 空間であり、点の CP 開近傍基も有限積で保存される。
 19. **`sigma_closed_discrete_normal_is_strongly_zero_dim`**: 任意の $\sigma$-閉離散正規空間は強ゼロ次元（$\operatorname{Ind}(X) = 0$、任意の閉集合と開近傍が clopen 集合で分離可能）である。
+20. **`hasCPOpenLocalBase_iff_open_subspace`**: $T_3$ 空間において、点の CP 開近傍基の存在は開部分空間への制限・拡張で完全に不変な局所的性質である。
+21. **`hasCPOpenLocalBase_of_isClosedMap_isOpenMap` / `M1_of_isClosedMap_isOpenMap_surjective`**: 連続かつ開閉写像のもとで、点の CP 開近傍基および M₁ 空間性（$T_3$ 全射像）が保存される。
 
 ## 2. 棄却された単純構成と反例
 

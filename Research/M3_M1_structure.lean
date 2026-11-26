@@ -1399,4 +1399,160 @@ theorem sigma_closed_discrete_normal_is_strongly_zero_dim
     have hzC' : z ∈ C' := mem_iUnion.mpr ⟨0, (hspec 0).2.2.2.1 (Or.inl hznotU)⟩
     exact Set.disjoint_left.mp hCC'_disj hzC hzC'
 
+/-- Theorem 16 (Locality of CP open local bases):
+In a `T3Space`, `HasCPOpenLocalBase` is a purely local property: for any open
+neighborhood `U` of `x`, `x` has a CP open local base in `X` iff `⟨x, hxU⟩` has
+a CP open local base in the subspace `↥U`. -/
+theorem hasCPOpenLocalBase_iff_open_subspace (X : Type) [TopologicalSpace X] [T3Space X]
+    (U : Set X) (hU : IsOpen U) (x : X) (hxU : x ∈ U) :
+    HasCPOpenLocalBase x ↔ HasCPOpenLocalBase (⟨x, hxU⟩ : ↥U) := by
+  constructor
+  · rintro ⟨𝓥, h𝓥_open, h𝓥_base, h𝓥_cp⟩
+    refine ⟨{ S : Set ↥U | ∃ V ∈ 𝓥, V ⊆ U ∧ S = Subtype.val ⁻¹' V }, ?_, ?_, ?_⟩
+    · rintro _ ⟨V, hV, _, rfl⟩
+      exact ⟨(h𝓥_open V hV).1.preimage continuous_subtype_val, (h𝓥_open V hV).2⟩
+    · intro O hO hxO
+      obtain ⟨W, hW_open, rfl⟩ := isOpen_induced_iff.mp hO
+      have hxWU : x ∈ W ∩ U := ⟨hxO, hxU⟩
+      obtain ⟨V, hV, hVWU⟩ := h𝓥_base (W ∩ U) (hW_open.inter hU) hxWU
+      exact ⟨Subtype.val ⁻¹' V, ⟨V, hV, hVWU.trans inter_subset_right, rfl⟩,
+        fun y hy => (hVWU hy).1⟩
+    · intro 𝓖 h𝓖
+      apply Subset.antisymm
+      · intro y hy
+        let 𝓗 : Set (Set X) := { V ∈ 𝓥 | V ⊆ U ∧ Subtype.val ⁻¹' V ∈ 𝓖 }
+        have hval_sub : Subtype.val '' (⋃₀ 𝓖) ⊆ ⋃₀ 𝓗 := by
+          rintro _ ⟨z, ⟨S, hS𝓖, hzS⟩, rfl⟩
+          obtain ⟨V, hV, hVU, rfl⟩ := h𝓖 hS𝓖
+          exact ⟨V, ⟨hV, hVU, hS𝓖⟩, hzS⟩
+        have hy_img : (y : X) ∈ Subtype.val '' closure (⋃₀ 𝓖) := ⟨y, hy, rfl⟩
+        have hy_cl : (y : X) ∈ closure (⋃₀ 𝓗) :=
+          closure_mono hval_sub (image_closure_subset_closure_image continuous_subtype_val hy_img)
+        rw [h𝓥_cp 𝓗 (fun _ h => h.1)] at hy_cl
+        obtain ⟨_, ⟨V, ⟨_, _, hV𝓖⟩, rfl⟩, hyV⟩ := hy_cl
+        refine ⟨closure (Subtype.val ⁻¹' V), mem_image_of_mem _ hV𝓖, ?_⟩
+        rw [mem_closure_iff]
+        intro O hO hyO
+        obtain ⟨W, hW_open, rfl⟩ := isOpen_induced_iff.mp hO
+        obtain ⟨z, ⟨hzW, hzU⟩, hzV⟩ :=
+          mem_closure_iff.mp hyV (W ∩ U) (hW_open.inter hU) ⟨hyO, y.2⟩
+        exact ⟨⟨z, hzU⟩, hzW, hzV⟩
+      · exact sUnion_subset (by rintro _ ⟨S, hS, rfl⟩; exact closure_mono (subset_sUnion_of_mem hS))
+  · rintro ⟨𝓥, h𝓥_open, h𝓥_base, h𝓥_cp⟩
+    obtain ⟨K, hK_nhds, hK_closed, hKU⟩ := exists_mem_nhds_isClosed_subset (hU.mem_nhds hxU)
+    obtain ⟨W₀, hW₀K, hW₀_open, hxW₀⟩ := mem_nhds_iff.mp hK_nhds
+    have hW₀_cl : closure W₀ ⊆ U := (hK_closed.closure_subset_iff.mpr hW₀K).trans hKU
+    let W : Set ↥U := Subtype.val ⁻¹' W₀
+    refine ⟨{ S : Set X | ∃ V ∈ 𝓥, V ⊆ W ∧ S = Subtype.val '' V }, ?_, ?_, ?_⟩
+    · rintro _ ⟨V, hV, _, rfl⟩
+      exact ⟨hU.isOpenMap_subtype_val V (h𝓥_open V hV).1, ⟨⟨x, hxU⟩, (h𝓥_open V hV).2, rfl⟩⟩
+    · intro O hO hxO
+      let O' : Set ↥U := Subtype.val ⁻¹' (O ∩ W₀)
+      have hO'_open : IsOpen O' := (hO.inter hW₀_open).preimage continuous_subtype_val
+      have hxO' : (⟨x, hxU⟩ : ↥U) ∈ O' := ⟨hxO, hxW₀⟩
+      obtain ⟨V, hV, hVO'⟩ := h𝓥_base O' hO'_open hxO'
+      refine ⟨Subtype.val '' V, ⟨V, hV, fun y hy => (hVO' hy).2, rfl⟩, ?_⟩
+      rintro _ ⟨y, hyV, rfl⟩
+      exact (hVO' hyV).1
+    · intro 𝓖 h𝓖
+      apply Subset.antisymm
+      · intro y hy
+        let 𝓗 : Set (Set ↥U) := { V ∈ 𝓥 | V ⊆ W ∧ Subtype.val '' V ∈ 𝓖 }
+        have hsub_W₀ : ⋃₀ 𝓖 ⊆ W₀ := by
+          rintro z ⟨S, hS𝓖, hzS⟩
+          obtain ⟨V, _, hVW, rfl⟩ := h𝓖 hS𝓖
+          obtain ⟨w, hwV, rfl⟩ := hzS
+          exact hVW hwV
+        have hyU : y ∈ U := hW₀_cl (closure_mono hsub_W₀ hy)
+        let y' : ↥U := ⟨y, hyU⟩
+        have hy'_cl : y' ∈ closure (⋃₀ 𝓗) := by
+          rw [mem_closure_iff]
+          intro O hO hy'O
+          obtain ⟨M, hM_open, rfl⟩ := isOpen_induced_iff.mp hO
+          obtain ⟨z, ⟨hzM, hzU⟩, hzG⟩ :=
+            mem_closure_iff.mp hy (M ∩ U) (hM_open.inter hU) ⟨hy'O, hyU⟩
+          obtain ⟨S, hS𝓖, hzS⟩ := hzG
+          obtain ⟨V, hV, hVW, rfl⟩ := h𝓖 hS𝓖
+          obtain ⟨w, hwV, rfl⟩ := hzS
+          exact ⟨w, hzM, V, ⟨hV, hVW, hS𝓖⟩, hwV⟩
+        rw [h𝓥_cp 𝓗 (fun _ h => h.1)] at hy'_cl
+        obtain ⟨_, ⟨V, ⟨_, _, hV𝓖⟩, rfl⟩, hy'V⟩ := hy'_cl
+        refine ⟨closure (Subtype.val '' V), mem_image_of_mem _ hV𝓖, ?_⟩
+        exact image_closure_subset_closure_image continuous_subtype_val ⟨y', hy'V, rfl⟩
+      · exact sUnion_subset (by rintro _ ⟨S, hS, rfl⟩; exact closure_mono (subset_sUnion_of_mem hS))
+
+/-- Theorem 17: Closed-and-open continuous maps preserve pointwise CP open
+neighborhood bases. -/
+theorem hasCPOpenLocalBase_of_isClosedMap_isOpenMap
+    {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y]
+    {f : X → Y} (hf_cont : Continuous f) (hf_closed : IsClosedMap f) (hf_open : IsOpenMap f)
+    {x : X} (hx : HasCPOpenLocalBase x) :
+    HasCPOpenLocalBase (f x) := by
+  obtain ⟨𝓥, h𝓥_open, h𝓥_base, h𝓥_cp⟩ := hx
+  refine ⟨(fun V => f '' V) '' 𝓥, ?_, ?_, ?_⟩
+  · rintro _ ⟨V, hV, rfl⟩
+    exact ⟨hf_open V (h𝓥_open V hV).1, ⟨x, (h𝓥_open V hV).2, rfl⟩⟩
+  · intro O hO hfxO
+    obtain ⟨V, hV, hVfO⟩ := h𝓥_base (f ⁻¹' O) (hO.preimage hf_cont) hfxO
+    exact ⟨f '' V, ⟨V, hV, rfl⟩, image_subset_iff.mpr hVfO⟩
+  · intro 𝓖 h𝓖
+    apply Subset.antisymm
+    · intro y hy
+      let 𝓗 : Set (Set X) := { V ∈ 𝓥 | f '' V ∈ 𝓖 }
+      have hsub : ⋃₀ 𝓖 ⊆ f '' closure (⋃₀ 𝓗) := by
+        rintro z ⟨S, hS𝓖, hzS⟩
+        obtain ⟨V, hV, rfl⟩ := h𝓖 hS𝓖
+        obtain ⟨w, hwV, rfl⟩ := hzS
+        exact ⟨w, subset_closure ⟨V, ⟨hV, hS𝓖⟩, hwV⟩, rfl⟩
+      have hcl : IsClosed (f '' closure (⋃₀ 𝓗)) := hf_closed _ isClosed_closure
+      have hy' : y ∈ f '' closure (⋃₀ 𝓗) := closure_minimal hsub hcl hy
+      obtain ⟨w, hw_cl, rfl⟩ := hy'
+      rw [h𝓥_cp 𝓗 (fun _ h => h.1)] at hw_cl
+      obtain ⟨_, ⟨V, ⟨_, hV𝓖⟩, rfl⟩, hwV⟩ := hw_cl
+      refine ⟨closure (f '' V), mem_image_of_mem _ hV𝓖, ?_⟩
+      exact image_closure_subset_closure_image hf_cont ⟨w, hwV, rfl⟩
+    · exact sUnion_subset (by rintro _ ⟨S, hS, rfl⟩; exact closure_mono (subset_sUnion_of_mem hS))
+
+/-- Theorem 18: Every `T3Space` image of an `M₁`-space under a closed-and-open
+continuous surjection is an `M₁`-space. -/
+theorem M1_of_isClosedMap_isOpenMap_surjective
+    {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y] [T3Space Y]
+    (hX : MSpace.IsM1 X) {f : X → Y}
+    (hf_cont : Continuous f) (hf_closed : IsClosedMap f) (hf_open : IsOpenMap f)
+    (hf_surj : Function.Surjective f) :
+    MSpace.IsM1 Y := by
+  obtain ⟨_, 𝓑, h𝓑_basis, 𝓑', h𝓑'_cp, h𝓑_eq⟩ := hX
+  let 𝓒' : ℕ → Set (Set Y) := fun n => (fun B => f '' B) '' 𝓑' n
+  refine ⟨inferInstance, ⋃ n, 𝓒' n, ?_, 𝓒', ?_, rfl⟩
+  · have hopen : ∀ S ∈ ⋃ n, 𝓒' n, IsOpen S := by
+      intro S hS
+      obtain ⟨n, B, hBn, rfl⟩ := mem_iUnion.mp hS
+      have hBo : IsOpen B := h𝓑_basis.isOpen (h𝓑_eq.symm ▸ mem_iUnion.mpr ⟨n, hBn⟩)
+      exact hf_open B hBo
+    refine isTopologicalBasis_of_isOpen_of_nhds hopen ?_
+    intro y O hyO hO_open
+    obtain ⟨x, rfl⟩ := hf_surj y
+    obtain ⟨B, hB𝓑, hxB, hBfO⟩ :=
+      h𝓑_basis.exists_subset_of_mem_open hyO (hO_open.preimage hf_cont)
+    rw [h𝓑_eq, mem_iUnion] at hB𝓑
+    obtain ⟨n, hBn⟩ := hB𝓑
+    exact ⟨f '' B, mem_iUnion.mpr ⟨n, B, hBn, rfl⟩, ⟨x, hxB, rfl⟩, image_subset_iff.mpr hBfO⟩
+  · intro n 𝓖 h𝓖
+    apply Subset.antisymm
+    · intro y hy
+      let 𝓗 : Set (Set X) := { B ∈ 𝓑' n | f '' B ∈ 𝓖 }
+      have hsub : ⋃₀ 𝓖 ⊆ f '' closure (⋃₀ 𝓗) := by
+        rintro z ⟨S, hS𝓖, hzS⟩
+        obtain ⟨B, hBn, rfl⟩ := h𝓖 hS𝓖
+        obtain ⟨w, hwB, rfl⟩ := hzS
+        exact ⟨w, subset_closure ⟨B, ⟨hBn, hS𝓖⟩, hwB⟩, rfl⟩
+      have hcl : IsClosed (f '' closure (⋃₀ 𝓗)) := hf_closed _ isClosed_closure
+      have hy' : y ∈ f '' closure (⋃₀ 𝓗) := closure_minimal hsub hcl hy
+      obtain ⟨w, hw_cl, rfl⟩ := hy'
+      rw [h𝓑'_cp n 𝓗 (fun _ h => h.1)] at hw_cl
+      obtain ⟨_, ⟨B, ⟨_, hB𝓖⟩, rfl⟩, hwB⟩ := hw_cl
+      refine ⟨closure (f '' B), mem_image_of_mem _ hB𝓖, ?_⟩
+      exact image_closure_subset_closure_image hf_cont ⟨w, hwB, rfl⟩
+    · exact sUnion_subset (by rintro _ ⟨S, hS, rfl⟩; exact closure_mono (subset_sUnion_of_mem hS))
+
 end Research.M3M1
