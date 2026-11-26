@@ -243,7 +243,8 @@ class TestSystem(unittest.TestCase):
         import os
         self.d.db.conn.execute("DELETE FROM spend")
         # ここまでで全ノードが閉じているので、割り当て用の未解決ノードを1つ足す（Lean は使わない）
-        self.d.db.add_node(node_id="L_0099", origin="lemma", tier="T1", stmt="True", informal="test")
+        self.d.db.add_node(node_id="L_0099", origin="goal", goal_key="G99", tier="T1", stmt="True",
+                           informal="test")
         n_att = self.d.db.q1("SELECT COUNT(*) n FROM attempts")["n"]
         os.environ["FAKE_LIMIT"] = "1"
         try:

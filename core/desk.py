@@ -113,9 +113,17 @@ class Desk:
         mx = int(self.lim("max_attempts_per_task", 5))
         out: list[tuple[tuple, str, str | None]] = []
         n_nodes = self.db.count_nodes()
+        # 補題は「まだ open の親を持つ帰着」の子であるときだけ意味がある（親が別経路で証明済みなら不要）
+        needed: set[str] = set()
+        for r in self.db.q("SELECT parent, children FROM reductions WHERE status='live'"):
+            p = self.db.node(r["parent"])
+            if p is not None and p["status"] == "open":
+                needed.update(json.loads(r["children"]))
         for n in self.db.nodes("open"):
             nid = n["id"]
             if not self.tier_open(n["tier"]):
+                continue
+            if n["origin"] == "lemma" and nid not in needed:
                 continue
             tr = TIER_ORDER.get(n["tier"], 5)
             live = self.db.reductions_of(nid, ("live",))
