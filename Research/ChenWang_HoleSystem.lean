@@ -268,4 +268,131 @@ theorem W_of_H_axioms {α : Type} (q : ℕ ≃ α) :
 
 end DefsD0007Instance
 
+section IdealHoleConstruction
+
+/-- Given any laminar partition `W : ℕ → Y → Set Y`, a `W`-closed subset `H₀ ⊆ Y`,
+and any ideal `𝓘` of subsets of `H₀ᶜ`, carving out `D ∈ 𝓘` at points of `H₀` and
+isolating points outside `H₀` defines a valid `HoleSystem Y`. -/
+noncomputable def idealHoleSystem {Y : Type}
+    (W : ℕ → Y → Set Y)
+    (hmem : ∀ n y, y ∈ W n y)
+    (hdec : ∀ n y, W (n + 1) y ⊆ W n y)
+    (hpart : ∀ n x y, y ∈ W n x → W n y = W n x)
+    (hinter : ∀ y, (⋂ n, W n y) = {y})
+    (H₀ : Set Y)
+    (𝓘 : Set (Set Y))
+    (h𝓘_empty : ∅ ∈ 𝓘)
+    (h𝓘_sub : ∀ D ∈ 𝓘, D ⊆ H₀ᶜ)
+    (h𝓘_union : ∀ D₁ ∈ 𝓘, ∀ D₂ ∈ 𝓘, D₁ ∪ D₂ ∈ 𝓘) :
+    HoleSystem Y where
+  W := W
+  mem_W := hmem
+  W_dec := hdec
+  W_part := hpart
+  W_inter := hinter
+  Holes := fun y => @ite _ (y ∈ H₀) (Classical.propDecidable _) 𝓘 { D | D = ∅ ∨ D = {y}ᶜ }
+  empty_mem := fun y => by
+    by_cases hy : y ∈ H₀ <;> simp [hy, h𝓘_empty]
+  not_mem_hole := fun y D hD => by
+    by_cases hy : y ∈ H₀
+    · simp only [hy, ↓reduceIte] at hD
+      exact fun hyD => h𝓘_sub D hD hyD hy
+    · simp only [hy, ↓reduceIte, mem_ofPred_eq] at hD
+      rcases hD with rfl | rfl
+      · exact notMem_empty y
+      · exact fun h => h rfl
+  union_mem := fun y D₁ hD₁ D₂ hD₂ => by
+    by_cases hy : y ∈ H₀
+    · simp only [hy, ↓reduceIte] at hD₁ hD₂ ⊢
+      exact h𝓘_union D₁ hD₁ D₂ hD₂
+    · simp only [hy, ↓reduceIte, mem_ofPred_eq] at hD₁ hD₂ ⊢
+      rcases hD₁ with rfl | rfl
+      · simpa using hD₂
+      · rcases hD₂ with rfl | rfl
+        · exact Or.inr (union_empty _)
+        · exact Or.inr (union_self _)
+  coherent := fun n y D hD z ⟨hzW, hzD⟩ => by
+    by_cases hz : z ∈ H₀
+    · by_cases hy : y ∈ H₀
+      · simp only [hy, ↓reduceIte] at hD
+        refine ⟨n, le_rfl, D, by simp [hz, hD], ?_⟩
+        rw [hpart n y z hzW]
+      · simp only [hy, ↓reduceIte, mem_ofPred_eq] at hD
+        rcases hD with rfl | rfl
+        · refine ⟨n, le_rfl, ∅, by simp [hz, h𝓘_empty], ?_⟩
+          rw [hpart n y z hzW]
+        · have hzy : z = y := by by_contra hne; exact hzD hne
+          exact (hy (hzy ▸ hz)).elim
+    · refine ⟨n, le_rfl, {z}ᶜ, by simp [hz], ?_⟩
+      intro w ⟨_, hwnot⟩
+      have hwz : w = z := by by_contra hne; exact hwnot hne
+      exact hwz ▸ ⟨hzW, hzD⟩
+
+/-- Every `idealHoleSystem` over a `W`-closed subset `H₀` is stratifiable
+(`MSpace.IsStratifiable Y`), with decreasing clopen neighborhoods `W n y`
+at every point `y : Y`. -/
+theorem idealHoleSystem_isStratifiable {Y : Type}
+    (W : ℕ → Y → Set Y)
+    (hmem : ∀ n y, y ∈ W n y)
+    (hdec : ∀ n y, W (n + 1) y ⊆ W n y)
+    (hpart : ∀ n x y, y ∈ W n x → W n y = W n x)
+    (hinter : ∀ y, (⋂ n, W n y) = {y})
+    (H₀ : Set Y)
+    (hH₀_closed : ∀ x ∉ H₀, ∃ m, Disjoint (W m x) H₀)
+    (𝓘 : Set (Set Y))
+    (h𝓘_empty : ∅ ∈ 𝓘)
+    (h𝓘_sub : ∀ D ∈ 𝓘, D ⊆ H₀ᶜ)
+    (h𝓘_union : ∀ D₁ ∈ 𝓘, ∀ D₂ ∈ 𝓘, D₁ ∪ D₂ ∈ 𝓘) :
+    let H := idealHoleSystem W hmem hdec hpart hinter H₀ 𝓘 h𝓘_empty h𝓘_sub h𝓘_union
+    @MSpace.IsStratifiable Y H.toTopologicalSpace := by
+  classical
+  intro H
+  let : TopologicalSpace Y := H.toTopologicalSpace
+  let g : ℕ → Y → Set Y := fun n y => if y ∈ H₀ then W n y else {y}
+  have hg_open : ∀ n y, IsOpen (g n y) ∧ y ∈ g n y := by
+    intro n y
+    dsimp only [g]
+    split_ifs with hy
+    · exact ⟨(H.W_clopen n y).1, hmem n y⟩
+    · refine ⟨?_, rfl⟩
+      have hEq : ({y} : Set Y) = W 0 y \ {y}ᶜ := by
+        ext z
+        simp only [mem_singleton_iff, mem_sdiff, mem_compl_iff, not_not]
+        exact ⟨fun h => ⟨h ▸ hmem 0 y, h⟩, fun h => h.2⟩
+      rw [hEq]
+      exact H.isOpen_basic 0 y (by simp [H, idealHoleSystem, hy])
+  have hg_dec : ∀ n y, g (n + 1) y ⊆ g n y := by
+    intro n y
+    dsimp only [g]
+    split_ifs
+    · exact hdec n y
+    · exact Subset.rfl
+  have hg_sub_W : ∀ n y, g n y ⊆ W n y := by
+    intro n y
+    dsimp only [g]
+    split_ifs
+    · exact Subset.rfl
+    · exact singleton_subset_iff.mpr (hmem n y)
+  refine H.isStratifiable_of_hole_absorption g hg_open hg_dec hg_sub_W ?_
+  intro F hF x hxF
+  by_cases hxH₀ : x ∈ H₀
+  · have hopen : IsOpen Fᶜ := hF.isOpen_compl
+    obtain ⟨m, D, hD, hsub⟩ := hopen x hxF
+    have hD𝓘 : D ∈ 𝓘 := by simpa [H, idealHoleSystem, hxH₀] using hD
+    refine ⟨0, m, D, hD, fun y ⟨hyF, hyW⟩ => ?_⟩
+    have hyD : y ∈ D := by by_contra hnot; exact hsub ⟨hyW, hnot⟩ hyF
+    have hy_not_H₀ : y ∉ H₀ := h𝓘_sub D hD𝓘 hyD
+    dsimp only [g]
+    simp only [hy_not_H₀, ↓reduceIte]
+    exact singleton_subset_iff.mpr hyD
+  · obtain ⟨m, hdisj⟩ := hH₀_closed x hxH₀
+    refine ⟨m, m, {x}ᶜ, by simp [H, idealHoleSystem, hxH₀], fun y ⟨hyF, hyW⟩ => ?_⟩
+    have hy_not_H₀ : y ∉ H₀ := fun hyH₀ => Set.disjoint_left.mp hdisj hyW hyH₀
+    have hyx : y ≠ x := fun h => hxF (h ▸ hyF)
+    dsimp only [g]
+    simp only [hy_not_H₀, ↓reduceIte]
+    exact singleton_subset_iff.mpr hyx
+
+end IdealHoleConstruction
+
 end Research.ChenWangHoleSystem
