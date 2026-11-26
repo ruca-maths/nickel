@@ -1,3 +1,186 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>M₃ ⇒ M₁ 証明マップ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@600;900&family=IBM+Plex+Sans+JP:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: 方眼紙の上に描いた研究ノート。冒頭に問い、件数の帯、段階ごとの依存マップ、下に台帳・経過・墓場 */
+:root {
+  --paper: #f5f6f2;
+  --sheet: #ffffff;
+  --ink: #1d2433;
+  --ink-2: #5b6475;
+  --rule: #dfe3e8;
+  --grid: rgba(54, 84, 140, .07);
+  --accent: #2f4fa8;
+  --ok: #217a4b;   --ok-bg: #e3f3e9;
+  --open: #6a7384; --open-bg: #eef0f3;
+  --bad: #b23a3a;  --bad-bg: #f8e4e2;
+  --dead: #8a7a5c; --dead-bg: #f2ede2;
+  --work: #b7791f; --work-bg: #fbf0dc;
+  --f-display: "Zen Old Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --f-body: "IBM Plex Sans JP", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #121620; --sheet: #192030; --ink: #e6e9f0; --ink-2: #9aa3b5; --rule: #2a3346;
+  --grid: rgba(140, 170, 230, .06); --accent: #8ea8ff;
+  --ok: #5fd39a; --ok-bg: #173527; --open: #a3acbd; --open-bg: #232b3b;
+  --bad: #ff8d84; --bad-bg: #3a1f22; --dead: #cdb88f; --dead-bg: #2f2a20; --work: #f2b65a; --work-bg: #392c16;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --paper: #121620; --sheet: #192030; --ink: #e6e9f0; --ink-2: #9aa3b5; --rule: #2a3346;
+  --grid: rgba(140, 170, 230, .06); --accent: #8ea8ff;
+  --ok: #5fd39a; --ok-bg: #173527; --open: #a3acbd; --open-bg: #232b3b;
+  --bad: #ff8d84; --bad-bg: #3a1f22; --dead: #cdb88f; --dead-bg: #2f2a20; --work: #f2b65a; --work-bg: #392c16;
+  color-scheme: dark }
+
+* { box-sizing: border-box }
+body {
+  background: var(--paper); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.7;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.mono { font-family: var(--f-mono); }
+h1, h2 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
+h2 { font-size: 1.45rem; }
+.eyebrow { font-size: .75rem; letter-spacing: .12em; color: var(--ink-2); text-transform: uppercase; font-weight: 500; }
+section { padding-block: 2.2rem; display: grid; gap: 1rem; }
+.lede { color: var(--ink-2); max-width: 65ch; margin: 0; }
+
+/* 冒頭 */
+.hero { padding-block: 3rem 1.5rem; display: grid; gap: 1.2rem; }
+.chain { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem .9rem; font-family: var(--f-display); font-weight: 900; font-size: clamp(2.4rem, 7vw, 4.6rem); line-height: 1.1; }
+.chain .arrow { color: var(--ok); font-size: .7em; }
+.chain .q { color: var(--accent); font-size: .7em; position: relative; }
+.chain .q small { font-family: var(--f-body); font-size: .9rem; font-weight: 500; display: block; text-align: center; }
+.verdict { display: flex; flex-wrap: wrap; gap: .6rem 1rem; align-items: center; }
+.pill { display: inline-flex; align-items: center; gap: .4rem; padding: .15rem .7rem; border-radius: 999px; font-size: .82rem; font-weight: 500; white-space: nowrap; }
+.pill::before { content: ""; width: .55rem; height: .55rem; border-radius: 50%; background: currentColor; }
+.s-checked { color: var(--ok); background: var(--ok-bg); }
+.s-open { color: var(--open); background: var(--open-bg); }
+.s-refuted { color: var(--bad); background: var(--bad-bg); }
+.s-dead { color: var(--dead); background: var(--dead-bg); }
+.s-work { color: var(--work); background: var(--work-bg); }
+
+/* 件数の帯 */
+.tally { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; }
+.tally div { padding: 1rem 1.1rem; display: grid; gap: .1rem; border-right: 1px solid var(--rule); }
+.tally div:last-child { border-right: 0; }
+.tally b { font-family: var(--f-display); font-size: 2rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tally span { font-size: .8rem; color: var(--ink-2); }
+
+/* 段階の進捗 */
+.tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: .8rem; }
+.tier { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: .9rem 1rem; display: grid; gap: .45rem; }
+.tier header { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
+.tier header b { font-family: var(--f-mono); }
+.bar { height: 8px; border-radius: 4px; background: var(--open-bg); overflow: hidden; display: flex; }
+.bar i { display: block; height: 100%; background: var(--ok); }
+.tier p { margin: 0; font-size: .82rem; color: var(--ink-2); }
+
+/* 依存マップ */
+.map-box { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; overflow-x: auto; }
+.map-box svg { display: block; min-width: 900px; width: 100%; height: auto; }
+.legend { display: flex; flex-wrap: wrap; gap: .5rem 1rem; font-size: .82rem; color: var(--ink-2); align-items: center; }
+.legend .ln { display: inline-flex; align-items: center; gap: .4rem; }
+.legend svg { overflow: visible; }
+.node { cursor: pointer; }
+.node:focus-visible rect { outline: none; stroke: var(--accent); stroke-width: 3; }
+.detail { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem 1.1rem; display: grid; gap: .5rem; min-width: 0; }
+.detail h3 { margin: 0; font-size: 1.05rem; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.detail pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-family: var(--f-mono); font-size: .8rem; color: var(--ink-2); }
+
+/* 台帳 */
+.table-box { overflow-x: auto; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: .88rem; }
+th, td { text-align: left; padding: .6rem .8rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-size: .72rem; letter-spacing: .1em; color: var(--ink-2); font-weight: 500; text-transform: uppercase; }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; font-family: var(--f-mono); white-space: nowrap; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: var(--paper); }
+
+/* 経過と墓場 */
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; align-items: start; }
+.cols > * { min-width: 0; }
+.feed { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border-left: 2px solid var(--rule); }
+.feed li { padding: .35rem 0 .35rem 1rem; position: relative; font-size: .9rem; }
+.feed li::before { content: ""; position: absolute; left: -6px; top: .85rem; width: 10px; height: 10px; border-radius: 50%; background: var(--c, var(--open)); border: 2px solid var(--paper); }
+.feed time { font-family: var(--f-mono); color: var(--ink-2); font-size: .8rem; margin-right: .5rem; }
+.grave { display: grid; gap: .7rem; }
+.grave details { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: .7rem .9rem; }
+.grave summary { cursor: pointer; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; font-weight: 500; }
+.grave p { margin: .5rem 0 0; font-size: .86rem; color: var(--ink-2); }
+.grave .who { font-family: var(--f-mono); font-size: .78rem; color: var(--ink-2); }
+
+.agents { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .8rem; }
+.agent { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: .9rem 1rem; display: grid; gap: .35rem; }
+.agent b { font-family: var(--f-mono); }
+.agent dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: .1rem .8rem; font-size: .85rem; }
+.agent dt { color: var(--ink-2); }
+.agent dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; }
+
+footer { padding-block: 2rem 3rem; color: var(--ink-2); font-size: .82rem; border-top: 1px solid var(--rule); display: grid; gap: .3rem; }
+footer a { color: var(--accent); }
+@media (prefers-reduced-motion: no-preference) { .bar i { transition: width .6s ease; } }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">自律マルチ AI 数学研究 · Lean 4 / Mathlib で検証済みのものだけを数える</div>
+    <div class="chain" aria-label="M1 ならば M2 ならば M3。M3 ならば M1 かは未解決">
+      <span>M<sub>1</sub></span><span class="arrow">⟹</span><span>M<sub>2</sub></span><span class="arrow">⟹</span><span>M<sub>3</sub></span>
+      <span class="q">⟹?<small>M<sub>1</sub></small></span>
+    </div>
+    <h1 style="font-size:1.35rem;font-weight:600">任意の M₃ 空間（stratifiable 空間）は M₁ 空間か　— Ceder, 1961</h1>
+    <div class="verdict" id="verdict"></div>
+    <p class="lede">4 台の AI（分解役・証明役 2・反証役）がこの問いと周辺定理に取り組んでいます。成果は Lean カーネルと公理検査を通ったものだけで、AI の自己申告は数えません。</p>
+  </header>
+
+  <div class="tally" id="tally"></div>
+
+  <section>
+    <div><div class="eyebrow">段階ごとの到達点</div><h2>どこまで来たか</h2></div>
+    <div class="tiers" id="tiers"></div>
+  </section>
+
+  <section>
+    <div><div class="eyebrow">依存マップ</div><h2>補題はどう支え合っているか</h2></div>
+    <p class="lede">左から右へ難しくなります。実線は帰着（親は子すべてから従う）、破線は証明の中で別の結果を使っていることを表します。ノードを選ぶと詳細が出ます。</p>
+    <div class="legend" id="legend"></div>
+    <div class="map-box"><svg id="map" role="img" aria-label="補題の依存マップ"></svg></div>
+    <div class="detail" id="detail" aria-live="polite"></div>
+  </section>
+
+  <section>
+    <div><div class="eyebrow">台帳</div><h2>すべての命題</h2></div>
+    <div class="table-box"><table>
+      <thead><tr><th>ノード</th><th>段階</th><th>命題</th><th>状態</th><th>試行 証明/分解/反証</th><th>証明</th></tr></thead>
+      <tbody id="board"></tbody>
+    </table></div>
+  </section>
+
+  <section class="cols">
+    <div style="display:grid;gap:1rem">
+      <div><div class="eyebrow">経過</div><h2>状態が変わった記録</h2></div>
+      <ol class="feed" id="feed"></ol>
+    </div>
+    <div style="display:grid;gap:1rem">
+      <div><div class="eyebrow">墓場</div><h2>断念した方針と理由</h2></div>
+      <div class="grave" id="grave"></div>
+    </div>
+  </section>
+
+  <section>
+    <div><div class="eyebrow">エージェント</div><h2>誰が何をしたか</h2></div>
+    <div class="agents" id="agents"></div>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<script id="data" type="application/json">{"generated_at": "2026-11-26 06:46:31", "targets_hash": "198f3fa8f630b46d28aa23d1bba3194b216c79f4ca39920d47757a6f5efd6f89", "nodes": [{"id": "L_0001", "goal": "T1a", "tier": "T1", "status": "checked", "depth": 0, "informal": "局所有限族は closure-preserving", "attempts": {"prove": 0, "decompose": 0, "refute": 0}, "closed_by": "prover-1", "stmt": "MSpace.Goals.T1a_closurePreserving_of_locallyFinite"}, {"id": "L_0002", "goal": "T1b", "tier": "T1", "status": "checked", "depth": 0, "informal": "M1 ⇒ M2", "attempts": {"prove": 0, "decompose": 0, "refute": 0}, "closed_by": "prover-1", "stmt": "MSpace.Goals.T1b_M1_imp_M2"}, {"id": "L_0003", "goal": "T1c", "tier": "T1", "status": "checked", "depth": 0, "informal": "M2 ⇒ M3", "attempts": {"prove": 0, "decompose": 0, "refute": 0}, "closed_by": "prover-2", "stmt": "MSpace.Goals.T1c_M2_imp_M3"}, {"id": "L_0004", "goal": "T2a", "tier": "T2", "status": "checked", "depth": 0, "informal": "M3 ⇔ stratifiable", "attempts": {"prove": 0, "decompose": 0, "refute": 0}, "closed_by": "prover-1", "stmt": "MSpace.Goals.T2a_M3_iff_stratifiable"}, {"id": "L_0005", "goal": "T2b", "tier": "T2", "status": "checked", "depth": 0, "informal": "stratifiable ⇒ パラコンパクト", "attempts": {"prove": 5, "decompose": 5, "refute": 5}, "closed_by": "remote", "stmt": "MSpace.Goals.T2b_stratifiable_paracompact"}, {"id": "L_0006", "goal": "T2c", "tier": "T2", "status": "checked", "depth": 0, "informal": "stratifiable ⇒ 完全正規", "attempts": {"prove": 0, "decompose": 0, "refute": 0}, "closed_by": "prover-2", "stmt": "MSpace.Goals.T2c_stratifiable_perfectlyNormal"}, {"id": "L_0007", "goal": "T2d", "tier": "T2", "status": "checked", "depth": 0, "informal": "距離化可能 ⇒ M1", "attempts": {"prove": 0, "decompose": 0, "refute": 0}, "closed_by": "prover-2", "stmt": "MSpace.Goals.T2d_metrizable_M1"}, {"id": "L_0008", "goal": "T3", "tier": "T3", "status": "open", "depth": 0, "informal": "M3 ⇒ M2", "attempts": {"prove": 0, "decompose": 0, "refute": 0}, "closed_by": null, "stmt": "MSpace.Goals.T3_M3_imp_M2"}, {"id": "L_0009", "goal": "Tinf", "tier": "Tinf", "status": "open", "depth": 0, "informal": "任意の M3 空間は M1 か", "attempts": {"prove": 4, "decompose": 4, "refute": 4}, "closed_by": null, "stmt": "MSpace.Goals.Tinf_M3_imp_M1"}, {"id": "L_0010", "goal": null, "tier": "T3", "status": "checked", "depth": 1, "informal": "M3 空間は stratification を持つ（Borges/Ceder の標準的な方向）。σ-cushioned pair-base 𝓟 = ⋃ 𝓟_n に対し、G n H = (closure(⋃{p.1 : p ∈ 𝓟_0 ∪ … ∪ 𝓟_n, p.2 ∩ H = ∅}))ᶜ とおく。cushioned 性（有限和も cushioned）から各 G n H は H を含む開集合、単調性は定義から明らか。⋂ closure(G n H) = H：x ∉ H なら x ∈ p.1 ⊆ p.2 ⊆ Hᶜ となる p ∈ 𝓟_m を取ると、n ≥ m で G n H ∩ p.1 = ∅、p.1 は開なので x ∉ closure(G n H)。n < m でも包含は成立するので ⋂ は H に一致。", "attempts": {"prove": 0, "decompose": 0, "refute": 0}, "closed_by": "prover-2", "stmt": "∀ (X : Type) [TopologicalSpace X], IsM3 X → ∃ G : ℕ → Set X → Set X, IsStratification G"}, {"id": "L_0011", "goal": null, "tier": "T3", "status": "open", "depth": 1, "informal": "stratifiable（正則 T1）空間は σ-closure-preserving な quasi-base を持つ（Gruenhage 1976 'Stratifiable spaces are M2' / Junnila 1978）。本ノードの核心部。さらに分解が必要。", "attempts": {"prove": 5, "decompose": 3, "refute": 3}, "closed_by": null, "stmt": "∀ (X : Type) [TopologicalSpace X], T3Space X → (∃ G : ℕ → Set X → Set X, IsStratification G) → ∃ 𝓑 : Set (Set X), IsQuasiBase 𝓑 ∧ SigmaClosurePreserving 𝓑"}], "reductions": [{"id": "R_0001", "parent": "L_0008", "children": ["L_0010", "L_0011"], "status": "live"}], "uses": {"L_0001": {"imports": [], "lines": 23}, "L_0002": {"imports": [], "lines": 15}, "L_0003": {"imports": [], "lines": 47}, "L_0004": {"imports": [], "lines": 100}, "L_0005": {"imports": ["Proofs.L_0006"], "lines": 244}, "L_0006": {"imports": [], "lines": 61}, "L_0007": {"imports": ["Proofs.L_0001"], "lines": 48}, "L_0010": {"imports": ["Proofs.L_0004"], "lines": 13}, "R_0001": {"imports": [], "lines": 15}}, "accepted": [{"module": "Proofs.L_0001", "kind": "proof", "node": "L_0001", "agent": "prover-1", "accepted_at": 1795637611.3526905, "axioms": "[\"Classical.choice\", \"Quot.sound\", \"propext\"]"}, {"module": "Proofs.L_0002", "kind": "proof", "node": "L_0002", "agent": "prover-1", "accepted_at": 1795637793.0048847, "axioms": "[\"Classical.choice\", \"Quot.sound\", \"propext\"]"}, {"module": "Proofs.L_0003", "kind": "proof", "node": "L_0003", "agent": "prover-2", "accepted_at": 1795637812.6958773, "axioms": "[\"Classical.choice\", \"Quot.sound\", \"propext\"]"}, {"module": "Proofs.R_0001", "kind": "reduction", "node": "L_0008", "agent": "architect-1", "accepted_at": 1795637900.565454, "axioms": "[\"Classical.choice\", \"Quot.sound\", \"propext\"]"}, {"module": "Proofs.L_0006", "kind": "proof", "node": "L_0006", "agent": "prover-2", "accepted_at": 1795638132.2489803, "axioms": "[\"Classical.choice\", \"Quot.sound\", \"propext\"]"}, {"module": "Proofs.L_0004", "kind": "proof", "node": "L_0004", "agent": "prover-1", "accepted_at": 1795638153.5410497, "axioms": "[\"Classical.choice\", \"Quot.sound\", \"propext\"]"}, {"module": "Proofs.L_0007", "kind": "proof", "node": "L_0007", "agent": "prover-2", "accepted_at": 1795638299.3372228, "axioms": "[\"Classical.choice\", \"Quot.sound\", \"propext\"]"}, {"module": "Proofs.L_0010", "kind": "proof", "node": "L_0010", "agent": "prover-2", "accepted_at": 1795638382.1811328, "axioms": "[\"Classical.choice\", \"Quot.sound\", \"propext\"]"}, {"module": "Proofs.L_0005", "kind": "proof", "node": "L_0005", "agent": "prover-pc2", "accepted_at": 1795642533, "axioms": "[\"Classical.choice\", \"Quot.sound\", \"propext\"]"}], "failures": [{"ts": "2026-11-26T05:16:43", "node": "L_0009", "task": "refute", "agent": "redteam-1", "outcome": "gave_up", "reason": "反証は未解決問題(Ceder 1961)の否定解決に等しく、定義の穴による自明な反例も見つからない", "note": "Targets/Defs.lean を点検: ClosurePreserving/Cushioned は任意部分族、pair-base は P1 開・P1⊆P2・x∈P1⊆P2⊆U、M1 は IsTopologicalBasis(開集合のみ)+σ-CP、両方とも T3Space を課す。いずれも Ceder の原定義と一致し、空族・空集合・宇宙制限(Type 0)で M3 側だけ自明に真になる/M1 側だけ自明に偽になる穴は無い。よって ¬Tinf の Lean 証明は M3 かつ非 M1 の空間の構成=未解決問題の否定解決を要する。既知の候補: Sorgenfrey 直線は M3 でない(非 stratifiable)ので不可。閉写像の距離空間像・Lašnev 空間・F_σ-metrizable・M3 で各点が可算 closure-preserving 局所基を持つもの等、多くの部分クラスで M1 が既知(Ito, Mizokami, Gruenhage)なのでそれらは候補にならない。反証タスクは見込みなし。推奨: Tinf への資源は肯定側の部分結果(T4)や T2a/T3 の形式化へ回すべき。"}, {"ts": "2026-11-26T05:17:10", "node": "L_0009", "task": "refute", "agent": "redteam-1", "outcome": "gave_up", "reason": "¬Tinf は Ceder 1961 の未解決問題を否定的に解くことと同値。Targets の定義には自明な反例を許す穴が見つからない", "note": "Targets/Defs.lean と Goals.lean を独立に点検した（過去メモとは別に検証）。ClosurePreserving/Cushioned は任意部分族で定義。IsPairBase は p.1 開・p.1⊆p.2・x∈p.1・p.2⊆U。IsM1 は IsTopologicalBasis（開集合のみ）+ σ-CP、M1/M3 とも T3Space を要求、量化は Type 0。空族を取る（∅ の ⋃₀ は ∅ で closure ∅ = ∅）、空集合の空間、部分空間・有限空間、密着/離散位相のどれでも M3 と M1 の差は出ない。有限の T3 空間は離散なので M1。離散空間・距離化可能空間はすべて M1（T2d）。さらに M3⇒M2 は既知（T3: Gruenhage/Junnila）なので、反例は M2 だが M1 でない空間（M2=M1 も未解決）でなければならない。Lean の小さな構成でこれを示す道はない。候補として Sorgenfrey 直線（M3 でない）、Lašnev 空間・閉写像による距離空間の像・F_σ-metrizable・各点が closure-preserving 局所基を持つ M3 空間（いずれも M1 が既知）を除外した。今後は refute 側をこのノードに割り当てないこと、資源は T2a/T2b/T2c/T3 の肯定側に回すことを推奨する。"}, {"ts": "2026-11-26T05:17:39", "node": "L_0009", "task": "refute", "agent": "redteam-1", "outcome": "gave_up", "reason": "¬Tinf は Ceder 1961 の未解決問題（M3⇒M1）を否定的に解くことと同値で、Targets の定義に自明な反例を許す穴はない（3回目の独立確認）", "note": "Targets/Defs.lean と Goals.lean を改めて読んだ。過去メモの点検内容と同じ結果になった: ClosurePreserving/Cushioned は任意部分族、IsPairBase は p.1 開・p.1⊆p.2、IsM1 は IsTopologicalBasis+σ-CP、M1/M2/M3 はどれも T3Space(Mathlib: T0+正則 ⇒ T1・正則で Ceder と一致)を要求、Tinf は X : Type で量化。σ 族は ℕ 添字で、有限族・空族も含むので空空間・有限空間・離散空間では差が出ない。新しい観点: SigmaCushioned の 𝓟 = ⋃ n, 𝓟' n は等号だが、𝓟' n を全部同じにすれば任意の cushioned 族も σ-cushioned になるので歪みはない。M3⇒M2 は既知(Gruenhage, Junnila)なので、反例は M2 かつ非 M1 の空間（これも未解決）を要する。Lean で小さく構成できる見込みはない。強く推奨: このノードの refute を今後スケジューラから外すこと（3回連続で同じ結論）。"}, {"ts": "2026-11-26T05:18:09", "node": "L_0009", "task": "refute", "agent": "redteam-1", "outcome": "gave_up", "reason": "¬Tinf は Ceder 1961 の未解決問題（M3⇒M1）の否定解決と同値。Targets の定義に自明な反例を許す穴はない（4回目の独立確認）", "note": "Defs.lean/Goals.lean を再読。IsM1=T3Space+IsTopologicalBasis+σ-CP、IsM3=T3Space+IsPairBase(p.1開,p.1⊆p.2,x∈p.1,p.2⊆U)+σ-cushioned、CP/cushioned は任意部分族、σ は ℕ 添字の和で等号（同じ族を並べれば非σ版を含むので歪みなし）、Tinf は X : Type。追加観点: IsPairBase は p.2 に開性を課さないが Ceder 原定義どおりで、M3 側を不当に弱めていない（M3⇒stratifiable の標準議論はこの形で通る）。IsTopologicalBasis は開集合族を要求するので M1 側を不当に強めてもいない。反例は M3（=stratifiable, 既知）かつ非 M1、さらに M2=M1 も未解決なので M2 かつ非 M1 の空間が必要で、Lean で小さく構成する道は無い。Sorgenfrey 直線（非 M3）、Lašnev 空間・閉写像の距離空間像・F_σ-metrizable・各点 CP 局所基を持つ M3（いずれも M1 既知）は候補外。4回連続同結論なので、このノードの refute タスクをスケジューラから外すことを強く推奨。"}, {"ts": "2026-11-26T05:18:50", "node": "L_0009", "task": "decompose", "agent": "architect-1", "outcome": "gave_up", "reason": "Tinf (M3⇒M1, Ceder 1961) は未解決。健全な AND 分解はどれも子のどれかが未解決問題と同値になる", "note": "検討した分解: (a) T3(M3⇒M2, 既知) ∧ (M2⇒M1) → 後者は Gruenhage の未解決問題で、M3=M2 が既知なので Tinf と同値。無意味な Cut。(b) M3 ⇒ stratifiable (T2a) ∧ (stratifiable ⇒ M1) → 後者は Tinf と同値（Borges により M3=stratifiable）。(c) 部分クラス経由 (Lašnev・閉写像の距離空間像・F_σ-metrizable・各点 CP 局所基を持つ M3 は M1, Ito/Mizokami/Gruenhage) ∧ (任意の M3 はそのクラスに属する) → 後者は未解決または偽。(d) 『M3 空間は σ-CP な開 base に refine できる cushioned pair-base を持つ』型の中間命題 → M1 そのものの言い換えで同値。結論: 本題ノードは分解しない。推奨: 資源は T2a/T2b/T2c/T2d/T3 の肯定側形式化へ。T4（既知部分結果, 例: Ito の『各点が可算 CP 局所基を持つ M3 は M1』）を人間が原論文確認のうえ Targets に追加すれば、それは Architect が分解可能な独立ノードになる（Tinf の子ではなく別ターゲットとして）。"}, {"ts": "2026-11-26T05:19:18", "node": "L_0009", "task": "decompose", "agent": "architect-1", "outcome": "gave_up", "reason": "Tinf (M3⇒M1, Ceder 1961) は未解決問題。健全な AND 分解では必ず子のどれかが Tinf と同値か未解決になる（前回 architect の結論を独立に再確認）", "note": "Checked 補題は L_0001(LF⇒CP), L_0002(M1⇒M2), L_0003(M2⇒M3) のみで、新しい材料はない。再検討した Cut: (a) M3⇒M2 ∧ M2⇒M1: 後者は未解決。(b) M3⇒stratifiable ∧ stratifiable⇒M1: 後者は Borges の同値 M3=stratifiable により Tinf と同値。(c) 『M3 ⇒ 既知の M1 部分クラス(Lašnev, 閉写像の距離空間像, F_σ-metrizable, 各点 CP 局所基を持つ M3)』∧『そのクラス ⇒ M1』: 前者は未解決か偽。(d) 『M3 ⇒ σ-CP 開 base に細分できる cushioned pair-base』: M1 の言い換え。(e) 新しい観点: 『M3 の各閉集合が σ-CP 開近傍基を持つ』『M3 は σ-CP な closed network を持つ（=M3 の既知性質）∧ σ-CP closed network を持つ T3 空間⇒M1』も考えたが、後者は Tinf より強く未解決（Gruenhage のサーベイの問題）。結論: 本題ノードは分解しない。再提案: L_0009 の decompose/refute タスクをスケジューラから外すこと。資源は T2a–T2d/T3 の肯定側形式化へ。部分結果（例: Ito の結果）は人間が原論文を確認のうえ Tinf とは独立した新しいターゲットとして Targets に追加すべき。"}, {"ts": "2026-11-26T05:19:23", "node": "L_0005", "task": "prove", "agent": "prover-2", "outcome": "gave_up", "reason": "単一セッションで完結不能な規模（要分解）", "note": "Mathlib (Topology/Compactness/Paracompact.lean) には Michael の定理（σ-局所有限開細分⇒パラコンパクト）が無い（TODO 扱い）。ParacompactSpace の既存インスタンスは compact / locallyCompact+sigmaCompact / EMetric(Stone) のみで stratifiable には適用不可。紙の証明(Borges): 開被覆 {U_a} を整列し H_a = U_a の補集合, F_{n,a} = (closure (G n H_a)) の補集合 ⊆ U_a, ⋃_n F_{n,a} = U_a（stratification 第3条件より）。Stone 型構成 V_{n,a} = F_{n,a} minus ⋃_{b<a} U_b 系で σ-discrete 開細分を作り Michael の補題で局所有限化する。Architect への分解提案: (A) 正則空間で任意の開被覆が σ-局所有限開細分を持てばパラコンパクト（Michael, 最重量）; (B) stratifiable ⇒ T3Space（x∉H なら x∉closure(G n H) となる n がある）; (C) stratifiable ⇒ 任意の開被覆が σ-discrete 開細分を持つ（単調性を使う; 整列には WellOrderingRel）。本セッションでは Lean コードは書いていない。"}, {"ts": "2026-11-26T05:19:49", "node": "L_0009", "task": "decompose", "agent": "architect-1", "outcome": "gave_up", "reason": "Tinf (M3⇒M1, Ceder 1961) は未解決問題。Checked 補題に新材料がなく、健全な AND 分解はどれも子が Tinf と同値・未解決・偽のいずれかになる（3回目の architect 独立確認）", "note": "Checked は L_0001(LF⇒CP), L_0002(M1⇒M2), L_0003(M2⇒M3) のみで、前回から変化なし。過去に検討済みの Cut (a) M3⇒M2∧M2⇒M1, (b) M3⇒stratifiable∧stratifiable⇒M1, (c) 既知 M1 部分クラス経由, (d) σ-CP 開 base へ細分可能な cushioned pair-base, (e) σ-CP closed network 経由 は、いずれも子のどれかが Tinf と同値か未解決になる。追加で考えたもの: (f) 『M3 ⇒ 各点で σ-CP な開近傍の局所基を、全体で揃えて σ-CP にとれる』は M1 の定義の言い換え。(g) 『M3 ⇒ 各閉集合が CP な開近傍基を持つ』∧『それを持つ T3 ⇒ M1』も後者が未解決で、前者も一般には知られていない。(h) 次元・可算性による場合分け（可算空間・σ-compact・Fréchet など）は AND 分解にならず、全ケースを覆うには結局一般の場合が必要になる。結論: このノードは分解しない。推奨（3回目）: L_0009 の decompose/refute をスケジューラから外し、T2a–T2d/T3 の肯定側に資源を回すこと。部分結果（Ito: 各点が可算 CP 局所基を持つ M3 は M1 など）は人間が原論文を確認したうえで、独立したターゲットとして追加すること。"}, {"ts": "2026-11-26T05:20:15", "node": "L_0009", "task": "decompose", "agent": "architect-1", "outcome": "gave_up", "reason": "Tinf (M3⇒M1, Ceder 1961) は未解決問題。Checked 補題は L_0001-L_0003 のみで新材料なし。健全な AND 分解は必ず子が Tinf と同値・未解決・偽になる（4回目の architect 確認）", "note": "過去の Cut (a) M3⇒M2∧M2⇒M1, (b) stratifiable 経由, (c) 既知 M1 部分クラス経由, (d)(f) σ-CP 開 base への細分=M1 の言い換え, (e) σ-CP closed network 経由, (g) 閉集合の CP 近傍基, (h) 場合分け をすべて再確認し、結論は変わらない。追加観点: (i) M3⇒M1 を『M3 の pair-base の各 P2 を開集合に取り替えても σ-cushioned が保たれる』に帰着する案も、それ自体が M3⇒M2 の強化で M1 にほぼ直結し未解決。(j) 局所化（各点の近傍で M1 ⇒ 全体 M1）∧（M3 は局所的に M1）も、後者が未解決のまま。今回で decompose 4回・refute 4回が同結論なので、L_0009 をスケジューラから外し、T2a–T2d/T3 の肯定側へ資源を回すことを強く推奨する。部分結果（Ito の定理など）は人間が原論文を確認のうえ独立ターゲットとして追加すべき。"}, {"ts": "2026-11-26T05:24:25", "node": "L_0005", "task": "prove", "agent": "prover-1", "outcome": "gave_up", "reason": "1セッション(30分)で完結不能な規模。Michael の定理が Mathlib に無く、分解が必要", "note": "Mathlib を確認した: ParacompactSpace のインスタンスは compact、locallyCompact+sigmaCompact、EMetric(Stone, Topology/EMetricSpace/Paracompact.lean) だけ。使える API は ParacompactSpace.of_hasBasis と precise_refinement。Michael の定理 (σ-局所有限開細分 ⇒ パラコンパクト) は無い（Topology/Semicontinuity/Michael.lean は選択定理で別物）。Lean コードは書いていない。分解の提案（Architect 向け）: (A) stratifiable ⇒ T3Space。x∉H(閉) なら ⋂ closure(G n H)=H より x∉closure(G n H) となる n がある。L_0006(完全正規)⇒NormalSpace からも出せる。(B) 開集合 U に対し F m U := (closure (G m Uᶜ))ᶜ と置くと、開、closure(F m U) ⊆ U、⋃ m F m U = U、U⊆V なら F m U ⊆ F m V。これを独立補題にする。(C) stratifiable ⇒ 任意の開被覆 u : ι → Set X が σ-局所有限（σ-discrete）な開細分を持つ。WellOrderingRel で ι を整列し、V n a := F n (u a) minus closure(⋃_{b<a} F (n+1) (u b)) 型の Stone 構成。(D) Michael の補題: 正則空間で任意の開被覆が σ-局所有限開細分を持てばパラコンパクト。最重量。代わりに 完全正規(L_0006)＋σ-局所有限開細分 ⇒ パラコンパクト とし、可算開被覆 V n := ⋃_a V n a を (B) の F で縮めて局所有限化すれば well-order が不要になる可能性がある。推奨: A, B, C, D を別ノードにし、本ノードは A∧C∧D から ParacompactSpace を出す帰着だけにする。"}, {"ts": "2026-11-26T05:26:40", "node": "L_0005", "task": "prove", "agent": "prover-1", "outcome": "gave_up", "reason": "1セッションで完結不能（3回目）。Architect による分解が必須", "note": "Lean コードは未作成（Mathlib に Michael の定理なしを再確認）。整列順序を使う部分を最小化した紙の分解: 【B】G' n H := ⋂_{k≤n} G k H（L_0006 の証明と同じ）。開集合 U に F n U := (closure (G' n Uᶜ))ᶜ。性質: (F1) 開 (F2) closure(F n U) ⊆ (G' n Uᶜ)ᶜ ⊆ U（A 開なら closure((closure A)ᶜ) は A と交わらない） (F3) n について増加 (F4) U⊆V ⇒ F n U ⊆ F n V (F5) ⋃_n F n U = U。【D'（整列不要・正規性不要）】W : ℕ → Set X が開被覆なら W' n ⊆ W n なる局所有限開被覆がある。A k := ⋃_{j≤k} W j, W' n := W n minus ⋃_{k<n} closure(F k (A k))。被覆性: x∈W n の最小の n をとると k<n で x∉A k ⊇ closure(F k (A k))。局所有限性: x∈A m, x∈F j (A m), N:=max j m で x∈F N (A N)（F3,F4）、この近傍は n>N の W' n と交わらない。【Comb】各 n で局所有限な開族 v n : β → Set X が開被覆の細分で全体を覆うなら、W n := ⋃_b v n b に D' を適用し t (n,b) := v n b ∩ W' n が局所有限開細分（被覆性: x∈W' n ⊆ W n）。よって本ノードは『stratifiable ⇒ 任意の開被覆が σ-局所有限開細分を持つ(C)』に帰着。【C の注意】U_a を整列し P_a := ⋃_{b<a} U_b とすると、開でない集合 C n a := F n U_a minus P_a は各 n で離散族（x の最小添字 a0 について近傍 U_{a0} ∩ G' n (P_{a0}ᶜ) が交わるのは C n a0 だけ。a<a0 側は G' n P_{a0}ᶜ ⊆ G' n U_aᶜ が F n U_a と交わらないことによる）で ⋃ = X。しかし開版 F n U_a minus closure(⋃_{b<a} F n U_b) は x ∈ U_{a0} minus F n U_{a0} の点で局所有限性が示せない。C の開拡大には『stratifiable で離散閉族は離散な開拡大を持つ』を別ノードにするか、Michael の補題（正則空間で σ-局所有限な任意の細分 ⇒ パラコンパクト）が要る。推奨ノード: B, D', Comb, C（最重量・更に分解要）。"}, {"ts": "2026-11-26T05:27:13", "node": "L_0011", "task": "prove", "agent": "prover-2", "outcome": "gave_up", "reason": "核心定理(Gruenhage/Junnila: stratifiable ⇒ M2)は1セッションで直接形式化できる規模ではなく、Architect による分解が必要", "note": "試した/検討した方針: (1) G n H から g(n,x)=G n {x}(T1で{x}閉) を作り g-関数特性化に落とすのは容易。(2) 開集合 U に対し U^(n) = (closure (G n Uᶜ))ᶜ は開で closure(U^(n)) ⊆ (G n Uᶜ)ᶜ ⊆ U、⋃_n U^(n) = U、U について単調。よって F_n = {(G n H)ᶜ : H 閉} は閉集合族で quasi-base 候補にはなるが、closure-preserving には ⋂_{H∈𝓗} G n H が開であること(G n が任意の交わりを保つこと)が必要で、一般には成り立たない。この単純な構成は不可。(3) 局所有限族(L_0001)経由: σ-局所有限な quasi-base は内部を取ると σ-局所有限開基になり距離化可能を意味するので、局所有限だけでは不可能。本物の closure-preserving 性が要る。推奨分解: (a) stratification → 単調な g-関数 g(n,x)（減少・x∉H 閉なら ∃n, x∉closure(⋃_{y∈H} g(n,y))）の補題, (b) Gruenhage 1976 の closure-preserving 閉集合族 𝓑_n の構成とその closure-preserving 性, (c) quasi-base 性, を別ノードに。"}, {"ts": "2026-11-26T05:28:03", "node": "L_0011", "task": "prove", "agent": "prover-2", "outcome": "gave_up", "reason": "Not decomposed: the core theorem (Gruenhage 1976 / Junnila 1978, stratifiable => M2) cannot be formalized directly in one session. Same conclusion as the previous attempt. An Architect decomposition is needed.", "note": "Rechecked the definitions in Targets/Defs.lean: ClosurePreserving quantifies over every subfamily 𝓖 ⊆ 𝓕 (closure (⋃₀ 𝓖) = ⋃₀ (closure '' 𝓖)), and IsQuasiBase requires x ∈ interior B ∧ B ⊆ U for every open U. No loophole such as a trivial family satisfies both. Useful reformulation for the decomposition: a family of closed sets {Fᵢ} is closure-preserving iff the family of complements {Fᵢᶜ} is interior-preserving (the intersection of any subfamily is open). So the goal is equivalent to: a σ-interior-preserving family 𝓦 of open sets such that for each x ∈ U open there is W ∈ 𝓦 with x ∉ closure... (more precisely x ∈ interior(Wᶜ) and Wᶜ ⊆ U). Suggested child nodes: (A) stratification -> g-function (g n x = G n {x} using T1, plus the decreasing version via ⋂_{k≤n}) and the property 'x ∉ H closed ⇒ ∃ n, x ∉ closure(⋃_{y∈H} g n y)'; (B) the combinatorial heart, Junnila's neighbornet / Gruenhage construction, proving that the family 𝓑_n for fixed n is closure-preserving, as a standalone lemma about an abstract g-function; (C) quasi-base property; (D) the σ-union assembly (L_0011 then follows from A-D). The pure definitional approach U^(n) = (closure (G n Uᶜ))ᶜ fails closure-preservation, as the previous note already says."}, {"ts": "2026-11-26T05:28:26", "node": "L_0005", "task": "prove", "agent": "prover-1", "outcome": "no_submission", "reason": "人間の指示でオーケストレータを停止（セッション中断）", "note": ""}], "events": [{"kind": "targets_approved", "agent": "Ruca-maths", "detail": "{\"hash\": \"198f3fa8f630b46d28aa23d1bba3194b216c79f4ca39920d47757a6f5efd6f89\"}", "created_at": 1795636755.148572}, {"kind": "checked", "agent": "prover-1", "detail": "{\"node\": \"L_0001\"}", "created_at": 1795637611.3685136}, {"kind": "goal_closed", "agent": null, "detail": "{\"node\": \"L_0001\", \"goal\": \"T1a\", \"how\": \"checked\"}", "created_at": 1795637611.3782306}, {"kind": "checked", "agent": "prover-1", "detail": "{\"node\": \"L_0002\"}", "created_at": 1795637793.0175767}, {"kind": "goal_closed", "agent": null, "detail": "{\"node\": \"L_0002\", \"goal\": \"T1b\", \"how\": \"checked\"}", "created_at": 1795637793.0198476}, {"kind": "checked", "agent": "prover-2", "detail": "{\"node\": \"L_0003\"}", "created_at": 1795637812.707766}, {"kind": "goal_closed", "agent": null, "detail": "{\"node\": \"L_0003\", \"goal\": \"T1c\", \"how\": \"checked\"}", "created_at": 1795637812.7107642}, {"kind": "checked", "agent": "prover-2", "detail": "{\"node\": \"L_0006\"}", "created_at": 1795638132.267497}, {"kind": "goal_closed", "agent": null, "detail": "{\"node\": \"L_0006\", \"goal\": \"T2c\", \"how\": \"checked\"}", "created_at": 1795638132.271968}, {"kind": "checked", "agent": "prover-1", "detail": "{\"node\": \"L_0004\"}", "created_at": 1795638153.5570688}, {"kind": "goal_closed", "agent": null, "detail": "{\"node\": \"L_0004\", \"goal\": \"T2a\", \"how\": \"checked\"}", "created_at": 1795638153.5609047}, {"kind": "checked", "agent": "prover-2", "detail": "{\"node\": \"L_0007\"}", "created_at": 1795638299.3644516}, {"kind": "goal_closed", "agent": null, "detail": "{\"node\": \"L_0007\", \"goal\": \"T2d\", \"how\": \"checked\"}", "created_at": 1795638299.3821778}, {"kind": "checked", "agent": "prover-2", "detail": "{\"node\": \"L_0010\"}", "created_at": 1795638382.189595}], "spend": [{"agent": "architect-1", "usd": 1.329, "n": 5}, {"agent": "prover-1", "usd": 2.256, "n": 5}, {"agent": "prover-2", "usd": 2.054, "n": 6}, {"agent": "redteam-1", "usd": 1.261, "n": 5}], "sessions": 21, "attempts": [{"agent": "architect-1", "task": "decompose", "outcome": "accepted", "n": 1}, {"agent": "architect-1", "task": "decompose", "outcome": "gave_up", "n": 4}, {"agent": "prover-1", "task": "prove", "outcome": "accepted", "n": 3}, {"agent": "prover-1", "task": "prove", "outcome": "gave_up", "n": 2}, {"agent": "prover-1", "task": "prove", "outcome": "no_submission", "n": 1}, {"agent": "prover-2", "task": "prove", "outcome": "accepted", "n": 4}, {"agent": "prover-2", "task": "prove", "outcome": "gave_up", "n": 3}, {"agent": "redteam-1", "task": "audit", "outcome": "reported", "n": 1}, {"agent": "redteam-1", "task": "refute", "outcome": "gave_up", "n": 4}], "audit": ["20261126-051609-redteam-1.md"]}</script>
 <script>
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
@@ -236,3 +419,5 @@ loadSiteJson()
       `<span class="pill s-refuted">データを読めません</span><span>status/site.json を取得できませんでした（${esc(String(e))}）。少し待って開き直してください。</span>`;
   });
 </script>
+  
+</body></html>
