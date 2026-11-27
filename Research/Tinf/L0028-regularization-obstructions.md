@@ -317,3 +317,47 @@ This strengthens the earlier real-line example, where throwing away
 the decorated sets and retaining the J_n did give a cofinal trace.
 The common mosaic construction can change the representative set
 and is unaffected by this counterexample.
+
+## A discrete family of slots can replace a sequence in the local patch
+
+Tamano 2008, Lemma 2 uses CP closed quasi-neighborhood bases at
+auxiliary points, rather than CP open bases at the trace points.
+For the local patch, the relevant properties can be separated as
+follows. At a trace point p on a closed wall M, suppose there is a
+set A in X minus M with p in cl A, and for each a in A an open
+slot O_a containing a. Assume cl O_a misses M, the closures of the
+slots are locally finite on X minus {p}, and the union of those
+closures has no accumulation on M minus {p}. Equip each a with a
+CP closed neighborhood base consisting of sets inside O_a.
+
+Given any open U containing p, take the centers A ∩ U, which still
+accumulate at p. At each such center, choose one closed base member
+inside U. Their union together with {p} is closed: at every other
+point, local finiteness reduces the union to finitely many closed
+members. It is also regular closed, since it is contained in the
+closure of its interior at the centers and at p, with one additional
+condition: the chosen members themselves must be regular closed.
+Without that extra condition the patch is closed and still captures
+p in the closure of its interior, which is what Tamano's stage needs.
+
+For an arbitrary selection of patches all anchored at p, at any
+other point only finitely many slots contribute, and inside each slot
+the union of the selected closed neighborhoods is closed by its CP
+property. At p the union already contains p if any patch is selected.
+Thus the family of closed patches is CP even when the centers cannot
+be presented as a sequence. The unproved input for general L_0028
+is a supply of such slots at an adapted trace on each wall. In
+particular p in cl(X minus M) alone does not give the locally finite
+slot condition. See Tamano, Lemma 2, for the sequential construction.
+https://topology.nipissingu.ca/tp/reprints/v32/tp32023.pdf
+
+For a single p the slot hypothesis follows if A is closed discrete in
+X minus {p} and that open subspace is paracompact and regular. Use
+collectionwise normality there to get a discrete family of closures,
+then shrink the slots inside X minus M. Ambient closures differ from
+relative closures only at p, and individual slots can be chosen to
+have ambient closure missing M, by first bounding them inside open
+neighborhoods whose ambient closures miss M. This shifts the local
+existence question to whether p is approached by a closed discrete
+set in the punctured space. The step still needs compatibility
+across the different trace points for a full L_0028 proof.
