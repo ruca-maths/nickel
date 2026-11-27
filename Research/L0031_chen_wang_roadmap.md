@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0011`）に向けた **Lean 4 カーネル検証済みモジュール 16 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0013`）に向けた **Lean 4 カーネル検証済みモジュール 17 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -83,3 +83,8 @@
 ## 15. [Stratifiable_Countable_Pi.lean](Stratifiable_Countable_Pi.lean)（Borges 1966・Ceder 1961 の可算積保存定理）
 - **`isStratifiable_prod` / `isStratifiable_countable_pi`**（Borges 1966）: 有限積および可算積 $\prod_{k \in \mathbb{N}} X_k$ が `MSpace.IsStratifiable` を保存することを単調 $g$-関数と `Proofs.L_0017` により証明。
 - **`isM1_prod` / `isM1_countable_pi`**（Ceder 1961）: 有限積および可算積 $\prod_{k \in \mathbb{N}} X_k$ が `MSpace.IsM1` を保存することを有限プレフィックス柱状族の帰納的 CP 性と `Denumerable (List ℕ)` により証明。
+
+## 16. [ChenWang_D0013_Compat_Instance.lean](ChenWang_D0013_Compat_Instance.lean)（`Defs.D_0013.Compat` の空虚性反証と `QTree` 上の修復版実例構成）
+- **`compat_not_exists`**: 任意の線形順序 $\alpha$、`T : Defs.D_0003.Tree2 α`、全単射 `q : ℕ ≃ α` に対し **`¬ Defs.D_0013.Compat q T`** を証明（0-indexed な `q : ℕ ≃ α` に対して 1-indexed の不等式 `j < q.symm (T.child p j)` を課したため、`q 1` で必ず矛盾が生じる仕様欠陥を発見）。
+- **`CompatRepaired` / `prop_3_2_1_repaired`**: `idx_lt_num` を `idx_le_num : j ≤ q.symm (T.child p j)` に修正しても Proposition 3.2.1 の結論が完全に保たれることを証明。
+- **`qtreeEnum` / `qtreeEnum_compatRepaired` / `exists_compatRepaired_qtree`**: `QTree := List (OrderDual ℕ+)` 上の重み次数全単射 `qtreeEnum : ℕ ≃ QTree` を構成し、`CompatRepaired qtreeEnum qtreeTree2` の全 4 公理を満たす具体モデルをカーネル検証済みで確立（`Defs/D_0013.lean` が未解決課題として明記していた存在証明を解決）。
