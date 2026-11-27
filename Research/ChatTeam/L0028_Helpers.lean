@@ -4,6 +4,8 @@ import Mathlib.Topology.Separation.Regular
 import Mathlib.Topology.Compactness.Paracompact
 import Mathlib.Topology.LocallyFinite
 import Mathlib.Data.Set.Finite.Basic
+import Mathlib.Order.WellFounded
+import Mathlib.SetTheory.Cardinal.Order
 import Targets
 
 namespace Work.L0028Helpers
@@ -728,5 +730,399 @@ lemma disjoint_openAvoidingCP {X : Type*} {𝓑 : Set (Set X)} {F W B : Set X}
     (hB : B ∈ 𝓑) (hdisj : Disjoint F B) : Disjoint (openAvoidingCP 𝓑 F W) B := by
   refine Set.disjoint_left.mpr fun y hy hyB => hy.2 ?_
   exact ⟨B, ⟨hB, hdisj⟩, hyB⟩
+
+/-! ### カエル: Shrinking Lemma ＆ 超限帰納法による SingleRegularOpenInsert ⇒ RegularOpenRefinementStep -/
+
+def SingleRegularOpenInsert_paracompact_stmt : Prop :=
+  ∀ (X : Type) [TopologicalSpace X] [T3Space X] [ParacompactSpace X],
+    ∀ {α : Type} (A : α → Set X),
+      (∀ a, IsOpen (A a)) →
+      LocallyFinite A →
+      (∀ S : Set α, IsRegularOpen (⋃ a ∈ S, A a)) →
+      ∀ (F G : Set X), IsClosed F → IsOpen G → F ⊆ G →
+        ∃ W : Set X, IsRegularOpen W ∧ F ⊆ W ∧ closure W ⊆ G ∧
+          ∀ S : Set α, IsRegularOpen (W ∪ (⋃ a ∈ S, A a))
+
+theorem exists_locallyFinite_refinement_with_closed_shrinking
+    {X α : Type} [TopologicalSpace X] [T3Space X] [ParacompactSpace X]
+    (U : α → Set X) (hUopen : ∀ a, IsOpen (U a)) (hUuniv : (⋃ a, U a) = Set.univ) :
+    ∃ (ι : Type) (G F : ι → Set X),
+      (∀ i, IsOpen (G i)) ∧ LocallyFinite G ∧ (∀ i, ∃ a, G i ⊆ U a) ∧
+      (∀ i, IsClosed (F i)) ∧ (∀ i, F i ⊆ G i) ∧ (⋃ i, F i) = Set.univ := by
+  classical
+  obtain ⟨ι, G, hGopen, hGuniv, hGlf, hGref⟩ :=
+    ParacompactSpace.locallyFinite_refinement α U hUopen hUuniv
+  have hKex : ∀ x : X, ∃ K : Set X, IsOpen K ∧ x ∈ K ∧ ∃ i : ι, closure K ⊆ G i := by
+    intro x
+    have hxG : x ∈ ⋃ i, G i := by rw [hGuniv]; trivial
+    rcases mem_iUnion.1 hxG with ⟨i, hxi⟩
+    obtain ⟨C, ⟨hCx, hCcl⟩, hCG⟩ :=
+      (closed_nhds_basis x).mem_iff.1 ((hGopen i).mem_nhds hxi)
+    exact ⟨interior C, isOpen_interior, mem_interior_iff_mem_nhds.2 hCx,
+      i, (closure_minimal interior_subset hCcl).trans hCG⟩
+  choose K hKopen hxK hKsub using hKex
+  have hKuniv : (⋃ x : X, K x) = Set.univ :=
+    eq_univ_iff_forall.2 (fun x => mem_iUnion.2 ⟨x, hxK x⟩)
+  obtain ⟨κ, H, hHopen, hHuniv, hHlf, hHref⟩ :=
+    ParacompactSpace.locallyFinite_refinement X K hKopen hKuniv
+  let F : ι → Set X := fun i => ⋃ j : κ, if closure (H j) ⊆ G i then closure (H j) else ∅
+  refine ⟨ι, G, F, hGopen, hGlf, hGref, ?_, ?_, ?_⟩
+  · intro i
+    have hlf_i : LocallyFinite (fun j : κ => if closure (H j) ⊆ G i then closure (H j) else ∅) := by
+      intro x
+      obtain ⟨M, hM, hFin⟩ := hHlf.closure x
+      refine ⟨M, hM, hFin.subset ?_⟩
+      intro j ⟨y, hy1, hy2⟩
+      by_cases hsub : closure (H j) ⊆ G i
+      · simp [hsub] at hy1
+        exact ⟨y, hy1, hy2⟩
+      · simp [hsub] at hy1
+    apply hlf_i.isClosed_iUnion
+    intro j
+    by_cases hsub : closure (H j) ⊆ G i
+    · simp [hsub, isClosed_closure]
+    · simp [hsub]
+  · intro i y hy
+    dsimp only [F] at hy
+    rcases mem_iUnion.1 hy with ⟨j, hj⟩
+    by_cases hsub : closure (H j) ⊆ G i
+    · simp [hsub] at hj
+      exact hsub hj
+    · simp [hsub] at hj
+  · refine eq_univ_iff_forall.2 (fun x => ?_)
+    have hxH : x ∈ ⋃ j : κ, H j := by rw [hHuniv]; trivial
+    rcases mem_iUnion.1 hxH with ⟨j, hxj⟩
+    rcases hHref j with ⟨y, hHjKy⟩
+    rcases hKsub y with ⟨i, hKyGi⟩
+    have hSub : closure (H j) ⊆ G i := (closure_mono hHjKy).trans hKyGi
+    refine mem_iUnion.2 ⟨i, ?_⟩
+    dsimp only [F]
+    exact mem_iUnion.2 ⟨j, by simp [hSub, subset_closure hxj]⟩
+
+private lemma exists_max_of_finite_nonempty
+    {ι : Type*} (r : ι → ι → Prop) [IsWellOrder ι r]
+    {S : Set ι} (hFin : S.Finite) (hNe : S.Nonempty) :
+    ∃ m ∈ S, ∀ x ∈ S, x = m ∨ r x m := by
+  classical
+  have hNeF : hFin.toFinset.Nonempty := by
+    obtain ⟨x, hx⟩ := hNe
+    exact ⟨x, hFin.mem_toFinset.2 hx⟩
+  suffices h : ∀ (F : Finset ι), F.Nonempty → ∃ m ∈ F, ∀ x ∈ F, x = m ∨ r x m by
+    obtain ⟨m, hmF, hmax⟩ := h hFin.toFinset hNeF
+    exact ⟨m, hFin.mem_toFinset.1 hmF, fun x hx => hmax x (hFin.mem_toFinset.2 hx)⟩
+  intro F
+  induction F using Finset.induction_on with
+  | empty => intro h; exact False.elim (Finset.not_nonempty_empty h)
+  | @insert a s _ ih =>
+    intro _
+    by_cases hs : s.Nonempty
+    · obtain ⟨m, hmS, hmax⟩ := ih hs
+      rcases trichotomous_of r a m with ham | rfl | hma
+      · refine ⟨m, Finset.mem_insert_of_mem hmS, ?_⟩
+        intro x hx
+        rcases Finset.mem_insert.1 hx with rfl | hxs
+        · exact Or.inr ham
+        · exact hmax x hxs
+      · refine ⟨a, Finset.mem_insert_self a s, ?_⟩
+        intro x hx
+        rcases Finset.mem_insert.1 hx with rfl | hxs
+        · exact Or.inl rfl
+        · exact hmax x hxs
+      · refine ⟨a, Finset.mem_insert_self a s, ?_⟩
+        intro x hx
+        rcases Finset.mem_insert.1 hx with rfl | hxs
+        · exact Or.inl rfl
+        · rcases hmax x hxs with rfl | hxm
+          · exact Or.inr hma
+          · exact Or.inr (IsTrans.trans x m a hxm hma)
+    · rw [Finset.not_nonempty_iff_eq_empty] at hs
+      subst hs
+      refine ⟨a, Finset.mem_insert_self a ∅, ?_⟩
+      intro x hx
+      rcases Finset.mem_insert.1 hx with rfl | hx'
+      · exact Or.inl rfl
+      · exact False.elim (Finset.notMem_empty x hx')
+
+open Classical in
+private lemma isRegularOpen_union_of_wellOrder_local_step
+    {X β ι : Type*} [TopologicalSpace X]
+    (r : ι → ι → Prop) [IsWellOrder ι r]
+    (V : β → Set X) (W : ι → Set X)
+    (hVopen : ∀ b, IsOpen (V b)) (_hVlf : LocallyFinite V)
+    (hVreg : ∀ S : Set β, IsRegularOpen (⋃ b ∈ S, V b))
+    (T : Set ι)
+    (hWopen : ∀ j ∈ T, IsOpen (W j))
+    (hWlf : LocallyFinite (fun j : ι => if j ∈ T then W j else ∅))
+    (hStepAt : ∀ j ∈ T, ∀ (S : Set β) (T' : Set ι),
+      (∀ k ∈ T', k ∈ T ∧ r k j) →
+      IsRegularOpen (W j ∪ (⋃ b ∈ S, V b) ∪ (⋃ k ∈ T', W k)))
+    (S : Set β) :
+    IsRegularOpen ((⋃ b ∈ S, V b) ∪ (⋃ j ∈ T, W j)) := by
+  classical
+  let U_tot : Set X := (⋃ b ∈ S, V b) ∪ (⋃ j ∈ T, W j)
+  have hOpen : IsOpen U_tot :=
+    (isOpen_biUnion (fun b _ => hVopen b)).union (isOpen_biUnion (fun j hj => hWopen j hj))
+  refine ⟨hOpen, Subset.antisymm ?_ (interior_maximal subset_closure hOpen)⟩
+  have hWclSub : closure (⋃ j ∈ T, W j) ⊆ ⋃ j : ι, if j ∈ T then closure (W j) else ∅ := by
+    apply closure_minimal
+    · intro y hy
+      rcases mem_iUnion₂.1 hy with ⟨j, hjT, hyW⟩
+      exact mem_iUnion.2 ⟨j, by simp [hjT, subset_closure hyW]⟩
+    · have hlf_cl : LocallyFinite (fun j : ι => if j ∈ T then closure (W j) else ∅) := by
+        intro x
+        obtain ⟨M, hM, hFin⟩ := hWlf.closure x
+        refine ⟨M, hM, hFin.subset ?_⟩
+        intro j ⟨y, hy1, hy2⟩
+        by_cases hj : j ∈ T
+        · simp [hj] at hy1
+          exact ⟨y, by simpa [hj] using hy1, hy2⟩
+        · simp [hj] at hy1
+      apply hlf_cl.isClosed_iUnion
+      intro j
+      by_cases hj : j ∈ T
+      · simp [hj, isClosed_closure]
+      · simp [hj]
+  intro p hp
+  obtain ⟨M, hM, hFinM⟩ := hWlf.closure p
+  let O : Set X := interior (closure U_tot) ∩ interior M
+  have hOopen : IsOpen O := isOpen_interior.inter isOpen_interior
+  have hpO : p ∈ O := ⟨hp, mem_interior_iff_mem_nhds.2 hM⟩
+  let T_fin : Set ι := {j : ι | j ∈ T ∧ (closure (W j) ∩ M).Nonempty}
+  have hTfin : T_fin.Finite := by
+    refine hFinM.subset ?_
+    intro j ⟨hjT, y, hyCl, hyM⟩
+    exact ⟨y, by simpa [hjT] using hyCl, hyM⟩
+  have hOsub : O ⊆ closure ((⋃ b ∈ S, V b) ∪ (⋃ j ∈ T_fin, W j)) := by
+    intro y ⟨hyInt, hyM⟩
+    have hyCl : y ∈ closure (⋃ b ∈ S, V b) ∪ closure (⋃ j ∈ T, W j) := by
+      rw [← closure_union]
+      exact interior_subset hyInt
+    rw [closure_union]
+    rcases hyCl with hyV | hyW
+    · exact Or.inl hyV
+    · right
+      rcases mem_iUnion.1 (hWclSub hyW) with ⟨j, hj⟩
+      by_cases hjT : j ∈ T
+      · simp [hjT] at hj
+        have hjFin : j ∈ T_fin := ⟨hjT, y, hj, interior_subset hyM⟩
+        exact closure_mono (subset_biUnion_of_mem hjFin) hj
+      · simp [hjT] at hj
+  by_cases hNe : T_fin.Nonempty
+  · obtain ⟨j_max, hj_max, hmax⟩ := exists_max_of_finite_nonempty r hTfin hNe
+    let T_lt : Set ι := {k : ι | k ∈ T_fin ∧ r k j_max}
+    have hEqSub : ((⋃ b ∈ S, V b) ∪ (⋃ j ∈ T_fin, W j)) ⊆
+        (W j_max ∪ (⋃ b ∈ S, V b) ∪ (⋃ k ∈ T_lt, W k)) := by
+      intro y hy
+      rcases hy with hyV | hyW
+      · exact Or.inl (Or.inr hyV)
+      · rcases mem_iUnion₂.1 hyW with ⟨j, hjFin, hyWj⟩
+        rcases hmax j hjFin with rfl | hlt
+        · exact Or.inl (Or.inl hyWj)
+        · exact Or.inr (mem_iUnion₂.2 ⟨j, ⟨hjFin, hlt⟩, hyWj⟩)
+    have hpInt : p ∈ interior (closure (W j_max ∪ (⋃ b ∈ S, V b) ∪ (⋃ k ∈ T_lt, W k))) :=
+      mem_interior.2 ⟨O, hOsub.trans (closure_mono hEqSub), hOopen, hpO⟩
+    have hReg := hStepAt j_max hj_max.1 S T_lt (fun k hk => ⟨hk.1.1, hk.2⟩)
+    rw [hReg.2] at hpInt
+    rcases hpInt with (hpW | hpV) | hpLt
+    · exact Or.inr (mem_iUnion₂.2 ⟨j_max, hj_max.1, hpW⟩)
+    · exact Or.inl hpV
+    · rcases mem_iUnion₂.1 hpLt with ⟨k, hk, hpWk⟩
+      exact Or.inr (mem_iUnion₂.2 ⟨k, hk.1.1, hpWk⟩)
+  · rw [Set.not_nonempty_iff_eq_empty] at hNe
+    have hOsubV : O ⊆ closure (⋃ b ∈ S, V b) := by
+      simpa [hNe] using hOsub
+    have hpV : p ∈ interior (closure (⋃ b ∈ S, V b)) :=
+      mem_interior.2 ⟨O, hOsubV, hOopen, hpO⟩
+    rw [(hVreg S).2] at hpV
+    exact Or.inl hpV
+
+theorem regularOpenRefinementStep_of_singleInsert_aux
+    (hInsert : SingleRegularOpenInsert_paracompact_stmt)
+    {X α β : Type} [TopologicalSpace X] [T3Space X] [ParacompactSpace X]
+    (U : α → Set X) (V : β → Set X)
+    (hUopen : ∀ a, IsOpen (U a)) (hUuniv : (⋃ a, U a) = Set.univ)
+    (hVopen : ∀ b, IsOpen (V b)) (hVlf : LocallyFinite V)
+    (hVreg : ∀ S : Set β, IsRegularOpen (⋃ b ∈ S, V b)) :
+    ∃ (γ : Type) (W : γ → Set X),
+      (∀ c, IsOpen (W c)) ∧ (⋃ c, W c) = Set.univ ∧
+      LocallyFinite W ∧ (∀ c, ∃ a, W c ⊆ U a) ∧
+      (∀ (S : Set β) (T : Set γ),
+        IsRegularOpen ((⋃ b ∈ S, V b) ∪ (⋃ c ∈ T, W c))) := by
+  classical
+  obtain ⟨ι, G, F, hGopen, hGlf, hGref, hFcl, hFG, hFuniv⟩ :=
+    exists_locallyFinite_refinement_with_closed_shrinking U hUopen hUuniv
+  let r : ι → ι → Prop := WellOrderingRel
+  have hwo : IsWellOrder ι r := WellOrderingRel.isWellOrder
+  have hwf : WellFounded r := WellOrderingRel.isWellOrder.wf
+  let GoodPrev (i : ι) (prev : (j : ι) → r j i → Set X) : Prop :=
+    (∀ j (hj : r j i), IsOpen (prev j hj) ∧ F j ⊆ prev j hj ∧ closure (prev j hj) ⊆ G j) ∧
+    (∀ (S : Set β) (T : Set {j : ι // r j i}),
+      IsRegularOpen ((⋃ b ∈ S, V b) ∪ (⋃ q ∈ T, prev q.1 q.2)))
+  have hStepEx : ∀ (i : ι) (prev : (j : ι) → r j i → Set X),
+      GoodPrev i prev →
+      ∃ Wi : Set X, IsRegularOpen Wi ∧ F i ⊆ Wi ∧ closure Wi ⊆ G i ∧
+        ∀ (S : Set β) (T : Set {j : ι // r j i}),
+          IsRegularOpen (Wi ∪ (⋃ b ∈ S, V b) ∪ (⋃ q ∈ T, prev q.1 q.2)) := by
+    intro i prev ⟨hP1, hP2⟩
+    let A : β ⊕ {j : ι // r j i} → Set X
+      | Sum.inl b => V b
+      | Sum.inr q => prev q.1 q.2
+    have hAopen : ∀ a, IsOpen (A a) := by
+      rintro (b | q)
+      · exact hVopen b
+      · exact (hP1 q.1 q.2).1
+    have hAlf : LocallyFinite A := by
+      intro x
+      obtain ⟨M₁, hM₁, hFin₁⟩ := hVlf x
+      obtain ⟨M₂, hM₂, hFin₂⟩ := hGlf x
+      refine ⟨M₁ ∩ M₂, Filter.inter_mem hM₁ hM₂, ?_⟩
+      have hSub : {a : β ⊕ {j : ι // r j i} | (A a ∩ (M₁ ∩ M₂)).Nonempty} ⊆
+          (Sum.inl '' {b : β | (V b ∩ M₁).Nonempty}) ∪
+          (Sum.inr '' {q : {j : ι // r j i} | (G q.1 ∩ M₂).Nonempty}) := by
+        rintro (b | q) ⟨y, hyA, hy1, hy2⟩
+        · exact Or.inl ⟨b, ⟨y, hyA, hy1⟩, rfl⟩
+        · right
+          refine ⟨q, ⟨y, ?_, hy2⟩, rfl⟩
+          exact (hP1 q.1 q.2).2.2 (subset_closure hyA)
+      have hFinQ : {q : {j : ι // r j i} | (G q.1 ∩ M₂).Nonempty}.Finite :=
+        hFin₂.preimage (Subtype.val_injective.injOn)
+      exact ((hFin₁.image Sum.inl).union (hFinQ.image Sum.inr)).subset hSub
+    have hAreg : ∀ S : Set (β ⊕ {j : ι // r j i}), IsRegularOpen (⋃ a ∈ S, A a) := by
+      intro S
+      let S₁ : Set β := {b | Sum.inl b ∈ S}
+      let S₂ : Set {j : ι // r j i} := {q | Sum.inr q ∈ S}
+      have hEq : (⋃ a ∈ S, A a) = (⋃ b ∈ S₁, V b) ∪ (⋃ q ∈ S₂, prev q.1 q.2) := by
+        ext y
+        simp only [mem_union, mem_iUnion, exists_prop]
+        constructor
+        · rintro ⟨a | q, haS, hyA⟩
+          · exact Or.inl ⟨a, haS, hyA⟩
+          · exact Or.inr ⟨q, haS, hyA⟩
+        · rintro (⟨b, hb, hy⟩ | ⟨q, hq, hy⟩)
+          · exact ⟨Sum.inl b, hb, hy⟩
+          · exact ⟨Sum.inr q, hq, hy⟩
+      rw [hEq]
+      exact hP2 S₁ S₂
+    obtain ⟨Wi, hWiReg, hFiWi, hWiGi, hWiCompat⟩ :=
+      hInsert X A hAopen hAlf hAreg (F i) (G i) (hFcl i) (hGopen i) (hFG i)
+    refine ⟨Wi, hWiReg, hFiWi, hWiGi, ?_⟩
+    intro S T
+    let S_sum : Set (β ⊕ {j : ι // r j i}) := (Sum.inl '' S) ∪ (Sum.inr '' T)
+    have hEq : (Wi ∪ (⋃ b ∈ S, V b) ∪ (⋃ q ∈ T, prev q.1 q.2)) =
+        (Wi ∪ (⋃ a ∈ S_sum, A a)) := by
+      ext y
+      simp only [mem_union, mem_iUnion, exists_prop, S_sum, mem_image]
+      constructor
+      · rintro ((hyW | ⟨b, hb, hyV⟩) | ⟨q, hq, hyP⟩)
+        · exact Or.inl hyW
+        · exact Or.inr ⟨Sum.inl b, Or.inl ⟨b, hb, rfl⟩, hyV⟩
+        · exact Or.inr ⟨Sum.inr q, Or.inr ⟨q, hq, rfl⟩, hyP⟩
+      · rintro (hyW | ⟨a, (⟨b, hb, rfl⟩ | ⟨q, hq, rfl⟩), hyA⟩)
+        · exact Or.inl (Or.inl hyW)
+        · exact Or.inl (Or.inr ⟨b, hb, hyA⟩)
+        · exact Or.inr ⟨q, hq, hyA⟩
+    rw [hEq]
+    exact hWiCompat S_sum
+  let stepFn (i : ι) (prev : (j : ι) → r j i → Set X) : Set X :=
+    if h : GoodPrev i prev then Classical.choose (hStepEx i prev h) else ∅
+  let W : ι → Set X := hwf.fix stepFn
+  have hAllGood : ∀ i : ι, GoodPrev i (fun j _ => W j) := by
+    intro i
+    refine hwf.induction (C := fun i => GoodPrev i (fun j _ => W j)) i ?_
+    intro i ih
+    have hSpec : ∀ j (hj : r j i),
+        IsRegularOpen (W j) ∧ F j ⊆ W j ∧ closure (W j) ⊆ G j ∧
+        ∀ (S : Set β) (T : Set {k : ι // r k j}),
+          IsRegularOpen (W j ∪ (⋃ b ∈ S, V b) ∪ (⋃ q ∈ T, W q.1)) := by
+      intro j hj
+      have hWjeq : W j = stepFn j (fun k _ => W k) := WellFounded.fix_eq hwf stepFn j
+      rw [hWjeq]
+      dsimp only [stepFn]
+      have hgood : GoodPrev j (fun k _ => W k) := ih j hj
+      simp only [hgood, ↓reduceDIte]
+      exact Classical.choose_spec (hStepEx j (fun k _ => W k) hgood)
+    refine ⟨fun j hj => ⟨(hSpec j hj).1.1, (hSpec j hj).2.1, (hSpec j hj).2.2.1⟩, ?_⟩
+    intro S T
+    let T_ι : Set ι := Subtype.val '' T
+    have hEqT : (⋃ q ∈ T, W q.1) = (⋃ j ∈ T_ι, W j) := by
+      ext y
+      simp only [mem_iUnion, exists_prop, T_ι, mem_image]
+      constructor
+      · rintro ⟨q, hqT, hy⟩; exact ⟨q.1, ⟨q, hqT, rfl⟩, hy⟩
+      · rintro ⟨j, ⟨q, hqT, rfl⟩, hy⟩; exact ⟨q, hqT, hy⟩
+    rw [hEqT]
+    have hWlf_T : LocallyFinite (fun j : ι => if j ∈ T_ι then W j else ∅) := by
+      intro x
+      obtain ⟨M, hM, hFin⟩ := hGlf x
+      refine ⟨M, hM, hFin.subset ?_⟩
+      intro j ⟨y, hy1, hy2⟩
+      by_cases hj : j ∈ T_ι
+      · simp [hj] at hy1
+        rcases hj with ⟨q, _, rfl⟩
+        exact ⟨y, (hSpec q.1 q.2).2.2.1 (subset_closure hy1), hy2⟩
+      · simp [hj] at hy1
+    apply @isRegularOpen_union_of_wellOrder_local_step X β ι _ r hwo V W hVopen hVlf hVreg T_ι
+    · intro j hj
+      rcases hj with ⟨q, _, rfl⟩
+      exact (hSpec q.1 q.2).1.1
+    · exact hWlf_T
+    · intro j hj S' T' hT'
+      rcases hj with ⟨q, _, rfl⟩
+      let T'_sub : Set {k : ι // r k q.1} := {p | p.1 ∈ T'}
+      have hEq' : (⋃ k ∈ T', W k) = (⋃ p ∈ T'_sub, W p.1) := by
+        ext y
+        simp only [mem_iUnion, exists_prop, T'_sub]
+        constructor
+        · rintro ⟨k, hk, hy⟩; exact ⟨⟨k, (hT' k hk).2⟩, hk, hy⟩
+        · rintro ⟨p, hp, hy⟩; exact ⟨p.1, hp, hy⟩
+      rw [hEq']
+      exact (hSpec q.1 q.2).2.2.2 S' T'_sub
+  have hWspec : ∀ i : ι,
+      IsRegularOpen (W i) ∧ F i ⊆ W i ∧ closure (W i) ⊆ G i ∧
+      ∀ (S : Set β) (T : Set {k : ι // r k i}),
+        IsRegularOpen (W i ∪ (⋃ b ∈ S, V b) ∪ (⋃ q ∈ T, W q.1)) := by
+    intro i
+    have hWieq : W i = stepFn i (fun k _ => W k) := WellFounded.fix_eq hwf stepFn i
+    rw [hWieq]
+    dsimp only [stepFn]
+    have hgood := hAllGood i
+    simp only [hgood, ↓reduceDIte]
+    exact Classical.choose_spec (hStepEx i (fun k _ => W k) hgood)
+  have hWlf : LocallyFinite W := by
+    intro x
+    obtain ⟨M, hM, hFin⟩ := hGlf x
+    refine ⟨M, hM, hFin.subset ?_⟩
+    intro i ⟨y, hyW, hyM⟩
+    exact ⟨y, (hWspec i).2.2.1 (subset_closure hyW), hyM⟩
+  refine ⟨ι, W, fun i => (hWspec i).1.1, ?_, hWlf, ?_, ?_⟩
+  · refine eq_univ_iff_forall.2 (fun x => ?_)
+    have hxF : x ∈ ⋃ i, F i := by rw [hFuniv]; trivial
+    rcases mem_iUnion.1 hxF with ⟨i, hxi⟩
+    exact mem_iUnion.2 ⟨i, (hWspec i).2.1 hxi⟩
+  · intro i
+    rcases hGref i with ⟨a, hGa⟩
+    exact ⟨a, (subset_closure.trans (hWspec i).2.2.1).trans hGa⟩
+  · intro S T
+    have hWlf_T : LocallyFinite (fun j : ι => if j ∈ T then W j else ∅) := by
+      intro x
+      obtain ⟨M, hM, hFin⟩ := hWlf x
+      refine ⟨M, hM, hFin.subset ?_⟩
+      intro j ⟨y, hy1, hy2⟩
+      by_cases hj : j ∈ T
+      · simp [hj] at hy1; exact ⟨y, hy1, hy2⟩
+      · simp [hj] at hy1
+    apply @isRegularOpen_union_of_wellOrder_local_step X β ι _ r hwo V W hVopen hVlf hVreg T
+    · intro j _; exact (hWspec j).1.1
+    · exact hWlf_T
+    · intro j _ S' T' hT'
+      let T'_sub : Set {k : ι // r k j} := {p | p.1 ∈ T'}
+      have hEq' : (⋃ k ∈ T', W k) = (⋃ p ∈ T'_sub, W p.1) := by
+        ext y
+        simp only [mem_iUnion, exists_prop, T'_sub]
+        constructor
+        · rintro ⟨k, hk, hy⟩; exact ⟨⟨k, (hT' k hk).2⟩, hk, hy⟩
+        · rintro ⟨p, hp, hy⟩; exact ⟨p.1, hp, hy⟩
+      rw [hEq']
+      exact (hWspec j).2.2.2 S' T'_sub
 
 end Work.L0028Helpers

@@ -16,6 +16,7 @@
 - `regularOpenDiscreteExpansionSeq_of_step`（かえる）: Mizokami (1985) Lemma 5（`RegularOpenRefinementStep_stmt`）から Lemma 6（`RegularOpenDiscreteExpansionSeq_stmt`）への完全帰納法。
 - `shrinkingStrat`, `mizokami_lemma_1_5`, `mizokami_lemma_1_5_singleton`（青）: Mizokami (2003, arXiv:math/0312457) Lemma 1.5（一般閉集合 $M$ および 1 点 $\{x\}$ 上で閉包が漏れない $X \setminus M$ の開膨張 $S(B)$）。
 - `atomClosed`, `openAvoidingCP` 関連補題群（青）: Mizokami (2003) Lemma 1.2 の原子閉細分 $E(N)$ および CP 避け開膨張のコア補題群。
+- `exists_locallyFinite_refinement_with_closed_shrinking`, `regularOpenRefinementStep_of_singleInsert_aux`（カエル）: パラコンパクト $T_3$ 空間での Shrinking Lemma、極限ステップ還元、および `WellOrderingRel` 上の超限帰納法による「1 個追加補題 ⇒ `RegularOpenRefinementStep_stmt`」。
 
 ### `Research/ChatTeam/L0031_ClopenShell_Hereditary.lean`（金魚）
 - `decClopen`, `shell`, `decClopen_antitone`, `decClopen_isClopen`, `shell_isClopen`, `clopen_inter_closure`, `exists_shell_of_ne`: clopen-$G_\delta$ 頂点の標準 clopen 殻分解。
@@ -33,6 +34,8 @@
    - 任意の非空 Polish 空間 $X$ は $\mathbb{N}^\mathbb{N}$ からの連続 compact-covering 全射 $\pi : \mathbb{N}^\mathbb{N} \to X$ を持ち、引き戻し $\pi^* : C_k(X, 2) \to C_k(\mathbb{N}^\mathbb{N}, 2)$ が位相的埋め込みになるため、`hasCPOuterBase_of_inducing_clopen_CP` と既検証の $C_k(\mathbb{N}^\mathbb{N}, 2)$ 結果から全点が clopen CP 開外基を持つ。
 3. **`L_0028` の新規 No-Go 4（青）**:
    - $\mathscr{C}_n := \{B \in \mathscr{B}_n \mid B \subseteq W_n\}$ は定理 B・C により厳密に CP になるが、$\mathbb{R}$ 上で $\mathscr{B}_n$ の添字付けを遅らせるだけで $\mathscr{C}_n = \{\emptyset\}$ となり近傍基性が崩壊する。
-4. **Mizokami (1985) Lemma 5–6 / Gruenhage (1980) Lemma 4.4 の構造解析（かえる＋一次裏取り）**:
+4. **Mizokami (1985) Lemma 5–6 / Gruenhage (1980) Lemma 4.4 の構造解析（カエル＋一次裏取り）**:
    - 原出典は Gruenhage (1980), *On the $M_3 \Rightarrow M_1$ question*, Topology Proc. 5, Lemma 4.4。
-   - 一般のパラコンパクト $T_3$ 空間で超限帰納法の極限ステップは無条件に閉じ、「1 個追加補題」へ完全還元されることを証明。さらに第二可算空間（$\mathbb{R}^2$ 単位円盤テスト含む）では Urysohn 関数の非可算個の閾値から可算個の禁止値を除くことで完全証明。非可分空間での単一閾値の反例（$\bigoplus_{t \in (0,1)} [0,1]_t$）も特定済み。
+   - 一般のパラコンパクト $T_3$ 空間で Shrinking Lemma と超限帰納法還元が Lean 4 で完全形式化済み（`SingleRegularOpenInsert` のみに縮減）。
+   - 任意部分和が正則開であることの完全な局所特徴づけ（$\forall p,\; p \notin \operatorname{int}(\bigcup_{C \in \mathscr{F}_p} \overline{C})$）を発見・証明。
+   - 第二可算空間（$\mathbb{R}^2$ 単位円盤テスト含む）では Urysohn 閾値法で完全証明、非可分ハリネズミ空間 $J(\omega_1)$ でも成立確認、$|\mathscr{A}|=1$ は正規空間一般で成立。残る核心は非可分空間での一般証明（あるいは $\sigma$-離散網による代替構成）。
