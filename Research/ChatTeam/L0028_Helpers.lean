@@ -542,4 +542,191 @@ theorem regularOpenDiscreteExpansionSeq_of_step
     rw [hEq]
     exact (seq (N + 1)).2.2.2 S hS
 
+/-! ### 青: Mizokami (2003, arXiv:math/0312457) Lemma 1.5・Lemma 1.2 コア補題 -/
+
+def shrinkingStrat {X : Type*} (G : Set X → ℕ → Set X) (H : Set X) (n : ℕ) : Set X :=
+  ⋂ k ∈ Set.Iic n, G H k
+
+lemma isOpen_shrinkingStrat {X : Type*} [TopologicalSpace X] {G : Set X → ℕ → Set X}
+    (hopen : ∀ H n, IsOpen (G H n)) (H : Set X) (n : ℕ) :
+    IsOpen (shrinkingStrat G H n) :=
+  (Set.finite_Iic n).isOpen_biInter (fun k _ => hopen H k)
+
+lemma shrinkingStrat_anti {X : Type*} {G : Set X → ℕ → Set X} {H : Set X} {m n : ℕ}
+    (hmn : m ≤ n) : shrinkingStrat G H n ⊆ shrinkingStrat G H m := by
+  intro y hy
+  simp only [shrinkingStrat, mem_iInter] at hy ⊢
+  intro k hkm
+  exact hy k (le_trans hkm hmn)
+
+lemma shrinkingStrat_mono {X : Type*} {G : Set X → ℕ → Set X}
+    (hmono : ∀ ⦃H₁ H₂ : Set X⦄, H₁ ⊆ H₂ → ∀ n, G H₁ n ⊆ G H₂ n)
+    {H₁ H₂ : Set X} (hsub : H₁ ⊆ H₂) (n : ℕ) :
+    shrinkingStrat G H₁ n ⊆ shrinkingStrat G H₂ n := by
+  intro y hy
+  simp only [shrinkingStrat, mem_iInter] at hy ⊢
+  intro k hk
+  exact hmono hsub k (hy k hk)
+
+lemma subset_shrinkingStrat {X : Type*} [TopologicalSpace X] {G : Set X → ℕ → Set X}
+    (hsub : ∀ H, IsClosed H → ∀ n, H ⊆ G H n) {H : Set X} (hH : IsClosed H) (n : ℕ) :
+    H ⊆ shrinkingStrat G H n := by
+  intro y hy
+  simp only [shrinkingStrat, mem_iInter]
+  intro k _
+  exact hsub H hH k hy
+
+lemma iInter_closure_shrinkingStrat {X : Type*} [TopologicalSpace X] {G : Set X → ℕ → Set X}
+    (hsub : ∀ H, IsClosed H → ∀ n, H ⊆ G H n)
+    (hinter : ∀ H, IsClosed H → (⋂ n, closure (G H n)) = H)
+    {H : Set X} (hH : IsClosed H) :
+    (⋂ n, closure (shrinkingStrat G H n)) = H := by
+  apply Subset.antisymm
+  · intro y hy
+    rw [← hinter H hH, mem_iInter]
+    simp only [mem_iInter] at hy
+    intro n
+    have hle : shrinkingStrat G H n ⊆ G H n := by
+      intro z hz
+      simp only [shrinkingStrat, mem_iInter] at hz
+      exact hz n (Set.mem_Iic.mpr le_rfl)
+    exact closure_mono hle (hy n)
+  · intro y hy
+    simp only [mem_iInter]
+    intro n
+    exact subset_closure (subset_shrinkingStrat hsub hH n hy)
+
+lemma mizokami_lemma_1_5 {X : Type*} [TopologicalSpace X] {G : Set X → ℕ → Set X}
+    (hG_open : ∀ H n, IsOpen (G H n))
+    (hG_sub : ∀ H, IsClosed H → ∀ n, H ⊆ G H n)
+    (hG_inter : ∀ H, IsClosed H → (⋂ n, closure (G H n)) = H)
+    (hG_mono : ∀ ⦃H₁ H₂ : Set X⦄, H₁ ⊆ H₂ → ∀ n, G H₁ n ⊆ G H₂ n)
+    {M : Set X} (hM : IsClosed M)
+    {𝓑 : Set (Set X)} (h𝓑_closed : ∀ B ∈ 𝓑, IsClosed B)
+    (h𝓑_cp : MSpace.ClosurePreserving 𝓑) :
+    ∃ S : Set X → Set X,
+      (∀ B ∈ 𝓑, IsOpen (S B) ∧ S B ⊆ Mᶜ) ∧
+      (∀ B ∈ 𝓑, B \ M ⊆ S B) ∧
+      (∀ 𝓑' ⊆ 𝓑, closure (⋃ B ∈ 𝓑', S B) ∩ M ⊆ (⋃₀ 𝓑') ∩ M) := by
+  let G' : Set X → ℕ → Set X := shrinkingStrat G
+  let S : Set X → Set X := fun B => ⋃ n, G' B n \ closure (G' M n)
+  refine ⟨S, ?_, ?_, ?_⟩
+  · intro B _
+    refine ⟨isOpen_iUnion fun n => (isOpen_shrinkingStrat hG_open B n).sdiff isClosed_closure, ?_⟩
+    rintro y ⟨_, ⟨n, rfl⟩, _, hy_notcl⟩ hyM
+    exact hy_notcl (subset_closure (subset_shrinkingStrat hG_sub hM n hyM))
+  · intro B hB y ⟨hyB, hyM⟩
+    have hM_eq : (⋂ n, closure (G' M n)) = M := iInter_closure_shrinkingStrat hG_sub hG_inter hM
+    rw [← hM_eq, mem_iInter] at hyM
+    push Not at hyM
+    obtain ⟨n, hn⟩ := hyM
+    exact mem_iUnion.mpr ⟨n, subset_shrinkingStrat hG_sub (h𝓑_closed B hB) n hyB, hn⟩
+  · intro 𝓑' h𝓑' y ⟨hy_cl, hyM⟩
+    refine ⟨?_, hyM⟩
+    let H : Set X := ⋃₀ 𝓑'
+    have hH_closed : IsClosed H := by
+      have hcp := h𝓑_cp 𝓑' h𝓑'
+      have himg : ⋃₀ (closure '' 𝓑') = H := by
+        ext z
+        constructor
+        · rintro ⟨_, ⟨B, hB, rfl⟩, hz⟩
+          rw [(h𝓑_closed B (h𝓑' hB)).closure_eq] at hz
+          exact ⟨B, hB, hz⟩
+        · rintro ⟨B, hB, hz⟩
+          exact ⟨closure B, ⟨B, hB, rfl⟩, subset_closure hz⟩
+      rw [himg] at hcp
+      rw [← hcp]
+      exact isClosed_closure
+    by_contra hyH
+    have hH_eq : (⋂ k, closure (G' H k)) = H :=
+      iInter_closure_shrinkingStrat hG_sub hG_inter hH_closed
+    change y ∉ H at hyH
+    rw [← hH_eq, mem_iInter] at hyH
+    push Not at hyH
+    obtain ⟨k, hk⟩ := hyH
+    let V : Set X := G' M k \ closure (G' H k)
+    have hV_open : IsOpen V := (isOpen_shrinkingStrat hG_open M k).sdiff isClosed_closure
+    have hyV : y ∈ V := ⟨subset_shrinkingStrat hG_sub hM k hyM, hk⟩
+    rw [mem_closure_iff] at hy_cl
+    obtain ⟨z, ⟨hzM, hznotH⟩, hzU⟩ := hy_cl V hV_open hyV
+    obtain ⟨B, hB, hzSB⟩ := mem_iUnion₂.mp hzU
+    obtain ⟨n, hzB, hznotM⟩ := mem_iUnion.mp hzSB
+    have hzH : z ∈ G' H n := shrinkingStrat_mono hG_mono (subset_sUnion_of_mem hB) n hzB
+    rcases le_total k n with hkn | hnk
+    · exact hznotH (subset_closure (shrinkingStrat_anti hkn hzH))
+    · exact hznotM (subset_closure (shrinkingStrat_anti hnk hzM))
+
+lemma mizokami_lemma_1_5_singleton {X : Type*} [TopologicalSpace X] [T1Space X]
+    {G : Set X → ℕ → Set X}
+    (hG_open : ∀ H n, IsOpen (G H n))
+    (hG_sub : ∀ H, IsClosed H → ∀ n, H ⊆ G H n)
+    (hG_inter : ∀ H, IsClosed H → (⋂ n, closure (G H n)) = H)
+    (hG_mono : ∀ ⦃H₁ H₂ : Set X⦄, H₁ ⊆ H₂ → ∀ n, G H₁ n ⊆ G H₂ n)
+    {x : X} {𝓑 : Set (Set X)}
+    (h𝓑_closed : ∀ B ∈ 𝓑, IsClosed B)
+    (h𝓑_cp : MSpace.ClosurePreserving 𝓑) :
+    ∃ S : Set X → Set X,
+      (∀ B ∈ 𝓑, IsOpen (S B) ∧ x ∉ S B) ∧
+      (∀ B ∈ 𝓑, B \ {x} ⊆ S B) ∧
+      (∀ 𝓑' ⊆ 𝓑, x ∈ closure (⋃ B ∈ 𝓑', S B) → ∃ B ∈ 𝓑', x ∈ B) := by
+  obtain ⟨S, hopen, hsub, hcl⟩ :=
+    mizokami_lemma_1_5 hG_open hG_sub hG_inter hG_mono isClosed_singleton h𝓑_closed h𝓑_cp
+  refine ⟨S, ?_, hsub, ?_⟩
+  · intro B hB
+    exact ⟨(hopen B hB).1, fun hx => (hopen B hB).2 hx rfl⟩
+  · intro 𝓑' h𝓑' hx
+    have hmem := (hcl 𝓑' h𝓑' ⟨hx, rfl⟩).1
+    exact mem_sUnion.mp hmem
+
+def atomClosed {X : Type*} (𝓑 : Set (Set X)) (N : Set X) : Set X :=
+  N ∩ ⋂ B ∈ {B ∈ 𝓑 | (N ∩ B).Nonempty}, B
+
+lemma atomClosed_subset {X : Type*} (𝓑 : Set (Set X)) (N : Set X) :
+    atomClosed 𝓑 N ⊆ N := inter_subset_left
+
+lemma isClosed_atomClosed {X : Type*} [TopologicalSpace X]
+    {𝓑 : Set (Set X)} (h𝓑_closed : ∀ B ∈ 𝓑, IsClosed B) {N : Set X} (hN : IsClosed N) :
+    IsClosed (atomClosed 𝓑 N) :=
+  hN.inter (isClosed_biInter fun B hB => h𝓑_closed B hB.1)
+
+lemma atomClosed_subset_of_inter_nonempty {X : Type*} {𝓑 : Set (Set X)} {N B : Set X}
+    (hB : B ∈ 𝓑) (hne : (atomClosed 𝓑 N ∩ B).Nonempty) : atomClosed 𝓑 N ⊆ B := by
+  have hNB : (N ∩ B).Nonempty := hne.mono (inter_subset_inter_left B (atomClosed_subset 𝓑 N))
+  intro y hy
+  exact mem_iInter₂.mp hy.2 B ⟨hB, hNB⟩
+
+def openAvoidingCP {X : Type*} (𝓑 : Set (Set X)) (F W : Set X) : Set X :=
+  W \ ⋃₀ {B ∈ 𝓑 | Disjoint F B}
+
+lemma isOpen_openAvoidingCP {X : Type*} [TopologicalSpace X]
+    {𝓑 : Set (Set X)} (h𝓑_closed : ∀ B ∈ 𝓑, IsClosed B) (h𝓑_cp : MSpace.ClosurePreserving 𝓑)
+    {F W : Set X} (hW : IsOpen W) : IsOpen (openAvoidingCP 𝓑 F W) := by
+  have hsub : {B ∈ 𝓑 | Disjoint F B} ⊆ 𝓑 := fun _ h => h.1
+  have hcl : IsClosed (⋃₀ {B ∈ 𝓑 | Disjoint F B}) := by
+    have hcp := h𝓑_cp _ hsub
+    have himg : ⋃₀ (closure '' {B ∈ 𝓑 | Disjoint F B}) = ⋃₀ {B ∈ 𝓑 | Disjoint F B} := by
+      ext z
+      constructor
+      · rintro ⟨_, ⟨B, hB, rfl⟩, hz⟩
+        rw [(h𝓑_closed B hB.1).closure_eq] at hz
+        exact ⟨B, hB, hz⟩
+      · rintro ⟨B, hB, hz⟩
+        exact ⟨closure B, ⟨B, hB, rfl⟩, subset_closure hz⟩
+    rw [himg] at hcp
+    rw [← hcp]
+    exact isClosed_closure
+  exact hW.sdiff hcl
+
+lemma subset_openAvoidingCP {X : Type*} {𝓑 : Set (Set X)} {F W : Set X}
+    (hFW : F ⊆ W) : F ⊆ openAvoidingCP 𝓑 F W := by
+  intro y hy
+  refine ⟨hFW hy, ?_⟩
+  rintro ⟨B, ⟨_, hdisj⟩, hyB⟩
+  exact Set.disjoint_left.mp hdisj hy hyB
+
+lemma disjoint_openAvoidingCP {X : Type*} {𝓑 : Set (Set X)} {F W B : Set X}
+    (hB : B ∈ 𝓑) (hdisj : Disjoint F B) : Disjoint (openAvoidingCP 𝓑 F W) B := by
+  refine Set.disjoint_left.mpr fun y hy hyB => hy.2 ?_
+  exact ⟨B, ⟨hB, hdisj⟩, hyB⟩
+
 end Work.L0028Helpers

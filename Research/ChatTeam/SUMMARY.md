@@ -14,6 +14,8 @@
 - `closurePreserving_iUnion_of_shrinking`（青, `L_0028b`）: 減少開近傍列 $W_n$ による層別 CP 統合補題。
 - `isRegularOpen_iUnion_of_locallyFinite_disjoint_frontier`（かえる）: 境界が対ごとに素な局所有限正則開族の任意部分和は正則開。
 - `regularOpenDiscreteExpansionSeq_of_step`（かえる）: Mizokami (1985) Lemma 5（`RegularOpenRefinementStep_stmt`）から Lemma 6（`RegularOpenDiscreteExpansionSeq_stmt`）への完全帰納法。
+- `shrinkingStrat`, `mizokami_lemma_1_5`, `mizokami_lemma_1_5_singleton`（青）: Mizokami (2003, arXiv:math/0312457) Lemma 1.5（一般閉集合 $M$ および 1 点 $\{x\}$ 上で閉包が漏れない $X \setminus M$ の開膨張 $S(B)$）。
+- `atomClosed`, `openAvoidingCP` 関連補題群（青）: Mizokami (2003) Lemma 1.2 の原子閉細分 $E(N)$ および CP 避け開膨張のコア補題群。
 
 ### `Research/ChatTeam/L0031_ClopenShell_Hereditary.lean`（金魚）
 - `decClopen`, `shell`, `decClopen_antitone`, `decClopen_isClopen`, `shell_isClopen`, `clopen_inter_closure`, `exists_shell_of_ne`: clopen-$G_\delta$ 頂点の標準 clopen 殻分解。
