@@ -67,6 +67,11 @@ class Desk:
     def lim(self, key: str, default):
         return self.L.get(key, default)
 
+    def max_attempts(self) -> float:
+        """1ノード×1種別あたりの試行回数の上限。null（または 0 以下）なら上限なし。"""
+        v = self.L.get("max_attempts_per_task", 5)
+        return float("inf") if v is None or int(v) <= 0 else int(v)
+
     # ======================================================================
     # 人間用: Targets 承認と根ノード登録
     # ======================================================================
@@ -110,7 +115,7 @@ class Desk:
         return cap is None or self.db.spent_today(tier) < float(cap)
 
     def candidates(self, role: str) -> list[tuple[tuple, str, str | None]]:
-        mx = int(self.lim("max_attempts_per_task", 5))
+        mx = self.max_attempts()
         out: list[tuple[tuple, str, str | None]] = []
         n_nodes = self.db.count_nodes()
         # 補題は「まだ open の親を持つ帰着」の子であるときだけ意味がある（親が別経路で証明済みなら不要）
