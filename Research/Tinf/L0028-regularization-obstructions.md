@@ -241,3 +241,58 @@ unmodified stratification in a metric space with nonempty M can
 therefore give a CP failure off M. To repair this route, the choice
 of open expansions away from M must exploit additional structure
 beyond the stratification conditions used by BoundaryExpansion.lean.
+
+## A common meagre set contains every thin defect
+
+Apply the mosaic cover from Mizokami's survey Lemma 1.2 to the
+original CP closed family K. Write the cover as the union of discrete
+closed families C_n. Define M_n as the union of the boundaries of
+the cells in C_n. Each M_n is closed nowhere dense. In fact the
+boundary cells are closed nowhere dense and form a discrete family.
+Locally, at most one can meet a sufficiently small neighborhood,
+which proves both closedness and empty interior of their union.
+
+If y belongs to K minus cl(int K) for some original member K,
+choose any cover cell C containing y. Membership compatibility gives
+C ⊆ K. If y were in int C it would be in int K, so y lies in the
+boundary of C. Thus every thin defect of every K lies in the same
+union of the M_n.
+
+Consequently the family {cl(int K) : K in K} already has the CP
+union identity at every point outside this countable union, by the
+thin-point criterion above. This gives fixed nowhere dense closed
+sets on which to seek a simultaneous repair, rather than a different
+exceptional set for every K. The estimate does not provide a repair
+on those sets or guarantee that separate repairs compose.
+
+## Construct a dense trace adapted to the whole family
+
+The arbitrary D in L_0028 need not be a dense trace. However a new
+sigma-closed-discrete D can be constructed from a mosaic and a
+sigma-discrete closed network, as follows.
+
+Let C_n be the discrete closed layers of a mosaic for the given
+CP family K. Let N_m be the discrete closed layers of an ambient
+network. For each n,m and every nonempty intersection C ∩ N
+with C in C_n and N in N_m, select one point. The intersections
+are a discrete closed family: at a point intersect a neighborhood
+meeting at most one C with a neighborhood meeting at most one N.
+Hence the selected points at fixed n,m have all subsets closed.
+Their union E over n,m is sigma-closed-discrete.
+
+For y in K and open U containing y, take a C containing y and
+a network element N with y in N ⊆ U. Then C ⊆ K by the mosaic
+condition, so the selected point of C ∩ N lies in U ∩ K ∩ E.
+Consequently K = cl(K ∩ E) for every original member.
+This supplies the trace hypothesis of the parent branch's Ito
+construction. It leaves the hypothesis of a CP open local base
+at the selected points. Asking for that property at every point
+would reinstate the general theorem; the remaining question is
+whether compatible representatives can be chosen, or replaced
+with weaker closure witnesses.
+
+Tamano 2008, Lemma 2, uses this type of adapted trace and convergent
+sequences outside a closed set to produce regularization pieces.
+Its convergence hypothesis must be supplied separately; density
+alone provides closure membership, not such sequences.
+https://topology.nipissingu.ca/tp/reprints/v32/tp32023.pdf
