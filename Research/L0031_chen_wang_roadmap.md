@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0028`）に向けた **Lean 4 カーネル検証済みモジュール 29 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0028`）に向けた **Lean 4 カーネル検証済みモジュール 32 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -148,3 +148,18 @@
 - **`IsStronglyZeroDim` / `stronglyZeroDim_of_normal_sigma_closedDiscrete`**: 閉離散集合の可算和 $X = \bigcup_n F_n$ で覆われる任意の正規空間において、任意の互いに素な閉集合が閉開集合で分離される（$\operatorname{Ind} X = 0$）ことを帰納的閉包分離により証明。
 - **`stronglyZeroDim_of_stratifiable_sigma_closedDiscrete` / `stronglyZeroDim_of_countable_normal_t1` / `stronglyZeroDim_of_countable_stratifiable`**: 任意の $\sigma$-閉離散層化可能空間および任意の可算層化可能空間が強 0 次元であることを導出。
 - **`clopen_basis_of_stronglyZeroDim`**: 強 0 次元 $T_1$ 空間は閉開集合からなる開基を持つことを証明。
+
+## 29. [Heath1966_Nagata_Spaces.lean](Heath1966_Nagata_Spaces.lean)（Heath 1966：Nagata 空間 $\iff$ 第 1 可算かつ層化可能空間）
+- **`IsNagataSpace` / `isNagataSpace_iff_firstCountable_and_isStratifiable`**（Heath 1966 Theorem 1）: 対称 $g$-関数による Nagata 空間の定義と、「第 1 可算かつ層化可能」との完全同値を証明。
+- **`isNagataSpace_of_metricSpace` / `hasCPOuterBase_of_isNagataSpace`**: 距離空間は Nagata 空間であり、Nagata 空間の各点は必ず単層 CP 開外基を持つ（したがって Nagata 空間は `L_0020` / `L_0030` / `L_0031` の反例にならない）。
+- **`isNagataSpace_subtype` / `isNagataSpace_prod`**: 任意の部分空間および有限積での永続性。
+
+## 30. [MoritaHanaiStone_PerfectMetric_IsM1.lean](MoritaHanaiStone_PerfectMetric_IsM1.lean)（Morita–Hanai–Stone 1956：距離空間の完全像・コンパクト境界閉像・第 1 可算閉像はすべて $M_1$）
+- **`closurePreserving_compl_sUnion_of_locallyFinite` / `isM1_of_sigma_locallyFinite_star_closed_cover`**: 任意の局所有限閉族 $\mathcal{H}$ の補集合族 $\{(\bigcup \mathcal{S})^c \mid \mathcal{S} \subseteq \mathcal{H}\}$ が局所有限トレースにより自動的に closure-preserving になることを証明し、$\sigma$-局所有限星型閉被覆から直接 $M_1$ 性を導出。
+- **`isM1_of_perfectMap_from_metricSpace`**: 距離空間の完全連続像（コンパクトファイバーを持つ閉連続全射の像）は常に $M_1$ 空間。
+- **`isM1_of_closedMap_compact_frontier_from_metricSpace` / `isCompact_frontier_of_closedMap_firstCountable` / `isM1_of_closedMap_firstCountable_from_metricSpace`**（Morita–Hanai–Stone 1956 完全版）: 距離空間からの閉連続全射において、各ファイバー境界 $\partial f^{-1}(\{y\})$ がコンパクト（特に像空間 $Y$ が第 1 可算）ならば、閉距離部分空間への制限により完全写像へ帰着され、$Y$ が常に $M_1$ 空間になることを完全証明。
+
+## 31. [Lasnev_Decomposition.lean](Lasnev_Decomposition.lean)（Lašnev 分解定理 1965・距離空間の閉像の Fréchet–Urysohn 性）
+- **`frechetUrysohn_of_closedMap_from_metricSpace`**: 任意の距離空間の閉連続像は常に Fréchet–Urysohn 空間であることを証明。
+- **`hasDecreasingOpenBase_of_compact_frontier`**: 距離空間の閉連続像において、ファイバー境界 $\partial f^{-1}(\{y\})$ がコンパクトな点 $y$ は減少可算開局所基を持つことを証明。
+- **`lasnev_decomposition_completeMetric`**（Lašnev 1965）: 完備距離空間の任意の閉連続像 $Y$ が $Y = Y_0 \cup \bigcup_n D_n$ と分解され、各 $D_n$ は閉離散集合であり、かつ $Y_0$ のすべての点 $y$ がコンパクトファイバー境界・第 1 可算性・単層 CP 開外基 `Defs.D_0001.HasCPOuterBase y` を満たすことを完全証明。
