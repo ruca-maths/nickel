@@ -18,6 +18,8 @@
 - `atomClosed`, `openAvoidingCP` 関連補題群（青）: Mizokami (2003) Lemma 1.2 の原子閉細分 $E(N)$ および CP 避け開膨張のコア補題群。
 - `IsDiscreteFamily`, `exists_closed_exhaustion_interior`, `mizokami_lemma_1_2`（青）: Mizokami (2003, arXiv:math/0312457) Lemma 1.2 全文（2 段ずらし点有限化による $\sigma$-離散閉被覆と点有限・$\sigma$-離散開膨張）。
 - `exists_locallyFinite_refinement_with_closed_shrinking`, `regularOpenRefinementStep_of_singleInsert_aux`（カエル）: パラコンパクト $T_3$ 空間での Shrinking Lemma、極限ステップ還元、および `WellOrderingRel` 上の超限帰納法による「1 個追加補題 ⇒ `RegularOpenRefinementStep_stmt`」。
+- `isRegularOpen_iUnion_iff_frontier_escape`, `singleInsert_iff_frontier_escape_cond`（カエル）: 任意部分和が正則開であることの完全な局所特徴づけと 1 個追加の逃げ道条件。
+- `singleRegularOpenInsert_singleton_normal`, `singleRegularOpenInsert_secondCountable`（カエル）: 正規空間での $|A|=1$ 版および第二可算空間での `SingleRegularOpenInsert` の完全形式化（Urysohn 局所最大値の高々可算除外）。
 
 ### `Research/ChatTeam/L0031_ClopenShell_Hereditary.lean`（金魚）
 - `decClopen`, `shell`, `decClopen_antitone`, `decClopen_isClopen`, `shell_isClopen`, `clopen_inter_closure`, `exists_shell_of_ne`: clopen-$G_\delta$ 頂点の標準 clopen 殻分解。

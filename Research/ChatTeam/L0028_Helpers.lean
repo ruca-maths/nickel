@@ -3,9 +3,12 @@ import Mathlib.Topology.Separation.Basic
 import Mathlib.Topology.Separation.Regular
 import Mathlib.Topology.Compactness.Paracompact
 import Mathlib.Topology.LocallyFinite
+import Mathlib.Topology.UrysohnsLemma
+import Mathlib.Topology.Bases
 import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Order.WellFounded
 import Mathlib.SetTheory.Cardinal.Order
+import Mathlib.Analysis.Real.Cardinality
 import Targets
 
 namespace Work.L0028Helpers
@@ -1413,5 +1416,389 @@ theorem mizokami_lemma_1_2 {X α : Type*} [TopologicalSpace X] [NormalSpace X]
     exact (hF_sub_E n k a).trans (atomClosed_subset_of_inter_nonempty hB hEne)
   · intro n k a B hB hdisj
     exact disjoint_openAvoidingCP hB hdisj
+
+/-! ### カエル (Round4): 局所特徴づけ・1個正規版・第二可算版 SingleRegularOpenInsert -/
+
+private lemma closure_biUnion_eq_of_locallyFinite
+    {X ι : Type*} [TopologicalSpace X]
+    {C : ι → Set X} (hlf : LocallyFinite C) (S : Set ι) :
+    closure (⋃ i ∈ S, C i) = ⋃ i ∈ S, closure (C i) := by
+  classical
+  refine Subset.antisymm ?_ (iUnion₂_subset (fun i hi => closure_mono (subset_biUnion_of_mem hi)))
+  have hEq : (⋃ i ∈ S, closure (C i)) = (⋃ i : ι, if i ∈ S then closure (C i) else ∅) := by
+    ext y
+    simp only [mem_iUnion, exists_prop]
+    constructor
+    · rintro ⟨i, hiS, hy⟩; exact ⟨i, by simp [hiS, hy]⟩
+    · rintro ⟨i, hy⟩
+      by_cases hi : i ∈ S
+      · simp [hi] at hy; exact ⟨i, hi, hy⟩
+      · simp [hi] at hy
+  rw [hEq]
+  apply closure_minimal
+  · intro y hy
+    rcases mem_iUnion₂.1 hy with ⟨i, hiS, hyi⟩
+    exact mem_iUnion.2 ⟨i, by simp [hiS, subset_closure hyi]⟩
+  · have hlf_sub : LocallyFinite (fun i : ι => if i ∈ S then closure (C i) else ∅) := by
+      intro x
+      obtain ⟨M, hM, hFin⟩ := hlf.closure x
+      refine ⟨M, hM, hFin.subset ?_⟩
+      intro i ⟨y, hy1, hy2⟩
+      by_cases hi : i ∈ S
+      · simp [hi] at hy1; exact ⟨y, hy1, hy2⟩
+      · simp [hi] at hy1
+    apply hlf_sub.isClosed_iUnion
+    intro i
+    by_cases hi : i ∈ S
+    · simp [hi, isClosed_closure]
+    · simp [hi]
+
+theorem isRegularOpen_iUnion_iff_frontier_escape
+    {X ι : Type*} [TopologicalSpace X]
+    (C : ι → Set X) (hCopen : ∀ i, IsOpen (C i)) (hlf : LocallyFinite C) :
+    (∀ S : Set ι, IsRegularOpen (⋃ i ∈ S, C i)) ↔
+      ∀ p : X, p ∉ interior (⋃ i ∈ {i : ι | p ∈ frontier (C i)}, closure (C i)) := by
+  classical
+  constructor
+  · intro hReg p hp
+    let S : Set ι := {i : ι | p ∈ frontier (C i)}
+    have hpCl : p ∈ interior (closure (⋃ i ∈ S, C i)) := by
+      rwa [closure_biUnion_eq_of_locallyFinite hlf S]
+    rw [(hReg S).2] at hpCl
+    rcases mem_iUnion₂.1 hpCl with ⟨i, hiS, hpi⟩
+    have hnot : p ∉ interior (C i) := hiS.2
+    rw [(hCopen i).interior_eq] at hnot
+    exact hnot hpi
+  · intro hEsc S
+    have hOpen : IsOpen (⋃ i ∈ S, C i) := isOpen_biUnion (fun i _ => hCopen i)
+    refine ⟨hOpen, Subset.antisymm ?_ (interior_maximal subset_closure hOpen)⟩
+    intro p hp
+    by_contra hpNot
+    let K : Set X := ⋃ i : ι, if i ∈ S ∧ p ∉ closure (C i) then closure (C i) else ∅
+    have hKcl : IsClosed K := by
+      have hlf_K : LocallyFinite (fun i : ι => if i ∈ S ∧ p ∉ closure (C i) then closure (C i) else ∅) := by
+        intro x
+        obtain ⟨M, hM, hFin⟩ := hlf.closure x
+        refine ⟨M, hM, hFin.subset ?_⟩
+        intro i ⟨y, hy1, hy2⟩
+        by_cases hcond : i ∈ S ∧ p ∉ closure (C i)
+        · simp [hcond] at hy1; exact ⟨y, hy1, hy2⟩
+        · simp [hcond] at hy1
+      apply hlf_K.isClosed_iUnion
+      intro i
+      by_cases hcond : i ∈ S ∧ p ∉ closure (C i)
+      · simp [hcond, isClosed_closure]
+      · simp [hcond]
+    have hpNotK : p ∉ K := by
+      intro hpK
+      dsimp only [K] at hpK
+      rcases mem_iUnion.1 hpK with ⟨i, hi⟩
+      by_cases hcond : i ∈ S ∧ p ∉ closure (C i)
+      · simp [hcond] at hi
+      · simp [hcond] at hi
+    have hOsub : interior (closure (⋃ i ∈ S, C i)) \ K ⊆
+        ⋃ i ∈ {i : ι | p ∈ frontier (C i)}, closure (C i) := by
+      intro y ⟨hyInt, hyNotK⟩
+      have hyCl : y ∈ ⋃ i ∈ S, closure (C i) := by
+        rw [← closure_biUnion_eq_of_locallyFinite hlf S]
+        exact interior_subset hyInt
+      rcases mem_iUnion₂.1 hyCl with ⟨i, hiS, hyi⟩
+      have hpiCl : p ∈ closure (C i) := by
+        by_contra hnot
+        exact hyNotK (mem_iUnion.2 ⟨i, by simp [hiS, hnot, hyi]⟩)
+      have hpiFr : p ∈ frontier (C i) := by
+        refine ⟨hpiCl, ?_⟩
+        rw [(hCopen i).interior_eq]
+        intro hpi
+        exact hpNot (mem_iUnion₂.2 ⟨i, hiS, hpi⟩)
+      exact mem_iUnion₂.2 ⟨i, hpiFr, hyi⟩
+    exact hEsc p (mem_interior.2 ⟨interior (closure (⋃ i ∈ S, C i)) \ K,
+      hOsub, isOpen_interior.sdiff hKcl, ⟨hp, hpNotK⟩⟩)
+
+theorem singleInsert_iff_frontier_escape_cond
+    {X α : Type*} [TopologicalSpace X]
+    (A : α → Set X) (hAopen : ∀ a, IsOpen (A a)) (hAlf : LocallyFinite A)
+    (hAreg : ∀ S : Set α, IsRegularOpen (⋃ a ∈ S, A a))
+    (W : Set X) (hWopen : IsOpen W) :
+    (IsRegularOpen W ∧ ∀ S : Set α, IsRegularOpen (W ∪ ⋃ a ∈ S, A a)) ↔
+      ∀ p ∈ frontier W,
+        p ∈ closure ((⋃ a ∈ {a : α | p ∈ frontier (A a)}, closure (A a))ᶜ \ closure W) := by
+  classical
+  let C : Option α → Set X
+    | none => W
+    | some a => A a
+  have hCopen : ∀ o, IsOpen (C o) := by
+    rintro (_ | a)
+    · exact hWopen
+    · exact hAopen a
+  have hClf : LocallyFinite C := by
+    intro x
+    obtain ⟨M, hM, hFin⟩ := hAlf x
+    refine ⟨M, hM, ?_⟩
+    have hSub : {o : Option α | (C o ∩ M).Nonempty} ⊆
+        insert none (Option.some '' {a : α | (A a ∩ M).Nonempty}) := by
+      rintro (_ | a) ⟨y, hyC, hyM⟩
+      · exact mem_insert none _
+      · exact mem_insert_of_mem none ⟨a, ⟨y, hyC, hyM⟩, rfl⟩
+    exact ((hFin.image Option.some).insert none).subset hSub
+  have hEquivAll : (IsRegularOpen W ∧ ∀ S : Set α, IsRegularOpen (W ∪ ⋃ a ∈ S, A a)) ↔
+      (∀ T : Set (Option α), IsRegularOpen (⋃ o ∈ T, C o)) := by
+    constructor
+    · rintro ⟨_, hWA⟩ T
+      by_cases hnone : none ∈ T
+      · let S : Set α := {a : α | some a ∈ T}
+        have hEq : (⋃ o ∈ T, C o) = W ∪ ⋃ a ∈ S, A a := by
+          ext y
+          simp only [mem_union, mem_iUnion, exists_prop]
+          constructor
+          · rintro ⟨_ | a, hoT, hy⟩
+            · exact Or.inl hy
+            · exact Or.inr ⟨a, hoT, hy⟩
+          · rintro (hyW | ⟨a, haS, hyA⟩)
+            · exact ⟨none, hnone, hyW⟩
+            · exact ⟨some a, haS, hyA⟩
+        rw [hEq]; exact hWA S
+      · let S : Set α := {a : α | some a ∈ T}
+        have hEq : (⋃ o ∈ T, C o) = ⋃ a ∈ S, A a := by
+          ext y
+          simp only [mem_iUnion, exists_prop]
+          constructor
+          · rintro ⟨_ | a, hoT, hy⟩
+            · exact False.elim (hnone hoT)
+            · exact ⟨a, hoT, hy⟩
+          · rintro ⟨a, haS, hyA⟩
+            exact ⟨some a, haS, hyA⟩
+        rw [hEq]; exact hAreg S
+    · intro hAll
+      refine ⟨?_, ?_⟩
+      · have hEq : W = ⋃ o ∈ ({none} : Set (Option α)), C o := by
+          ext y; simp [C]
+        rw [hEq]; exact hAll {none}
+      · intro S
+        let T : Set (Option α) := insert none (Option.some '' S)
+        have hEq : (W ∪ ⋃ a ∈ S, A a) = ⋃ o ∈ T, C o := by
+          ext y
+          simp only [mem_union, mem_iUnion, exists_prop, T, mem_insert_iff, mem_image]
+          constructor
+          · rintro (hyW | ⟨a, haS, hyA⟩)
+            · exact ⟨none, Or.inl rfl, hyW⟩
+            · exact ⟨some a, Or.inr ⟨a, haS, rfl⟩, hyA⟩
+          · rintro ⟨_ | a, (h1 | ⟨b, hbS, h2⟩), hy⟩
+            · exact Or.inl hy
+            · cases h2
+            · cases h1
+            · cases Option.some.inj h2; exact Or.inr ⟨a, hbS, hy⟩
+        rw [hEq]; exact hAll T
+  rw [hEquivAll, isRegularOpen_iUnion_iff_frontier_escape C hCopen hClf]
+  have hAesc := (isRegularOpen_iUnion_iff_frontier_escape A hAopen hAlf).1 hAreg
+  constructor
+  · intro hCesc p hpW
+    have hEqSet : ((⋃ a ∈ {a : α | p ∈ frontier (A a)}, closure (A a))ᶜ \ closure W) =
+        (⋃ o ∈ {o : Option α | p ∈ frontier (C o)}, closure (C o))ᶜ := by
+      ext y
+      simp only [Set.mem_sdiff, mem_compl_iff, mem_iUnion, exists_prop, not_exists, not_and]
+      constructor
+      · rintro ⟨h1, h2⟩ (_ | a) hfr
+        · exact h2
+        · exact h1 a hfr
+      · intro h
+        refine ⟨fun a ha => h (some a) ha, h none hpW⟩
+    rw [hEqSet, mem_closure_iff]
+    intro O hO hpO
+    by_contra hEmp
+    rw [Set.not_nonempty_iff_eq_empty] at hEmp
+    have hOsub : O ⊆ ⋃ o ∈ {o : Option α | p ∈ frontier (C o)}, closure (C o) := by
+      intro y hyO
+      by_contra hnot
+      have : y ∈ O ∩ (⋃ o ∈ {o : Option α | p ∈ frontier (C o)}, closure (C o))ᶜ := ⟨hyO, hnot⟩
+      rw [hEmp] at this
+      exact this
+    exact hCesc p (mem_interior.2 ⟨O, hOsub, hO, hpO⟩)
+  · intro hWesc p hpInt
+    by_cases hpW : p ∈ frontier W
+    · have hCl := hWesc p hpW
+      rcases mem_closure_iff.1 hCl _ isOpen_interior hpInt with ⟨y, hyInt, hyNotA, hyNotW⟩
+      have hyU := interior_subset hyInt
+      rcases mem_iUnion₂.1 hyU with ⟨_ | a, hfr, hyC⟩
+      · exact hyNotW hyC
+      · exact hyNotA (mem_iUnion₂.2 ⟨a, hfr, hyC⟩)
+    · have hSub : (⋃ o ∈ {o : Option α | p ∈ frontier (C o)}, closure (C o)) ⊆
+          (⋃ a ∈ {a : α | p ∈ frontier (A a)}, closure (A a)) := by
+        intro y hy
+        rcases mem_iUnion₂.1 hy with ⟨_ | a, hfr, hyC⟩
+        · exact False.elim (hpW hfr)
+        · exact mem_iUnion₂.2 ⟨a, hfr, hyC⟩
+      exact hAesc p (interior_mono hSub hpInt)
+
+private lemma isRegularOpen_interior_closure {X : Type*} [TopologicalSpace X] (s : Set X) :
+    IsRegularOpen (interior (closure s)) := by
+  refine ⟨isOpen_interior, Subset.antisymm ?_ (interior_maximal subset_closure isOpen_interior)⟩
+  exact interior_mono (closure_minimal interior_subset isClosed_closure)
+
+theorem singleRegularOpenInsert_singleton_normal
+    {X : Type*} [TopologicalSpace X] [NormalSpace X]
+    {A F G : Set X} (hA : IsRegularOpen A)
+    (hF : IsClosed F) (hG : IsOpen G) (hFG : F ⊆ G) :
+    ∃ W : Set X, IsRegularOpen W ∧ F ⊆ W ∧ closure W ⊆ G ∧ IsRegularOpen (W ∪ A) := by
+  obtain ⟨U₂, hU₂open, hFU₂, hU₂G⟩ := normal_exists_closure_subset hF hG hFG
+  obtain ⟨U₁, hU₁open, hFU₁, hU₁U₂⟩ := normal_exists_closure_subset hF hU₂open hFU₂
+  let W : Set X := interior (closure (U₁ ∪ (A ∩ U₂)))
+  have hWreg : IsRegularOpen W := isRegularOpen_interior_closure (U₁ ∪ (A ∩ U₂))
+  have hFW : F ⊆ W :=
+    hFU₁.trans (interior_maximal (subset_union_left.trans subset_closure) hU₁open)
+  have hWclG : closure W ⊆ G := by
+    have hSub : U₁ ∪ (A ∩ U₂) ⊆ closure U₂ :=
+      union_subset ((subset_closure.trans hU₁U₂).trans subset_closure)
+        (inter_subset_right.trans subset_closure)
+    have hWsub : W ⊆ closure U₂ := interior_subset.trans (closure_minimal hSub isClosed_closure)
+    exact (closure_minimal hWsub isClosed_closure).trans hU₂G
+  have hWAopen : IsOpen (W ∪ A) := hWreg.1.union hA.1
+  refine ⟨W, hWreg, hFW, hWclG, hWAopen,
+    Subset.antisymm ?_ (interior_maximal subset_closure hWAopen)⟩
+  have hWAcl : closure (W ∪ A) ⊆ closure U₁ ∪ closure A := by
+    apply closure_minimal _ (isClosed_closure.union isClosed_closure)
+    refine union_subset ?_ (subset_closure.trans subset_union_right)
+    calc W ⊆ closure (U₁ ∪ (A ∩ U₂)) := interior_subset
+      _ = closure U₁ ∪ closure (A ∩ U₂) := closure_union
+      _ ⊆ closure U₁ ∪ closure A := union_subset_union_right _ (closure_mono inter_subset_left)
+  intro p hp
+  by_cases hpU₂ : p ∈ U₂
+  · left
+    refine mem_interior.2 ⟨interior (closure (W ∪ A)) ∩ U₂, ?_, isOpen_interior.inter hU₂open, ⟨hp, hpU₂⟩⟩
+    intro y ⟨hyInt, hyU₂⟩
+    rcases hWAcl (interior_subset hyInt) with hyU₁ | hyA
+    · exact closure_mono subset_union_left hyU₁
+    · apply closure_mono subset_union_right
+      rw [mem_closure_iff]
+      intro N hN hyN
+      rcases mem_closure_iff.1 hyA (N ∩ U₂) (hN.inter hU₂open) ⟨hyN, hyU₂⟩ with ⟨z, ⟨hzN, hzU₂⟩, hzA⟩
+      exact ⟨z, hzN, hzA, hzU₂⟩
+  · right
+    have hpNotU₁ : p ∉ closure U₁ := fun h => hpU₂ (hU₁U₂ h)
+    have hpIntA : p ∈ interior (closure A) := by
+      refine mem_interior.2 ⟨interior (closure (W ∪ A)) \ closure U₁, ?_,
+        isOpen_interior.sdiff isClosed_closure, ⟨hp, hpNotU₁⟩⟩
+      intro y ⟨hyInt, hyNotU₁⟩
+      rcases hWAcl (interior_subset hyInt) with hyU₁ | hyA
+      · exact False.elim (hyNotU₁ hyU₁)
+      · exact hyA
+    rwa [hA.2] at hpIntA
+
+theorem singleRegularOpenInsert_secondCountable
+    {X : Type} [TopologicalSpace X] [NormalSpace X] [SecondCountableTopology X]
+    {α : Type} (A : α → Set X)
+    (hAopen : ∀ a, IsOpen (A a)) (hAlf : LocallyFinite A)
+    (hAreg : ∀ S : Set α, IsRegularOpen (⋃ a ∈ S, A a))
+    {F G : Set X} (hF : IsClosed F) (hG : IsOpen G) (hFG : F ⊆ G) :
+    ∃ W : Set X, IsRegularOpen W ∧ F ⊆ W ∧ closure W ⊆ G ∧
+      ∀ S : Set α, IsRegularOpen (W ∪ (⋃ a ∈ S, A a)) := by
+  classical
+  have hDisj : Disjoint F Gᶜ := Set.disjoint_compl_right_iff_subset.2 hFG
+  obtain ⟨f, hfF, hfGc, _⟩ :=
+    exists_continuous_zero_one_of_isClosed hF hG.isClosed_compl hDisj
+  have hfCont : Continuous f := f.continuous
+  obtain ⟨B₀, hB₀cnt, _, hB₀basis⟩ := TopologicalSpace.exists_countable_basis X
+  let B₁ : Set (Set X) := {B ∈ B₀ | {a : α | (closure (A a) ∩ B).Nonempty}.Finite}
+  have hB₁cnt : B₁.Countable := hB₀cnt.mono (fun _ h => h.1)
+  have hB₁open : ∀ B ∈ B₁, IsOpen B := fun B hB => hB₀basis.isOpen hB.1
+  let Bad (B : Set X) (S : Set α) : Set ℝ :=
+    {t : ℝ | ∃ p ∈ B \ (⋃ a ∈ S, A a), (∀ x ∈ B \ (⋃ a ∈ S, A a), f x ≤ f p) ∧ f p = t}
+  have hBadSub : ∀ B S, (Bad B S).Subsingleton := by
+    intro B S t₁ ⟨p₁, hp₁, hmax₁, ht₁⟩ t₂ ⟨p₂, hp₂, hmax₂, ht₂⟩
+    rw [← ht₁, ← ht₂]
+    exact le_antisymm (hmax₂ p₁ hp₁) (hmax₁ p₂ hp₂)
+  let E : Set ℝ :=
+    ⋃ B ∈ B₁, ⋃ S ∈ {S : Set α | S ⊆ {a : α | (closure (A a) ∩ B).Nonempty}}, Bad B S
+  have hEcnt : E.Countable := by
+    refine hB₁cnt.biUnion (fun B hB => ?_)
+    have hPowCnt : {S : Set α | S ⊆ {a : α | (closure (A a) ∩ B).Nonempty}}.Countable :=
+      hB.2.powerset.countable
+    exact hPowCnt.biUnion (fun S _ => (hBadSub B S).countable)
+  have hIooUncnt : ¬ (Set.Ioo (0 : ℝ) 1).Countable := by simp
+  have htEx : ∃ t₀ ∈ Set.Ioo (0 : ℝ) 1, t₀ ∉ E := by
+    by_contra hAll
+    push Not at hAll
+    exact hIooUncnt (hEcnt.mono hAll)
+  obtain ⟨t₀, ⟨ht₀_pos, ht₀_lt⟩, ht₀NotE⟩ := htEx
+  let W : Set X := interior (closure (f ⁻¹' Set.Iio t₀))
+  have hWreg : IsRegularOpen W := isRegularOpen_interior_closure (f ⁻¹' Set.Iio t₀)
+  have hFW : F ⊆ W := by
+    have hSub : F ⊆ f ⁻¹' Set.Iio t₀ := by
+      intro x hx; show f x < t₀; rw [hfF hx]; exact ht₀_pos
+    exact hSub.trans (interior_maximal subset_closure (isOpen_Iio.preimage hfCont))
+  have hWclIic : closure W ⊆ f ⁻¹' Set.Iic t₀ := by
+    have h1 : closure (f ⁻¹' Set.Iio t₀) ⊆ f ⁻¹' Set.Iic t₀ :=
+      closure_minimal (fun x (hx : f x < t₀) => le_of_lt hx) (isClosed_Iic.preimage hfCont)
+    exact closure_minimal (interior_subset.trans h1) (isClosed_Iic.preimage hfCont)
+  have hWclG : closure W ⊆ G := by
+    intro x hx
+    by_contra hxGc
+    have hle : f x ≤ t₀ := hWclIic hx
+    rw [hfGc hxGc] at hle
+    exact not_lt_of_ge hle ht₀_lt
+  refine ⟨W, hWreg, hFW, hWclG, ?_⟩
+  intro S
+  have hOpen : IsOpen (W ∪ ⋃ a ∈ S, A a) := hWreg.1.union (isOpen_biUnion (fun a _ => hAopen a))
+  refine ⟨hOpen, Subset.antisymm ?_ (interior_maximal subset_closure hOpen)⟩
+  intro p hp
+  by_contra hpNot
+  have hpNotW : p ∉ W := fun h => hpNot (Or.inl h)
+  have hpNotA : p ∉ ⋃ a ∈ S, A a := fun h => hpNot (Or.inr h)
+  obtain ⟨M, hM, hFinM⟩ := hAlf.closure p
+  have hOopen : IsOpen (interior (closure (W ∪ ⋃ a ∈ S, A a)) ∩ interior M) :=
+    isOpen_interior.inter isOpen_interior
+  have hpO : p ∈ interior (closure (W ∪ ⋃ a ∈ S, A a)) ∩ interior M :=
+    ⟨hp, mem_interior_iff_mem_nhds.2 hM⟩
+  obtain ⟨B, hBB₀, hpB, hBsub⟩ := hB₀basis.exists_subset_of_mem_open hpO hOopen
+  have hBB₁ : B ∈ B₁ := ⟨hBB₀, hFinM.subset (fun a ⟨y, hyA, hyB⟩ =>
+    ⟨y, hyA, interior_subset (hBsub hyB).2⟩)⟩
+  let S_B : Set α := {a ∈ S | (closure (A a) ∩ B).Nonempty}
+  have hSBsub : S_B ⊆ {a : α | (closure (A a) ∩ B).Nonempty} := fun _ h => h.2
+  have hfp_eq : f p = t₀ := by
+    have hge : t₀ ≤ f p := by
+      by_contra hlt
+      push Not at hlt
+      exact hpNotW (interior_maximal subset_closure (isOpen_Iio.preimage hfCont) hlt)
+    have hle : f p ≤ t₀ := by
+      by_contra hgt
+      push Not at hgt
+      have hSubA : B ∩ f ⁻¹' Set.Ioi t₀ ⊆ closure (⋃ a ∈ S, A a) := by
+        intro y ⟨hyB, hyGt⟩
+        have hyCl : y ∈ closure W ∪ closure (⋃ a ∈ S, A a) := by
+          rw [← closure_union]; exact interior_subset (hBsub hyB).1
+        rcases hyCl with hyW | hyA
+        · exact False.elim (not_lt_of_ge (hWclIic hyW) (show t₀ < f y from hyGt))
+        · exact hyA
+      have hpIntA : p ∈ interior (closure (⋃ a ∈ S, A a)) :=
+        mem_interior.2 ⟨B ∩ f ⁻¹' Set.Ioi t₀, hSubA,
+          (hB₁open B hBB₁).inter (isOpen_Ioi.preimage hfCont), ⟨hpB, hgt⟩⟩
+      rw [(hAreg S).2] at hpIntA
+      exact hpNotA hpIntA
+    exact le_antisymm hle hge
+  have hMax : ∀ x ∈ B \ (⋃ a ∈ S_B, A a), f x ≤ f p := by
+    intro x ⟨hxB, hxNotSB⟩
+    rw [hfp_eq]
+    by_contra hgt
+    push Not at hgt
+    have hSubSB : B ∩ f ⁻¹' Set.Ioi t₀ ⊆ closure (⋃ a ∈ S_B, A a) := by
+      intro y ⟨hyB, hyGt⟩
+      have hyCl : y ∈ closure W ∪ closure (⋃ a ∈ S, A a) := by
+        rw [← closure_union]; exact interior_subset (hBsub hyB).1
+      rcases hyCl with hyW | hyA
+      · exact False.elim (not_lt_of_ge (hWclIic hyW) (show t₀ < f y from hyGt))
+      · rw [closure_biUnion_eq_of_locallyFinite hAlf S] at hyA
+        rcases mem_iUnion₂.1 hyA with ⟨a, haS, hya⟩
+        have haSB : a ∈ S_B := ⟨haS, y, hya, hyB⟩
+        exact closure_mono (subset_biUnion_of_mem haSB) hya
+    have hxIntSB : x ∈ interior (closure (⋃ a ∈ S_B, A a)) :=
+      mem_interior.2 ⟨B ∩ f ⁻¹' Set.Ioi t₀, hSubSB,
+        (hB₁open B hBB₁).inter (isOpen_Ioi.preimage hfCont), ⟨hxB, hgt⟩⟩
+    rw [(hAreg S_B).2] at hxIntSB
+    exact hxNotSB hxIntSB
+  have hpDiff : p ∈ B \ (⋃ a ∈ S_B, A a) :=
+    ⟨hpB, fun h => hpNotA (by
+      rcases mem_iUnion₂.1 h with ⟨a, haSB, hpa⟩
+      exact mem_iUnion₂.2 ⟨a, haSB.1, hpa⟩)⟩
+  exact ht₀NotE (mem_iUnion₂.2 ⟨B, hBB₁, mem_iUnion₂.2 ⟨S_B, hSBsub, ⟨p, hpDiff, hMax, hfp_eq⟩⟩⟩)
 
 end Work.L0028Helpers
