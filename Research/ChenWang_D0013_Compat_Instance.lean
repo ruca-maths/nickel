@@ -3,6 +3,10 @@ import Mathlib.Data.List.Lex
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Data.Set.Finite.Lattice
+import Mathlib.Data.Rat.Denumerable
+import Mathlib.Algebra.Order.Field.Rat
+import Mathlib.Order.CountableDenseLinearOrder
+import Mathlib.Tactic.Linarith
 import Defs.D_0013
 
 /-!
@@ -519,5 +523,223 @@ theorem qtreeEnum_compatRepaired : CompatRepaired qtreeEnum qtreeTree2 where
 theorem exists_compatRepaired_qtree :
     ∃ q : ℕ ≃ QTree, CompatRepaired q qtreeTree2 :=
   ⟨qtreeEnum, qtreeEnum_compatRepaired⟩
+
+/-! ## Part 5: Transport to `ℚ ∩ [0, 1)` via Cantor's isomorphism theorem -/
+
+/-- The half-open rational interval `ℚ ∩ [0, 1)`. -/
+abbrev RatIco : Type := { r : ℚ // 0 ≤ r ∧ r < 1 }
+
+/-- The open rational interval `ℚ ∩ (0, 1)`. -/
+abbrev RatIoo : Type := { r : ℚ // 0 < r ∧ r < 1 }
+
+/-- Non-root elements of `QTree`. -/
+abbrev QTreePos : Type := { u : QTree // u ≠ [] }
+
+private lemma qtree_countable : Countable QTree :=
+  Countable.of_equiv ℕ qtreeEnum
+
+private lemma qtreePos_countable : Countable QTreePos := by
+  have : Countable QTree := qtree_countable
+  exact inferInstance
+
+private lemma qtreePos_nonempty : Nonempty QTreePos :=
+  ⟨⟨[OrderDual.toDual (1 : ℕ+)], by simp⟩⟩
+
+private lemma qtreePos_noMaxOrder : NoMaxOrder QTreePos where
+  exists_gt := fun ⟨u, _⟩ =>
+    ⟨⟨u ++ [OrderDual.toDual (1 : ℕ+)], by simp⟩, list_lex_lt_append_singleton u _⟩
+
+private lemma qtreePos_noMinOrder : NoMinOrder QTreePos where
+  exists_lt := fun ⟨u, hu⟩ => by
+    cases u with
+    | nil => exact (hu rfl).elim
+    | cons d rest =>
+      let k : ℕ := (OrderDual.ofDual d).1
+      refine ⟨⟨[OrderDual.toDual ⟨k + 1, Nat.succ_pos k⟩], by simp⟩, ?_⟩
+      show [OrderDual.toDual ⟨k + 1, Nat.succ_pos k⟩] < d :: rest
+      have hdual : OrderDual.toDual (⟨k + 1, Nat.succ_pos k⟩ : ℕ+) < d := Nat.lt_succ_self k
+      exact List.Lex.rel hdual
+
+private lemma qtreePos_denselyOrdered : DenselyOrdered QTreePos where
+  dense := fun ⟨u, _⟩ ⟨v, _⟩ huv => by
+    have huv' : u < v := huv
+    by_cases hpre : u <+: v
+    · obtain ⟨t, rfl⟩ := hpre
+      cases t with
+      | nil => simp at huv'
+      | cons d rest =>
+        let k : ℕ := (OrderDual.ofDual d).1
+        let w : QTree := u ++ [OrderDual.toDual ⟨k + 1, Nat.succ_pos k⟩]
+        refine ⟨⟨w, by simp [w]⟩, list_lex_lt_append_singleton u _, ?_⟩
+        show w < u ++ d :: rest
+        have hdual : OrderDual.toDual (⟨k + 1, Nat.succ_pos k⟩ : ℕ+) < d := Nat.lt_succ_self k
+        have hgen : ∀ l : QTree, l ++ [OrderDual.toDual ⟨k + 1, Nat.succ_pos k⟩] < l ++ d :: rest := by
+          intro l
+          induction l with
+          | nil => exact List.Lex.rel hdual
+          | cons b bs ih => exact List.Lex.cons ih
+        exact hgen u
+    · let w : QTree := u ++ [OrderDual.toDual (1 : ℕ+)]
+      exact ⟨⟨w, by simp [w]⟩, list_lex_lt_append_singleton u _,
+        list_lex_append_lt_of_not_prefix huv' hpre _⟩
+
+private lemma ratIoo_nonempty : Nonempty RatIoo :=
+  ⟨⟨(1 : ℚ) / 2, by linarith, by linarith⟩⟩
+
+private lemma ratIoo_noMinOrder : NoMinOrder RatIoo where
+  exists_lt := fun ⟨r, h0, h1⟩ =>
+    ⟨⟨r / 2, by linarith, by linarith⟩, by change r / 2 < r; linarith⟩
+
+private lemma ratIoo_noMaxOrder : NoMaxOrder RatIoo where
+  exists_gt := fun ⟨r, h0, h1⟩ =>
+    ⟨⟨(r + 1) / 2, by linarith, by linarith⟩, by change r < (r + 1) / 2; linarith⟩
+
+private lemma ratIoo_denselyOrdered : DenselyOrdered RatIoo where
+  dense := fun ⟨a, ha0, ha1⟩ ⟨b, hb0, hb1⟩ hab => by
+    have hab' : a < b := hab
+    refine ⟨⟨(a + b) / 2, by linarith, by linarith⟩, ?_, ?_⟩
+    · show a < (a + b) / 2; linarith
+    · show (a + b) / 2 < b; linarith
+
+/-- Order isomorphism `QTree ≃o ℚ ∩ [0, 1)` via Cantor's isomorphism theorem on the
+positive parts plus `[] ↔ 0`. -/
+theorem nonempty_qtree_orderIso_ratIco : Nonempty (QTree ≃o RatIco) := by
+  have : Countable QTreePos := qtreePos_countable
+  have : Nonempty QTreePos := qtreePos_nonempty
+  have : NoMaxOrder QTreePos := qtreePos_noMaxOrder
+  have : NoMinOrder QTreePos := qtreePos_noMinOrder
+  have : DenselyOrdered QTreePos := qtreePos_denselyOrdered
+  have : Nonempty RatIoo := ratIoo_nonempty
+  have : NoMinOrder RatIoo := ratIoo_noMinOrder
+  have : NoMaxOrder RatIoo := ratIoo_noMaxOrder
+  have : DenselyOrdered RatIoo := ratIoo_denselyOrdered
+  obtain ⟨e⟩ := Order.iso_of_countable_dense (α := QTreePos) (β := RatIoo)
+  let f : QTree → RatIco := fun u =>
+    if h : u = [] then ⟨0, le_rfl, zero_lt_one⟩
+    else ⟨(e ⟨u, h⟩).1, le_of_lt (e ⟨u, h⟩).2.1, (e ⟨u, h⟩).2.2⟩
+  let g : RatIco → QTree := fun r =>
+    if h : r.1 = 0 then []
+    else (e.symm ⟨r.1, lt_of_le_of_ne r.2.1 (Ne.symm h), r.2.2⟩).1
+  have hfg : Function.LeftInverse g f := by
+    intro u
+    by_cases hu : u = []
+    · simp [f, g, hu]
+    · have hpos : (e ⟨u, hu⟩).1 ≠ 0 := ne_of_gt (e ⟨u, hu⟩).2.1
+      simp only [f, g, hu, hpos, ↓reduceDIte]
+      have hEq : (⟨(e ⟨u, hu⟩).1, lt_of_le_of_ne (le_of_lt (e ⟨u, hu⟩).2.1) (Ne.symm hpos),
+          (e ⟨u, hu⟩).2.2⟩ : RatIoo) = e ⟨u, hu⟩ := Subtype.ext rfl
+      rw [hEq, e.symm_apply_apply]
+  have hgf : Function.RightInverse g f := by
+    intro r
+    by_cases hr : r.1 = 0
+    · apply Subtype.ext
+      simp [f, g, hr]
+    · have hne : (e.symm ⟨r.1, lt_of_le_of_ne r.2.1 (Ne.symm hr), r.2.2⟩).1 ≠ [] :=
+        (e.symm ⟨r.1, lt_of_le_of_ne r.2.1 (Ne.symm hr), r.2.2⟩).2
+      apply Subtype.ext
+      simp only [f, g, hr, hne, ↓reduceDIte]
+      have hEq : (⟨(e.symm ⟨r.1, lt_of_le_of_ne r.2.1 (Ne.symm hr), r.2.2⟩).1, hne⟩ : QTreePos) =
+          e.symm ⟨r.1, lt_of_le_of_ne r.2.1 (Ne.symm hr), r.2.2⟩ := Subtype.ext rfl
+      rw [hEq, e.apply_symm_apply]
+  refine ⟨⟨⟨f, g, hfg, hgf⟩, ?_⟩⟩
+  intro u v
+  change f u ≤ f v ↔ u ≤ v
+  by_cases hu : u = [] <;> by_cases hv : v = []
+  · subst hu hv; simp [f]
+  · subst hu
+    have hpos : (0 : ℚ) < (e ⟨v, hv⟩).1 := (e ⟨v, hv⟩).2.1
+    simp only [f, ↓reduceDIte, hv]
+    exact ⟨fun _ => list_lex_nil_le v, fun _ => le_of_lt hpos⟩
+  · subst hv
+    have hpos : (0 : ℚ) < (e ⟨u, hu⟩).1 := (e ⟨u, hu⟩).2.1
+    simp only [f, hu, ↓reduceDIte]
+    have hnot1 : ¬ (⟨(e ⟨u, hu⟩).1, le_of_lt hpos, (e ⟨u, hu⟩).2.2⟩ : RatIco) ≤ ⟨0, le_rfl, zero_lt_one⟩ :=
+      not_le_of_gt hpos
+    have hnot2 : ¬ u ≤ [] := fun h => hu (le_antisymm h (list_lex_nil_le u))
+    exact iff_of_false hnot1 hnot2
+  · simp only [f, hu, hv, ↓reduceDIte]
+    exact e.le_iff_le
+
+/-- Transport a `Tree2 α` along an order isomorphism `e : α ≃o β`. -/
+def transportTree2 {α β : Type} [LinearOrder α] [LinearOrder β]
+    (e : α ≃o β) (T : Tree2 α) : Tree2 β where
+  lev b := T.lev (e.symm b)
+  C b₁ b₂ := T.C (e.symm b₁) (e.symm b₂)
+  idx b := T.idx (e.symm b)
+  lev_child _ _ h := T.lev_child _ _ h
+  lt_child b₁ b₂ h := by
+    have := T.lt_child (e.symm b₁) (e.symm b₂) h
+    exact (e.symm.lt_iff_lt).mp this
+  gap b₁ b₂ b₃ h hlev hmem :=
+    T.gap (e.symm b₁) (e.symm b₂) (e.symm b₃) h hlev
+      ⟨e.symm.lt_iff_lt.mpr hmem.1, e.symm.lt_iff_lt.mpr hmem.2⟩
+  idx_pos _ _ h := T.idx_pos _ _ h
+  child_anti b₁ b₂ b₃ h₁ h₂ hlt :=
+    (e.symm.lt_iff_lt).mp (T.child_anti _ _ _ h₁ h₂ hlt)
+  child_inj b₁ b₂ b₃ h₁ h₂ heq :=
+    e.symm.injective (T.child_inj _ _ _ h₁ h₂ heq)
+  root := e T.root
+  child b j := e (T.child (e.symm b) j)
+  C_child b j hj := by
+    simpa [e.symm_apply_apply] using T.C_child (e.symm b) j hj
+  idx_child b j := by
+    simpa [e.symm_apply_apply] using T.idx_child (e.symm b) j
+  root_le b := by
+    have := e.le_iff_le.mpr (T.root_le (e.symm b))
+    simpa [e.apply_symm_apply] using this
+  connected b := by
+    have hconn := T.connected (e.symm b)
+    have hmap : ∀ a₁ a₂, ReflTransGen T.C a₁ a₂ →
+        ReflTransGen (fun x y => T.C (e.symm x) (e.symm y)) (e a₁) (e a₂) := by
+      intro a₁ a₂ h
+      induction h with
+      | refl => exact ReflTransGen.refl
+      | tail _ hbc ih => exact ih.tail (by simpa [e.symm_apply_apply] using hbc)
+    simpa [e.apply_symm_apply] using hmap T.root (e.symm b) hconn
+  desc_lt b j r hj hdesc := by
+    have hback : ∀ x y, ReflTransGen (fun u v => T.C (e.symm u) (e.symm v)) x y →
+        ReflTransGen T.C (e.symm x) (e.symm y) := by
+      intro x y h
+      induction h with
+      | refl => exact ReflTransGen.refl
+      | tail _ hbc ih => exact ih.tail hbc
+    have hd := hback _ _ hdesc
+    simp only [e.symm_apply_apply] at hd
+    have hlt := T.desc_lt (e.symm b) j (e.symm r) hj hd
+    simpa [e.apply_symm_apply] using e.lt_iff_lt.mpr hlt
+
+/-- Transport `CompatRepaired q T` along an order isomorphism `e : α ≃o β`. -/
+theorem transportCompatRepaired {α β : Type} [LinearOrder α] [LinearOrder β]
+    (e : α ≃o β) {q : ℕ ≃ α} {T : Tree2 α} (hc : CompatRepaired q T) :
+    CompatRepaired (q.trans e.toEquiv) (transportTree2 e T) where
+  num_child b₁ b₂ h := by
+    simpa [Equiv.symm_trans_apply] using hc.num_child (e.symm b₁) (e.symm b₂) h
+  idx_le_num b j hj := by
+    simpa [transportTree2, Equiv.symm_trans_apply, e.symm_apply_apply] using hc.idx_le_num (e.symm b) j hj
+  desc_of_mem b r hbr hr1 := by
+    have h1 : e.symm b < e.symm r := e.symm.lt_iff_lt.mpr hbr
+    have h2 : e.symm r < T.child (e.symm b) 1 := by
+      simpa [transportTree2, e.symm_apply_apply] using e.symm.lt_iff_lt.mpr hr1
+    obtain ⟨l, hl, hd⟩ := hc.desc_of_mem (e.symm b) (e.symm r) h1 h2
+    refine ⟨l, hl, ?_⟩
+    have hmap : ∀ a₁ a₂, ReflTransGen T.C a₁ a₂ →
+        ReflTransGen (transportTree2 e T).C (e a₁) (e a₂) := by
+      intro a₁ a₂ h
+      induction h with
+      | refl => exact ReflTransGen.refl
+      | tail _ hbc ih => exact ih.tail (by simpa [transportTree2, e.symm_apply_apply] using hbc)
+    simpa [transportTree2, e.apply_symm_apply] using hmap _ _ hd
+  shrink b u hbu := by
+    obtain ⟨a, ha, hlt⟩ := hc.shrink (e.symm b) (e.symm u) (e.symm.lt_iff_lt.mpr hbu)
+    refine ⟨a, ha, ?_⟩
+    simpa [transportTree2, e.apply_symm_apply] using e.lt_iff_lt.mpr hlt
+
+/-- Concrete realization of `Tree2` and `CompatRepaired` on `ℚ ∩ [0, 1)`, answering
+the open existence obligation noted in `Defs/D_0013.lean`. -/
+theorem exists_ratIco_tree2_compatRepaired :
+    ∃ (T : Tree2 RatIco) (q : ℕ ≃ RatIco), CompatRepaired q T := by
+  obtain ⟨e⟩ := nonempty_qtree_orderIso_ratIco
+  exact ⟨transportTree2 e qtreeTree2, qtreeEnum.trans e.toEquiv,
+    transportCompatRepaired e qtreeEnum_compatRepaired⟩
 
 end Research.ChenWangCompat

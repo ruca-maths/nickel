@@ -772,4 +772,248 @@ theorem not_L0020_imp_Tinf (hnot : ¬ Specs.L_0020.stmt) : MSpace.Goals.Tinf_M3_
     · intro W _ _
       exact ⟨∅, rfl, empty_subset W⟩
 
+/-! ## Part 6: Corollaries — σ-closed-discrete dense subset, locally compact/compact M₁, countable M₁ -/
+
+/-- Every stratifiable space has a σ-closed-discrete dense subset `⋃ p, D p`
+(generalizing `Proofs.L_0026` from `M₁` to `M₃` / stratifiable spaces). -/
+theorem stratifiable_has_sigma_closed_discrete_dense (X : Type) [TopologicalSpace X]
+    (hStrat : MSpace.IsStratifiable X) :
+    ∃ D : ℕ → Set X,
+      (∀ p, ∀ S ⊆ D p, IsClosed S) ∧
+      Dense (⋃ p, D p) := by
+  have : T1Space X := hStrat.1
+  obtain ⟨𝓝_fam, _, hN_disc, hN_net⟩ :=
+    stratifiable_has_sigma_discrete_closed_network X hStrat
+  let D : ℕ → Set X := fun p =>
+    { x : X | ∃ F ∈ 𝓝_fam p, ∃ h : F.Nonempty, x = h.some }
+  refine ⟨D, ?_, ?_⟩
+  · intro p S hS
+    rw [← isOpen_compl_iff]
+    refine isOpen_iff_mem_nhds.mpr fun z hz => ?_
+    obtain ⟨W, hWo, hzW, hWuniq⟩ := hN_disc p z
+    by_cases hhit : ∃ x₀ ∈ S, x₀ ∈ W
+    · obtain ⟨x₀, hx₀S, hx₀W⟩ := hhit
+      have hzx₀ : z ≠ x₀ := fun h => hz (h ▸ hx₀S)
+      obtain ⟨F₀, hF₀mem, hF₀ne, rfl⟩ := hS hx₀S
+      have hopen : IsOpen (W \ {hF₀ne.some}) := hWo.sdiff isClosed_singleton
+      refine Filter.mem_of_superset (hopen.mem_nhds ⟨hzW, hzx₀⟩) ?_
+      rintro y ⟨hyW, hyne⟩ hyS
+      obtain ⟨F, hFmem, hFne, rfl⟩ := hS hyS
+      have hFeq : F = F₀ :=
+        hWuniq F hFmem F₀ hF₀mem ⟨hFne.some, hyW, hFne.some_mem⟩ ⟨hF₀ne.some, hx₀W, hF₀ne.some_mem⟩
+      subst hFeq
+      exact hyne rfl
+    · refine Filter.mem_of_superset (hWo.mem_nhds hzW) ?_
+      intro y hyW hyS
+      exact hhit ⟨y, hyS, hyW⟩
+  · rw [dense_iff_inter_open]
+    intro V hVo ⟨x, hxV⟩
+    obtain ⟨p, F, hFp, hxF, hFV⟩ := hN_net x V hVo hxV
+    have hFne : F.Nonempty := ⟨x, hxF⟩
+    exact ⟨hFne.some, hFV hFne.some_mem, mem_iUnion.mpr ⟨p, F, hFp, hFne, rfl⟩⟩
+
+/-- General network form of Ito (1985): if `X` is stratifiable and admits a σ-discrete
+closed network whose members each have a CP open outer base, then `X` is `M₁`. -/
+theorem isM1_of_stratifiable_and_network_hasCPOuterBase (X : Type) [TopologicalSpace X]
+    (hStrat : MSpace.IsStratifiable X)
+    (𝓝_fam : ℕ → Set (Set X))
+    (hN_closed : ∀ p, ∀ F ∈ 𝓝_fam p, IsClosed F)
+    (hN_disc : ∀ p, IsDiscreteFam (𝓝_fam p))
+    (hN_net : ∀ x : X, ∀ V : Set X, IsOpen V → x ∈ V → ∃ p, ∃ F ∈ 𝓝_fam p, x ∈ F ∧ F ⊆ V)
+    (hN_cp : ∀ p, ∀ F ∈ 𝓝_fam p, HasCPOuterBaseSet F) :
+    MSpace.IsM1 X := by
+  have hT3 : T3Space X := (Proofs.L_0004.strat_to_m3 X hStrat).1
+  choose W hW_open hW_sub hW_disc using
+    fun p => stratifiable_discrete_open_expansion hStrat (hN_disc p) (hN_closed p)
+  choose 𝓤 hU_open hU_cp hU_base using
+    fun (p : ℕ) (F : 𝓝_fam p) => hN_cp p F.1 F.2
+  let 𝓑' : ℕ → Set (Set X) := fun p =>
+    { U : Set X | ∃ F : 𝓝_fam p, U ∈ 𝓤 p F ∧ U ⊆ W p F }
+  have hB'_open : ∀ p, ∀ U ∈ 𝓑' p, IsOpen U := by
+    rintro p U ⟨F, hUF, _⟩
+    exact (hU_open p F U hUF).1
+  have hB'_cp : ∀ p, MSpace.ClosurePreserving (𝓑' p) := by
+    intro p 𝓖 h𝓖
+    apply Subset.antisymm
+    · intro z hz
+      obtain ⟨O, hOo, hzO, hOuniq⟩ := hW_disc p z
+      have hne_hit : ∃ U ∈ 𝓖, (O ∩ U).Nonempty := by
+        obtain ⟨y, hyO, hyG⟩ := mem_closure_iff.mp hz O hOo hzO
+        obtain ⟨U, hUG, hyU⟩ := hyG
+        exact ⟨U, hUG, y, hyO, hyU⟩
+      obtain ⟨U₀, hU₀G, hO_U₀⟩ := hne_hit
+      obtain ⟨F₀, hU₀_mem, hU₀_sub⟩ := h𝓖 hU₀G
+      have hO_W₀ : (O ∩ W p F₀).Nonempty := hO_U₀.mono (inter_subset_inter_right O hU₀_sub)
+      let 𝓖₀ : Set (Set X) := { U ∈ 𝓖 | U ∈ 𝓤 p F₀ ∧ U ⊆ W p F₀ }
+      have hG₀_sub : 𝓖₀ ⊆ 𝓤 p F₀ := fun _ h => h.2.1
+      have hz_cl0 : z ∈ closure (⋃₀ 𝓖₀) := by
+        rw [mem_closure_iff]
+        intro V hVo hzV
+        obtain ⟨y, hyOV, ⟨U, hUG, hyU⟩⟩ :=
+          mem_closure_iff.mp hz (O ∩ V) (hOo.inter hVo) ⟨hzO, hzV⟩
+        obtain ⟨F, hUF, hUW⟩ := h𝓖 hUG
+        have hF_eq : F = F₀ :=
+          hOuniq F F₀ ⟨y, hyOV.1, hUW hyU⟩ hO_W₀
+        subst hF_eq
+        exact ⟨y, hyOV.2, ⟨U, ⟨hUG, hUF, hUW⟩, hyU⟩⟩
+      rw [hU_cp p F₀ 𝓖₀ hG₀_sub] at hz_cl0
+      obtain ⟨C, ⟨U, hUG₀, rfl⟩, hzC⟩ := hz_cl0
+      exact ⟨closure U, ⟨U, hUG₀.1, rfl⟩, hzC⟩
+    · rintro z ⟨_, ⟨U, hUG, rfl⟩, hzU⟩
+      exact closure_mono (Set.subset_sUnion_of_mem hUG) hzU
+  refine ⟨hT3, ⋃ p, 𝓑' p, ?_, ⟨𝓑', hB'_cp, rfl⟩⟩
+  refine isTopologicalBasis_of_isOpen_of_nhds ?_ ?_
+  · rintro U hU
+    obtain ⟨p, hUp⟩ := mem_iUnion.mp hU
+    exact hB'_open p U hUp
+  · intro x V hxV hVo
+    obtain ⟨p, F, hFp, hxF, hFV⟩ := hN_net x V hVo hxV
+    let Fsub : 𝓝_fam p := ⟨F, hFp⟩
+    have hopen_inter : IsOpen (V ∩ W p Fsub) := hVo.inter (hW_open p Fsub)
+    have hF_inter : F ⊆ V ∩ W p Fsub := fun y hy => ⟨hFV hy, hW_sub p Fsub hy⟩
+    obtain ⟨U, hUF, hU_sub⟩ := hU_base p Fsub (V ∩ W p Fsub) hopen_inter hF_inter
+    refine ⟨U, mem_iUnion.mpr ⟨p, ⟨Fsub, hUF, hU_sub.trans inter_subset_right⟩⟩,
+      (hU_open p Fsub U hUF).2 hxF, hU_sub.trans inter_subset_left⟩
+
+/-- A decreasing countable sequence of sets is always closure-preserving. -/
+private lemma closurePreserving_range_antitone {X : Type*} [TopologicalSpace X]
+    (U : ℕ → Set X) (hanti : ∀ n, U (n + 1) ⊆ U n) :
+    MSpace.ClosurePreserving (Set.range U) := by
+  have hle : ∀ {m n : ℕ}, m ≤ n → U n ⊆ U m := by
+    intro m n hmn
+    induction hmn with
+    | refl => exact Subset.rfl
+    | step _ ih => exact (hanti _).trans ih
+  intro 𝓖 h𝓖
+  by_cases hne : 𝓖.Nonempty
+  · classical
+    have hex : ∃ n : ℕ, U n ∈ 𝓖 := by
+      obtain ⟨S, hSG⟩ := hne
+      obtain ⟨n, rfl⟩ := h𝓖 hSG
+      exact ⟨n, hSG⟩
+    let n₀ : ℕ := Nat.find hex
+    have hn₀ : U n₀ ∈ 𝓖 := Nat.find_spec hex
+    have hEq : ⋃₀ 𝓖 = U n₀ := by
+      apply Subset.antisymm
+      · rintro x ⟨S, hSG, hxS⟩
+        obtain ⟨n, rfl⟩ := h𝓖 hSG
+        exact hle (Nat.find_min' hex hSG) hxS
+      · exact Set.subset_sUnion_of_mem hn₀
+    apply Subset.antisymm
+    · rw [hEq]
+      exact Set.subset_sUnion_of_mem ⟨U n₀, hn₀, rfl⟩
+    · rintro x ⟨_, ⟨S, hSG, rfl⟩, hxS⟩
+      exact closure_mono (Set.subset_sUnion_of_mem hSG) hxS
+  · rw [Set.not_nonempty_iff_eq_empty] at hne
+    subst hne
+    simp
+
+/-- In a locally compact stratifiable space, every compact subset `K` has a decreasing
+countable (hence CP) open outer base. -/
+theorem hasCPOuterBaseSet_of_compact_in_locallyCompact_stratifiable (X : Type) [TopologicalSpace X]
+    (hStrat : MSpace.IsStratifiable X) [LocallyCompactSpace X]
+    {K : Set X} (hK : IsCompact K) : HasCPOuterBaseSet K := by
+  have : T3Space X := (Proofs.L_0004.strat_to_m3 X hStrat).1
+  have hKcl : IsClosed K := hK.isClosed
+  obtain ⟨_, G₀, hG₀⟩ := hStrat
+  obtain ⟨G, hG, hanti⟩ := exists_antitone_stratification hG₀
+  choose C_pt hC_comp hC_nhd using fun x : X => exists_compact_mem_nhds x
+  have hK_sub_union : K ⊆ ⋃ x ∈ K, interior (C_pt x) := fun x hx =>
+    mem_iUnion₂.mpr ⟨x, hx, mem_interior_iff_mem_nhds.mpr (hC_nhd x)⟩
+  obtain ⟨t, _, htfin, hKt⟩ := hK.elim_finite_subcover_image (fun x _ => isOpen_interior) hK_sub_union
+  let C : Set X := ⋃ x ∈ t, C_pt x
+  have hC_compact : IsCompact C := htfin.isCompact_biUnion fun x _ => hC_comp x
+  let O_int : Set X := ⋃ x ∈ t, interior (C_pt x)
+  have hO_open : IsOpen O_int := isOpen_biUnion fun x _ => isOpen_interior
+  have hK_sub_O : K ⊆ O_int := hKt
+  have hO_sub_C : O_int ⊆ C := by
+    rintro y hy
+    obtain ⟨x, hxt, hyx⟩ := mem_iUnion₂.mp hy
+    exact mem_iUnion₂.mpr ⟨x, hxt, interior_subset hyx⟩
+  let U : ℕ → Set X := fun n => G n K ∩ O_int
+  have hU_anti : ∀ n, U (n + 1) ⊆ U n := fun n =>
+    Set.inter_subset_inter_left O_int (hanti n K)
+  refine ⟨Set.range U, ?_, closurePreserving_range_antitone U hU_anti, ?_⟩
+  · rintro _ ⟨n, rfl⟩
+    exact ⟨(hG.1 n K hKcl).inter hO_open, fun x hx => ⟨hG.2.1 n K hKcl hx, hK_sub_O hx⟩⟩
+  · intro W hWo hKW
+    let S : ℕ → Set X := fun n => (C ∩ closure (G n K)) \ W
+    have hS_closed : ∀ n, IsClosed (S n) := fun n =>
+      (hC_compact.isClosed.inter isClosed_closure).sdiff hWo
+    have hS_anti : ∀ n, S (n + 1) ⊆ S n := fun n =>
+      Set.sdiff_subset_sdiff_left (Set.inter_subset_inter_right C (closure_mono (hanti n K)))
+    have hS_empty : (⋂ n, S n) = ∅ := by
+      rw [Set.eq_empty_iff_forall_notMem]
+      intro x hx
+      have hx_cl : x ∈ ⋂ n, closure (G n K) := mem_iInter.mpr fun n => (mem_iInter.mp hx n).1.2
+      rw [hG.2.2.1 K hKcl] at hx_cl
+      exact (mem_iInter.mp hx 0).2 (hKW hx_cl)
+    have hne_all : ∃ n, S n = ∅ := by
+      by_contra hall
+      push Not at hall
+      have hnonempty : (⋂ n, S n).Nonempty :=
+        IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed S hS_anti hall
+          (hC_compact.of_isClosed_subset (hS_closed 0) (fun x hx => hx.1.1))
+          hS_closed
+      rw [hS_empty] at hnonempty
+      exact Set.not_nonempty_empty hnonempty
+    obtain ⟨n, hn⟩ := hne_all
+    refine ⟨U n, ⟨n, rfl⟩, fun x hx => ?_⟩
+    by_contra hxW
+    have hxS : x ∈ S n := ⟨⟨hO_sub_C hx.2, subset_closure hx.1⟩, hxW⟩
+    rw [hn] at hxS
+    exact hxS
+
+/-- Every locally compact stratifiable space is `M₁`. -/
+theorem isM1_of_stratifiable_locallyCompact (X : Type) [TopologicalSpace X]
+    (hStrat : MSpace.IsStratifiable X) [LocallyCompactSpace X] :
+    MSpace.IsM1 X := by
+  obtain ⟨𝓝_fam, hN_closed, hN_disc, hN_net⟩ :=
+    stratifiable_has_sigma_discrete_closed_network X hStrat
+  let 𝓝' : ℕ → Set (Set X) := fun p => { F ∈ 𝓝_fam p | IsCompact F }
+  refine isM1_of_stratifiable_and_network_hasCPOuterBase X hStrat 𝓝'
+    (fun p F hF => hN_closed p F hF.1)
+    (fun p z => by
+      obtain ⟨W, hWo, hzW, hWuniq⟩ := hN_disc p z
+      exact ⟨W, hWo, hzW, fun F₁ hF₁ F₂ hF₂ h1 h2 => hWuniq F₁ hF₁.1 F₂ hF₂.1 h1 h2⟩)
+    (fun x V hVo hxV => by
+      obtain ⟨K, hKc, hKnhd⟩ := exists_compact_mem_nhds x
+      have hopen : IsOpen (V ∩ interior K) := hVo.inter isOpen_interior
+      have hx_in : x ∈ V ∩ interior K := ⟨hxV, mem_interior_iff_mem_nhds.mpr hKnhd⟩
+      obtain ⟨p, F, hFp, hxF, hFsub⟩ := hN_net x (V ∩ interior K) hopen hx_in
+      have hFcomp : IsCompact F :=
+        hKc.of_isClosed_subset (hN_closed p F hFp) (hFsub.trans (inter_subset_right.trans interior_subset))
+      exact ⟨p, F, ⟨hFp, hFcomp⟩, hxF, hFsub.trans inter_subset_left⟩)
+    (fun p F hF => hasCPOuterBaseSet_of_compact_in_locallyCompact_stratifiable X hStrat hF.2)
+
+/-- Every compact stratifiable space is `M₁`. -/
+theorem isM1_of_stratifiable_compact (X : Type) [TopologicalSpace X]
+    (hStrat : MSpace.IsStratifiable X) [CompactSpace X] :
+    MSpace.IsM1 X := by
+  have : T3Space X := (Proofs.L_0004.strat_to_m3 X hStrat).1
+  exact isM1_of_stratifiable_locallyCompact X hStrat
+
+/-- Every countable `T₃` space whose points each have a CP open outer base is `M₁`. -/
+theorem isM1_of_countable_t3_hasCPOuterBase (X : Type) [TopologicalSpace X]
+    [T3Space X] [Countable X]
+    (hCP : ∀ x : X, Defs.D_0001.HasCPOuterBase x) :
+    MSpace.IsM1 X := by
+  by_cases hne : Nonempty X
+  · obtain ⟨f, hf⟩ := exists_surjective_nat X
+    choose 𝓑 hB_open hB_base hB_cp using hCP
+    refine ⟨inferInstance, ⋃ n : ℕ, 𝓑 (f n), ?_, ⟨fun n => 𝓑 (f n), fun n => hB_cp (f n), rfl⟩⟩
+    refine isTopologicalBasis_of_isOpen_of_nhds ?_ ?_
+    · rintro U hU
+      obtain ⟨n, hUn⟩ := mem_iUnion.mp hU
+      exact (hB_open (f n) U hUn).1
+    · intro x V hxV hVo
+      obtain ⟨n, rfl⟩ := hf x
+      obtain ⟨U, hUn, hUV⟩ := hB_base (f n) V hVo hxV
+      exact ⟨U, mem_iUnion.mpr ⟨n, hUn⟩, (hB_open (f n) U hUn).2, hUV⟩
+  · rw [not_nonempty_iff] at hne
+    refine ⟨inferInstance, ∅, ?_, ⟨fun _ => ∅, fun _ 𝓖 h𝓖 => by
+      have hEq : 𝓖 = ∅ := Set.subset_empty_iff.mp h𝓖
+      subst hEq; simp, by simp⟩⟩
+    exact isTopologicalBasis_of_isOpen_of_nhds (fun _ h => h.elim) (fun x => isEmptyElim x)
+
 end Research.Ito1985

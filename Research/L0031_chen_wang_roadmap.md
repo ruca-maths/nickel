@@ -84,13 +84,15 @@
 - **`isStratifiable_prod` / `isStratifiable_countable_pi`**（Borges 1966）: 有限積および可算積 $\prod_{k \in \mathbb{N}} X_k$ が `MSpace.IsStratifiable` を保存することを単調 $g$-関数と `Proofs.L_0017` により証明。
 - **`isM1_prod` / `isM1_countable_pi`**（Ceder 1961）: 有限積および可算積 $\prod_{k \in \mathbb{N}} X_k$ が `MSpace.IsM1` を保存することを有限プレフィックス柱状族の帰納的 CP 性と `Denumerable (List ℕ)` により証明。
 
-## 16. [ChenWang_D0013_Compat_Instance.lean](ChenWang_D0013_Compat_Instance.lean)（`Defs.D_0013.Compat` の空虚性反証と `QTree` 上の修復版実例構成）
+## 16. [ChenWang_D0013_Compat_Instance.lean](ChenWang_D0013_Compat_Instance.lean)（`Defs.D_0013.Compat` の空虚性反証と `QTree` / `ℚ ∩ [0,1)` 上の修復版実例構成）
 - **`compat_not_exists`**: 任意の線形順序 $\alpha$、`T : Defs.D_0003.Tree2 α`、全単射 `q : ℕ ≃ α` に対し **`¬ Defs.D_0013.Compat q T`** を証明（0-indexed な `q : ℕ ≃ α` に対して 1-indexed の不等式 `j < q.symm (T.child p j)` を課したため、`q 1` で必ず矛盾が生じる仕様欠陥を発見）。
 - **`CompatRepaired` / `prop_3_2_1_repaired`**: `idx_lt_num` を `idx_le_num : j ≤ q.symm (T.child p j)` に修正しても Proposition 3.2.1 の結論が完全に保たれることを証明。
-- **`qtreeEnum` / `qtreeEnum_compatRepaired` / `exists_compatRepaired_qtree`**: `QTree := List (OrderDual ℕ+)` 上の重み次数全単射 `qtreeEnum : ℕ ≃ QTree` を構成し、`CompatRepaired qtreeEnum qtreeTree2` の全 4 公理を満たす具体モデルをカーネル検証済みで確立（`Defs/D_0013.lean` が未解決課題として明記していた存在証明を解決）。
+- **`qtreeEnum` / `qtreeEnum_compatRepaired` / `exists_compatRepaired_qtree`**: `QTree := List (OrderDual ℕ+)` 上の重み次数全単射 `qtreeEnum : ℕ ≃ QTree` を構成し、`CompatRepaired qtreeEnum qtreeTree2` の全 4 公理を満たす具体モデルを確立。
+- **`nonempty_qtree_orderIso_ratIco` / `exists_ratIco_tree2_compatRepaired`**: Cantor の往復同型定理により `QTree ≃o ℚ ∩ [0, 1)` を構成し、`Defs/D_0013.lean` が未解決課題として明記していた **`ℚ ∩ [0, 1)` 上の `Tree2` と `CompatRepaired` の存在**を完全に証明。
 
-## 17. [Ito1985_SigmaSpace_M1.lean](Ito1985_SigmaSpace_M1.lean)（Heath 1969・Collectionwise Normality・Ito 1985 閉集合版・`¬ L_0020 → Tinf`）
+## 17. [Ito1985_SigmaSpace_M1.lean](Ito1985_SigmaSpace_M1.lean)（Heath 1969・Collectionwise Normality・Ito 1985・局所コンパクト/コンパクト $M_1$・`¬ L_0020 → Tinf`）
 - **`stratifiable_discrete_open_expansion`**: 任意の stratifiable 空間における離散閉集合族の離散開拡大（collectionwise normality）を減少 stratification と単調正規性作用素 `Hsep` から直接証明。
 - **`stratifiable_has_sigma_discrete_closed_network`**（Heath 1969）: 任意の stratifiable 空間が $\sigma$-離散閉ネットワークを持つ（$\sigma$-空間である）ことを、`Proofs.L_0008`（$M_3 \Rightarrow M_2$）と `A m k x := C_m(x) \ G_k(D_m(x))` により完全形式化。
-- **`isM1_of_stratifiable_and_closed_hasCPOuterBase`**（Ito 1985 閉集合版）: 任意の stratifiable 空間において、すべての閉集合が単層 CP 開外基を持てば空間は $M_1$ であることを証明。
+- **`isM1_of_stratifiable_and_closed_hasCPOuterBase` / `isM1_of_stratifiable_and_network_hasCPOuterBase`**（Ito 1985 閉集合版・一般ネットワーク版）: stratifiable 空間で各閉集合（またはある $\sigma$-離散閉ネットワークの各元）が単層 CP 開外基を持てば $M_1$。
 - **`not_L0020_imp_Tinf`**: 縮約商 `CollapseQuot X F` と結合し、**`¬ Specs.L_0020.stmt → MSpace.Goals.Tinf_M3_imp_M1`** を証明。`ChenWang_BoxFan_Equiv.lean` の `L0020_imp_not_Tinf` と合わせて、Ceder の未解決問題 `Tinf` が **`Tinf ↔ ¬ L_0020 ↔ ¬ L_0030 ↔ ¬ L_0031`** と ZFC 内で厳密同値であることを確立。
+- **`stratifiable_has_sigma_closed_discrete_dense` / `isM1_of_stratifiable_locallyCompact` / `isM1_of_stratifiable_compact` / `isM1_of_countable_t3_hasCPOuterBase`**: stratifiable 空間の $\sigma$-閉離散稠密部分集合（`Proofs.L_0026` の $M_3$ への一般化）、局所コンパクト・コンパクト stratifiable 空間の $M_1$ 性、および可算 $T_3$ 空間での CP 外基 $\Rightarrow M_1$ を証明。
