@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0019`）に向けた **Lean 4 カーネル検証済みモジュール 25 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0019`）に向けた **Lean 4 カーネル検証済みモジュール 26 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -130,3 +130,6 @@
 ## 24. [Borges_Adjunction_Space.lean](Borges_Adjunction_Space.lean)（Borges 1966 Theorem 3.7：接着空間 $X \cup_f Y$ の層化可能性保存）
 - **`AdjunctionSpace X Y A` / `adjTop`**: 閉部分集合 $A \subseteq X$ と任意の連続貼り合わせ写像 $f : A \to Y$（閉写像不要）による位相押し出し $X \cup_f Y$ の商位相と開閉集合の特徴付け。
 - **`adjunctionSpace_t1Space` / `adjunctionSpace_isStratifiable`**: $X, Y$ が stratifiable ならば任意の閉部分集合 $A \subseteq X$ と連続写像 $f : A \to Y$ に対する接着空間 $X \cup_f Y$ が常に stratifiable であることを証明（縮約商 $X/A$ の大幅な一般化）。
+
+## 25. [Borges_WeakTopology_DirectLimit.lean](Borges_WeakTopology_DirectLimit.lean)（Borges 1966 Theorem 7.2：可算増大閉被覆の弱位相／帰納極限の層化可能性）
+- **`isStratifiable_of_weak_increasing_closed_cover`**: 増大する閉 stratifiable 部分空間列 $F_0 \subseteq F_1 \subseteq \cdots$（$\bigcup_m F_m = X$）による弱位相（可算 CW 複体・$\mathbb{R}^\infty$・$k_\omega$-空間を含む）を持つ $T_1$ 空間 $X$ が常に stratifiable であることを、1 ステップ単調開拡大 `extStep` と閉包分離帰納延長 `extStep_sep_extend` により完全形式化。
