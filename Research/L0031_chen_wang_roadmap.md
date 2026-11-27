@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0028`）に向けた **Lean 4 カーネル検証済みモジュール 36 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0028`）に向けた **Lean 4 カーネル検証済みモジュール 37 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -179,3 +179,8 @@
 ## 35. [Slaughter1973_CompleteMetric_Lasnev_IsM1.lean](Slaughter1973_CompleteMetric_Lasnev_IsM1.lean)（Slaughter 1973：完備距離空間の任意の閉連続像は $M_1$ 空間）
 - **`closedMetric_discrete_open_expansion`**: 距離空間の任意の閉連続像における閉離散部分集合の離散開拡大（単調正規性作用素経由）。
 - **`slaughter_completeMetric_closedMap_isM1`**: Lašnev 分解（閉離散層 $D_m$ とコンパクトファイバー層 $Y_0$）、HCP 補集合 CP 定理、および離散開拡大＋各点 CP 開外基を統合し、任意の完備距離空間の任意の閉連続像 $Y$ が常に **`MSpace.IsM1 Y`** であることを完全証明。
+
+## 36. [Gruenhage1978_SigmaDiscrete_Stratifiable_IsM1.lean](Gruenhage1978_SigmaDiscrete_Stratifiable_IsM1.lean)（Gruenhage 1978：すべての $\sigma$-離散層化可能空間および可算層化可能空間は $M_1$ 空間）
+- **`hasCPOuterBase_of_stratifiable_sigma_closedDiscrete`**: 任意の $\sigma$-閉離散層化可能空間において、$\operatorname{Ind} X = 0$・離散閉開拡大・減少 stratification を組み合わせて、**すべての点** $x_0$ に単層 closure-preserving 閉開外基 `Defs.D_0001.HasCPOuterBase x₀` を構成。
+- **`isM1_of_stratifiable_sigma_closedDiscrete` / `isM1_of_stratifiable_sigma_discrete`**（Gruenhage 1978）: 任意の $\sigma$-離散層化可能空間（閉性を仮定しない離散部分空間の可算和 $X = \bigcup_n D_n$）が $F_\sigma$-還元を経て常に **`MSpace.IsM1 X`** であることを完全証明。
+- **`isM1_of_countable_stratifiable`**: 任意の**可算**層化可能空間は常に **`M₁` 空間**である（したがって `Tinf` / `L_0020` / `L_0030` / `L_0031` の反例は必ず非可算かつ非 $\sigma$-離散でなければならない）。
