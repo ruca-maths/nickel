@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0018`）に向けた **Lean 4 カーネル検証済みモジュール 21 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0021`）に向けた **Lean 4 カーネル検証済みモジュール 24 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -111,3 +111,18 @@
 - **`isM1_open_subspace`**: $M_1$ 空間の任意の開部分空間は $M_1$。
 - **`isM1_of_locallyFinite_shrunk_open_M1_cover` / `isM1_of_paracompact_locallyM1` / `isM1_of_stratifiable_locallyM1`**: 局所有限な収縮開 $M_1$ 被覆を持つ $T_3$ 空間、特に任意の局所 $M_1$ パラコンパクト $T_3$ 空間・局所 $M_1$ stratifiable 空間は常に $M_1$（`Proofs.L_0005` 結合）。
 - **`exists_point_no_M1_open_nhd_of_not_isM1`**: 対偶として、任意の非 $M_1$ stratifiable 空間には「いかなる開近傍も $M_1$ にならない点 $x_0$」が必ず存在する（`Tinf` の局所化定理）。
+
+## 21. [M1_Permanence_And_Retracts.lean](M1_Permanence_And_Retracts.lean)（$M_1$/層化可能空間の永続性定理と Jones の補題）
+- **`isM1_of_sigma_locallyFinite_basis` / `isM1_of_secondCountable_t3`**: $\sigma$-局所有限開基を持つ $T_3$ 空間（Nagata–Smirnov）および第 2 可算 $T_3$ 空間は常に $M_1$。
+- **`isM1_of_isClosedMap_isOpenMap` / `isStratifiable_of_isClosedMap_isOpenMap`**: 閉開連続全射は $M_1$（$T_3$ 値域）および stratifiable（$T_1$ 値域、コンパクトファイバー不要）を保存。
+- **`isM1_of_homeomorph` / `isStratifiable_of_homeomorph`**: 同相不変性。
+- **`jones_lemma` / `not_normalSpace_of_dense_closedDiscrete`**: 正規空間における稠密集合 $Q$ と閉離散集合 $D$ に対する単射 $\mathcal{P}(D) \hookrightarrow \mathcal{P}(Q)$ および濃度障害による非正規性判定（Sorgenfrey 平面が非正規・非層化であることの基盤）。
+
+## 22. [Sorgenfrey_Not_Stratifiable.lean](Sorgenfrey_Not_Stratifiable.lean)（Sorgenfrey 直線 `(ℝ, Defs.D_0009.rho ℝ)` の非層化性・非 $M_1$ 性）
+- **`ratGrid_dense` / `antiDiag_closed_discrete` / `sorgenfrey_prod_not_normal`**: Sorgenfrey 平面 `(ℝ, rho ℝ) × (ℝ, rho ℝ)` において $\mathbb{Q} \times \mathbb{Q}$ が可算稠密かつ反対角線 $\{(x, -x)\}$ が連続体濃度の閉離散集合であることから、Jones の補題により非正規であることを証明。
+- **`sorgenfrey_not_isStratifiable` / `sorgenfrey_not_isM1`**: 有限積の層化可能性保存と層化可能 $\Rightarrow$ 正規から、Sorgenfrey 直線 `(ℝ, Defs.D_0009.rho ℝ)` が stratifiable でも $M_1$ でもないことをカーネル検証済みで確定（可算順序 `QTree`/`ℚ ∩ [0,1)` 上の `rho` が第 2 可算 $M_1$ であるのとの対比）。
+
+## 23. [Stratifiable_Hereditary_And_GDeltaDiag.lean](Stratifiable_Hereditary_And_GDeltaDiag.lean)（層化可能・$M_2$・$M_3$ の遺伝性と $G_\delta$-対角線定理）
+- **`isStratifiable_subtype` / `isM3_subtype` / `isM2_subtype`**: stratifiable・$M_3$・$M_2$ が任意の部分空間に遺伝することを証明（$M_1$ の遺伝性が `Tinf` と同値であることとの対比）。
+- **`paracompact_subtype_of_isStratifiable` / `perfectlyNormal_subtype_of_isStratifiable`**: stratifiable 空間は遺伝的パラコンパクトかつ遺伝的完全正規。
+- **`gDelta_diagonal_of_isStratifiable`**: 任意の stratifiable 空間は $G_\delta$-対角線 `IsGδ (Set.diagonal X)` を持つ。
