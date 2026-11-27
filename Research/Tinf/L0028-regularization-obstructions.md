@@ -139,3 +139,24 @@ adding the other levels cannot make the proposed family CP.
 This rules out the unmodified open analogue for general input
 sigma-CP bases. It leaves L_0028 and the possibility of first
 choosing a different input basis open.
+
+### Normalizing the layers does not repair the mask
+
+The preceding example persists under two standard normalizations of
+the sigma-CP basis. Replace each level by the family of arbitrary
+unions of members of the first n+1 original levels. A finite union
+of CP families is CP, and the family of arbitrary unions of a CP
+family is CP: for any selected unions, collect their constituent
+members and apply the original closure identity both to the total
+union and to each selected union. The new levels are increasing,
+closed under arbitrary unions, and still contain a basis.
+
+At level zero the only new sets whose closures miss x are ∅ and A.
+Indeed, a union using any B_j contains x. Thus the normalized layer
+has the same W_0 and contains all the original B_j, so the same
+subfamily violates CP after clipping. Moreover A, every B_j,
+and W_0 are regular open. The additional nonempty union at level
+zero is (-2,0) ∪ (0,1), whose regular-open hull is (-2,1).
+Replacing every normalized level-zero element by its regular-open
+hull also leaves A, B_j and W_0 unchanged. This rules out fixing
+the boundary failure merely by these normalizations.
