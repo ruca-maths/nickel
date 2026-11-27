@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0019`）に向けた **Lean 4 カーネル検証済みモジュール 26 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0019`）に向けた **Lean 4 カーネル検証済みモジュール 27 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -133,3 +133,8 @@
 
 ## 25. [Borges_WeakTopology_DirectLimit.lean](Borges_WeakTopology_DirectLimit.lean)（Borges 1966 Theorem 7.2：可算増大閉被覆の弱位相／帰納極限の層化可能性）
 - **`isStratifiable_of_weak_increasing_closed_cover`**: 増大する閉 stratifiable 部分空間列 $F_0 \subseteq F_1 \subseteq \cdots$（$\bigcup_m F_m = X$）による弱位相（可算 CW 複体・$\mathbb{R}^\infty$・$k_\omega$-空間を含む）を持つ $T_1$ 空間 $X$ が常に stratifiable であることを、1 ステップ単調開拡大 `extStep` と閉包分離帰納延長 `extStep_sep_extend` により完全形式化。
+
+## 26. [KOmega_Stratifiable_IsM1.lean](KOmega_Stratifiable_IsM1.lean)（Dickson の補題と $k_\omega$ 層化可能空間の $M_1$ 定理）
+- **`dickson_fin_nat`**: $\mathbb{N}^d$ の任意部分集合が有限個の下界支配元を持つこと（Dickson の補題）を純組合せ的帰納法で証明。
+- **`kOmega_stratifiable_and_closed_outerBase`**: 増大コンパクト stratifiable 層 $K_0 \subseteq K_1 \subseteq \cdots$ の弱位相空間（$k_\omega$ 層化可能空間：$\mathbb{R}^\infty$、$S_\omega$、任意の可算 CW 複体を含む）において、空間自身が stratifiable であり、かつ**任意の閉集合** $C \subseteq X$ が Dickson の補題＋厳密閉包トレースにより単層 CP 開外基を持つことを証明。
+- **`isM1_of_kOmega_stratifiable`**: Ito (1985) 閉集合版と結合し、任意の $k_\omega$ 層化可能空間が $M_1$ 空間であることを完全証明。
