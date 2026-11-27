@@ -1,4 +1,4 @@
-import Targets
+import Specs.L_0028
 import Defs.D_0001
 
 namespace ChildResearch.OuterBaseToRegularClosed
@@ -70,5 +70,21 @@ theorem regular_closed_cp_base_of_cp_outer_base {X : Type} [TopologicalSpace X]
     obtain ⟨W, hW, hWC⟩ := hVbase (interior C) isOpen_interior hxC
     refine ⟨closure W, ⟨W, hW, rfl⟩, ?_⟩
     exact (closure_mono hWC).trans (hCclosed.closure_interior_subset.trans hCU)
+
+/-- The singleton instance of Mizokami's closed-set theorem suffices.
+The literature theorem is a hypothesis of this reduction. -/
+theorem L0028_of_mizokami
+    (h : ∀ (X : Type) [TopologicalSpace X], IsM1 X → ∀ F : Set X,
+      IsClosed F → ∃ V : Set (Set X),
+        (∀ U ∈ V, IsOpen U ∧ F ⊆ U) ∧
+        (∀ U : Set X, IsOpen U → F ⊆ U → ∃ W ∈ V, W ⊆ U) ∧
+        ClosurePreserving V) : Specs.L_0028.stmt := by
+  unfold Specs.L_0028.stmt
+  intro X _ hM _ x _
+  letI : T3Space X := hM.1
+  apply regular_closed_cp_base_of_cp_outer_base x
+  obtain ⟨V, hn, hb, hc⟩ := h X hM {x} isClosed_singleton
+  exact ⟨V, fun U hU => ⟨(hn U hU).1, singleton_subset_iff.mp (hn U hU).2⟩,
+    fun U hU hxU => hb U hU (singleton_subset_iff.mpr hxU), hc⟩
 
 end ChildResearch.OuterBaseToRegularClosed
