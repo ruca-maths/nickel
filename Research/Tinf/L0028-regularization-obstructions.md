@@ -217,3 +217,27 @@ member is contained in the closure of its own part outside M,
 each such point is captured by an individual expansion, so there
 is no CP failure on M. By itself this does not give control on
 X minus M or arbitrary containment in a prescribed open target.
+
+### Fixed stratified expansions can fail away from M
+
+In the real Hilbert space ℓ² take x = 10e₀, M = {x}, and let
+G_n(C) be the open distance neighborhood of radius 1/(n+1).
+Take K_j = closedBall(x,1) ∪ {c_j} for j ≥ 1, where
+c_j = (1+1/j)e_j. The c_j are uniformly separated, so every
+subfamily of the K_j has closed union. Adjoin the decreasing
+closed balls centered at x with radii 1/(j+1). These form a CP
+closed neighborhood base together with the K_j, as each subfamily
+of the balls has a largest member and a finite union of two closed
+unions is closed. The space is metrizable and separable, so it has
+a sigma-CP open basis and singleton levels of a countable dense set.
+
+For O_n and S_M from the preceding section, O_0 contains the open
+ball of radius 2 centered at 0. For j ≥ 2, p_j = (2/j)e_j lies
+in that ball and has distance 1-1/j from c_j. Thus p_j is in
+S_M(K_j), and p_j → 0. For any fixed j, however,
+S_M(K_j) ⊆ G_0(K_j), and the distance of 0 from K_j is strictly
+larger than 1. Hence 0 misses every individual closure. Even an
+unmodified stratification in a metric space with nonempty M can
+therefore give a CP failure off M. To repair this route, the choice
+of open expansions away from M must exploit additional structure
+beyond the stratification conditions used by BoundaryExpansion.lean.
