@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0028`）に向けた **Lean 4 カーネル検証済みモジュール 33 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0028`）に向けた **Lean 4 カーネル検証済みモジュール 34 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -166,3 +166,7 @@
 
 ## 32. [Whitney_Metric_ClosedOuterBase.lean](Whitney_Metric_ClosedOuterBase.lean)（Whitney 分解定理：距離空間の任意の閉集合は CP 開外基を持つ）
 - **`metric_closed_hasCPOuterBase`**: 任意の距離空間 $X$ とその**任意の閉部分集合** $F \subseteq X$ に対し、補集合 $X \setminus F$ 上の Whitney 型局所有限開細分（$B(a, r_a)$ with $B(a, 3 r_a) \subseteq F^c$）を用いて、$F$ の単層 closure-preserving 開外基を直接構成。
+
+## 33. [CollapseQuotient_Metric_IsM1.lean](CollapseQuotient_Metric_IsM1.lean)（距離空間の任意の閉縮約商 $X / F$ は $M_1$ 空間）
+- **`collapseQuot_t3Space`**: 任意の正規 $T_1$ 空間 $X$ と非空閉集合 $F \subseteq X$ に対し縮約商 $X/F$ は $T_3$。
+- **`collapseQuot_metric_isM1`**: 任意の距離空間 $X$ と任意の非空閉集合 $F \subseteq X$ に対し、Whitney 分解による単層 CP 開外基と距離殻 $H_k$ 上の局所有限開細分を結合することで、縮約商 $X/F$ が頂点 `none` に CP 開外基を持ち、かつ空間全体が常に **`M₁` 空間**であることを無条件に証明（$\mathbb{R}/\mathbb{Z}$、$\mathbb{R}^d/\mathbb{Z}^d$、$\ell^2/F$ 等の非第 1 可算・非局所コンパクト・非 $k_\omega$ 商空間をすべて包含）。
