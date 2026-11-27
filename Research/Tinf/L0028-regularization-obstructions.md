@@ -361,3 +361,30 @@ neighborhoods whose ambient closures miss M. This shifts the local
 existence question to whether p is approached by a closed discrete
 set in the punctured space. The step still needs compatibility
 across the different trace points for a full L_0028 proof.
+
+## What must be preserved when repairing several walls
+
+Tamano's proof of Lemma 1 gives a composition pattern for the
+closed patches, using finite increasing sequences of wall indices.
+At a fixed prefix the family of partial closed expansions must
+be CP. Furthermore, a later piece must respect the separating
+neighborhoods from every earlier prefix. If a point lies on wall
+m outside a selected union of limit expansions, there are only
+finitely many prefixes whose indices are at most m. For each such
+prefix, its partial union is closed. A monotone separation
+neighborhood of the point then excludes the tails from that prefix.
+Taking a finite intersection excludes every tail. The branches
+starting above m instead miss the point by a stratification cutoff.
+
+The common meagre defect estimate above covers the thin points of
+the initial K only. The union after repairs can contain new thin
+points, since a CP closed patch need not be regular closed. Thus
+using those fixed walls requires a further invariant: every new
+point added by a patch must either be in the closure of an interior
+already or belong to a wall scheduled later. Initial coverage of
+defects alone provides no such invariant. The local gluing lemma
+in BoundaryExpansion.lean isolates the part of the induction on
+each wall: if all accumulations on it are absorbed by the selected
+anchors, preservation on the complement is sufficient for global CP.
+Source for the finite-prefix composition: Tamano 2008, proof of
+Lemma 1, https://topology.nipissingu.ca/tp/reprints/v32/tp32023.pdf .

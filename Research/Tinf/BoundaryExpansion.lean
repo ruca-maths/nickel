@@ -43,4 +43,36 @@ theorem closure_expansions_inter_subset {X : Type} [TopologicalSpace X]
         (hmono n (subset_sUnion_of_mem hC) hn.2)))
   exact (closure_minimal hcover (hE.union isClosed_closure) hy).elim hyE hm
 
+/-- Glue CP on the complement to control on a closed wall. The absorption
+hypothesis measures an arbitrary subfamily against its own closed anchors. -/
+theorem cp_of_complement_and_anchor {X I : Type} [TopologicalSpace X]
+    (M : Set X) (K W : I → Set X)
+    (hsub : ∀ i, K i ⊆ W i)
+    (hwall : ∀ A : Set I,
+      closure (⋃ i ∈ A, W i) ∩ M ⊆ ⋃ i ∈ A, K i)
+    (hout : ∀ A : Set I, closure (⋃ i ∈ A, W i) \ M ⊆
+      ⋃ i ∈ A, closure (W i)) :
+    ClosurePreserving (range W) := by
+  intro H hH
+  let A : Set I := {i | W i ∈ H}
+  have heq : ⋃₀ H = ⋃ i ∈ A, W i := by
+    ext y
+    constructor
+    · rintro ⟨C, hC, hy⟩
+      obtain ⟨i, rfl⟩ := hH hC
+      exact mem_iUnion₂.mpr ⟨i, hC, hy⟩
+    · intro hy
+      obtain ⟨i, hi, hy⟩ := mem_iUnion₂.mp hy
+      exact ⟨W i, hi, hy⟩
+  apply Subset.antisymm
+  · intro y hy
+    rw [heq] at hy
+    by_cases hyM : y ∈ M
+    · obtain ⟨i, hi, hyi⟩ := mem_iUnion₂.mp (hwall A ⟨hy, hyM⟩)
+      exact ⟨closure (W i), mem_image_of_mem _ hi, subset_closure (hsub i hyi)⟩
+    · obtain ⟨i, hi, hyi⟩ := mem_iUnion₂.mp (hout A ⟨hy, hyM⟩)
+      exact ⟨closure (W i), mem_image_of_mem _ hi, hyi⟩
+  · rintro y ⟨_, ⟨C, hC, rfl⟩, hy⟩
+    exact closure_mono (subset_sUnion_of_mem hC) hy
+
 end ChildResearch.BoundaryExpansion
