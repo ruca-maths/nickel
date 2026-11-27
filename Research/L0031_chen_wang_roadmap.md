@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0013`）に向けた **Lean 4 カーネル検証済みモジュール 17 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0013`）に向けた **Lean 4 カーネル検証済みモジュール 18 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -88,3 +88,9 @@
 - **`compat_not_exists`**: 任意の線形順序 $\alpha$、`T : Defs.D_0003.Tree2 α`、全単射 `q : ℕ ≃ α` に対し **`¬ Defs.D_0013.Compat q T`** を証明（0-indexed な `q : ℕ ≃ α` に対して 1-indexed の不等式 `j < q.symm (T.child p j)` を課したため、`q 1` で必ず矛盾が生じる仕様欠陥を発見）。
 - **`CompatRepaired` / `prop_3_2_1_repaired`**: `idx_lt_num` を `idx_le_num : j ≤ q.symm (T.child p j)` に修正しても Proposition 3.2.1 の結論が完全に保たれることを証明。
 - **`qtreeEnum` / `qtreeEnum_compatRepaired` / `exists_compatRepaired_qtree`**: `QTree := List (OrderDual ℕ+)` 上の重み次数全単射 `qtreeEnum : ℕ ≃ QTree` を構成し、`CompatRepaired qtreeEnum qtreeTree2` の全 4 公理を満たす具体モデルをカーネル検証済みで確立（`Defs/D_0013.lean` が未解決課題として明記していた存在証明を解決）。
+
+## 17. [Ito1985_SigmaSpace_M1.lean](Ito1985_SigmaSpace_M1.lean)（Heath 1969・Collectionwise Normality・Ito 1985 閉集合版・`¬ L_0020 → Tinf`）
+- **`stratifiable_discrete_open_expansion`**: 任意の stratifiable 空間における離散閉集合族の離散開拡大（collectionwise normality）を減少 stratification と単調正規性作用素 `Hsep` から直接証明。
+- **`stratifiable_has_sigma_discrete_closed_network`**（Heath 1969）: 任意の stratifiable 空間が $\sigma$-離散閉ネットワークを持つ（$\sigma$-空間である）ことを、`Proofs.L_0008`（$M_3 \Rightarrow M_2$）と `A m k x := C_m(x) \ G_k(D_m(x))` により完全形式化。
+- **`isM1_of_stratifiable_and_closed_hasCPOuterBase`**（Ito 1985 閉集合版）: 任意の stratifiable 空間において、すべての閉集合が単層 CP 開外基を持てば空間は $M_1$ であることを証明。
+- **`not_L0020_imp_Tinf`**: 縮約商 `CollapseQuot X F` と結合し、**`¬ Specs.L_0020.stmt → MSpace.Goals.Tinf_M3_imp_M1`** を証明。`ChenWang_BoxFan_Equiv.lean` の `L0020_imp_not_Tinf` と合わせて、Ceder の未解決問題 `Tinf` が **`Tinf ↔ ¬ L_0020 ↔ ¬ L_0030 ↔ ¬ L_0031`** と ZFC 内で厳密同値であることを確立。
