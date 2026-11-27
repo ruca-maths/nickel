@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0021`）に向けた **Lean 4 カーネル検証済みモジュール 24 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0019`）に向けた **Lean 4 カーネル検証済みモジュール 25 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -126,3 +126,7 @@
 - **`isStratifiable_subtype` / `isM3_subtype` / `isM2_subtype`**: stratifiable・$M_3$・$M_2$ が任意の部分空間に遺伝することを証明（$M_1$ の遺伝性が `Tinf` と同値であることとの対比）。
 - **`paracompact_subtype_of_isStratifiable` / `perfectlyNormal_subtype_of_isStratifiable`**: stratifiable 空間は遺伝的パラコンパクトかつ遺伝的完全正規。
 - **`gDelta_diagonal_of_isStratifiable`**: 任意の stratifiable 空間は $G_\delta$-対角線 `IsGδ (Set.diagonal X)` を持つ。
+
+## 24. [Borges_Adjunction_Space.lean](Borges_Adjunction_Space.lean)（Borges 1966 Theorem 3.7：接着空間 $X \cup_f Y$ の層化可能性保存）
+- **`AdjunctionSpace X Y A` / `adjTop`**: 閉部分集合 $A \subseteq X$ と任意の連続貼り合わせ写像 $f : A \to Y$（閉写像不要）による位相押し出し $X \cup_f Y$ の商位相と開閉集合の特徴付け。
+- **`adjunctionSpace_t1Space` / `adjunctionSpace_isStratifiable`**: $X, Y$ が stratifiable ならば任意の閉部分集合 $A \subseteq X$ と連続写像 $f : A \to Y$ に対する接着空間 $X \cup_f Y$ が常に stratifiable であることを証明（縮約商 $X/A$ の大幅な一般化）。
