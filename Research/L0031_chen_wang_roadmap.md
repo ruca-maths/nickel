@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0019`）に向けた **Lean 4 カーネル検証済みモジュール 27 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0028`）に向けた **Lean 4 カーネル検証済みモジュール 29 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -88,7 +88,7 @@
 - **`compat_not_exists`**: 任意の線形順序 $\alpha$、`T : Defs.D_0003.Tree2 α`、全単射 `q : ℕ ≃ α` に対し **`¬ Defs.D_0013.Compat q T`** を証明（0-indexed な `q : ℕ ≃ α` に対して 1-indexed の不等式 `j < q.symm (T.child p j)` を課したため、`q 1` で必ず矛盾が生じる仕様欠陥を発見）。
 - **`CompatRepaired` / `prop_3_2_1_repaired`**: `idx_lt_num` を `idx_le_num : j ≤ q.symm (T.child p j)` に修正しても Proposition 3.2.1 の結論が完全に保たれることを証明。
 - **`qtreeEnum` / `qtreeEnum_compatRepaired` / `exists_compatRepaired_qtree`**: `QTree := List (OrderDual ℕ+)` 上の重み次数全単射 `qtreeEnum : ℕ ≃ QTree` を構成し、`CompatRepaired qtreeEnum qtreeTree2` の全 4 公理を満たす具体モデルを確立。
-- **`nonempty_qtree_orderIso_ratIco` / `exists_ratIco_tree2_compatRepaired`**: Cantor の往復同型定理により `QTree ≃o ℚ ∩ [0, 1)` を構成し、`Defs/D_0013.lean` が未解決課題として明記していた **`ℚ ∩ [0, 1)` 上の `Tree2` と `CompatRepaired` の存在**を完全に証明。
+- **`nonempty_qtree_orderIso_ratIco` / `exists_ratIco_tree2_compatRepaired` / `exists_qtree_tree2_compat2` / `exists_ratIco_tree2_compat2`**: Cantor の往復同型定理により `QTree ≃o ℚ ∩ [0, 1)` を構成し、`Defs/D_0013.lean`・`Defs/D_0024.lean` の **`QTree` および `ℚ ∩ [0, 1)` 上の `Tree2` と `Defs.D_0024.Compat2` の存在**を完全に証明。
 
 ## 17. [Ito1985_SigmaSpace_M1.lean](Ito1985_SigmaSpace_M1.lean)（Heath 1969・Collectionwise Normality・Ito 1985・局所コンパクト/コンパクト $M_1$・`¬ L_0020 → Tinf`）
 - **`stratifiable_discrete_open_expansion`**: 任意の stratifiable 空間における離散閉集合族の離散開拡大（collectionwise normality）を減少 stratification と単調正規性作用素 `Hsep` から直接証明。
@@ -138,3 +138,13 @@
 - **`dickson_fin_nat`**: $\mathbb{N}^d$ の任意部分集合が有限個の下界支配元を持つこと（Dickson の補題）を純組合せ的帰納法で証明。
 - **`kOmega_stratifiable_and_closed_outerBase`**: 増大コンパクト stratifiable 層 $K_0 \subseteq K_1 \subseteq \cdots$ の弱位相空間（$k_\omega$ 層化可能空間：$\mathbb{R}^\infty$、$S_\omega$、任意の可算 CW 複体を含む）において、空間自身が stratifiable であり、かつ**任意の閉集合** $C \subseteq X$ が Dickson の補題＋厳密閉包トレースにより単層 CP 開外基を持つことを証明。
 - **`isM1_of_kOmega_stratifiable`**: Ito (1985) 閉集合版と結合し、任意の $k_\omega$ 層化可能空間が $M_1$ 空間であることを完全証明。
+
+## 27. [Borges_ClosedImage_And_MonotoneNormal.lean](Borges_ClosedImage_And_MonotoneNormal.lean)（Borges 1966 Theorem 3.1・Heath–Lutzer–Zenor 1973 Theorem 2.5：閉連続像の層化可能性保存）
+- **`IsMonotonicallyNormal` / `IsSemiStratifiable` / `isStratifiable_iff_monotonicallyNormal_and_semiStratifiable`**（Heath–Lutzer–Zenor 1973）: 層化可能空間 $\iff$ 単調正規かつ半層化可能の完全同値を形式化。
+- **`t1Space_of_isClosedMap` / `monotonicallyNormal_of_isClosedMap` / `semiStratifiable_of_isClosedMap`**: 任意の閉連続全射が $T_1$・単調正規性・半層化可能性を保存することを証明。
+- **`isStratifiable_of_isClosedMap`**（Borges 1966 Theorem 3.1）: コンパクトファイバーの仮定なしで、**任意の**閉連続全射 $f : X \to Y$ が層化可能性を保存することを完全証明（`Borges_PerfectMap_And_ClosedSum.lean` および `CollapseQuotient_OuterBase.lean` の大幅な一般化）。
+
+## 28. [Ind0_SigmaDiscrete_And_Countable.lean](Ind0_SigmaDiscrete_And_Countable.lean)（$\sigma$-閉離散・可算正規／層化可能空間の強 0 次元性 $\operatorname{Ind} X = 0$）
+- **`IsStronglyZeroDim` / `stronglyZeroDim_of_normal_sigma_closedDiscrete`**: 閉離散集合の可算和 $X = \bigcup_n F_n$ で覆われる任意の正規空間において、任意の互いに素な閉集合が閉開集合で分離される（$\operatorname{Ind} X = 0$）ことを帰納的閉包分離により証明。
+- **`stronglyZeroDim_of_stratifiable_sigma_closedDiscrete` / `stronglyZeroDim_of_countable_normal_t1` / `stronglyZeroDim_of_countable_stratifiable`**: 任意の $\sigma$-閉離散層化可能空間および任意の可算層化可能空間が強 0 次元であることを導出。
+- **`clopen_basis_of_stronglyZeroDim`**: 強 0 次元 $T_1$ 空間は閉開集合からなる開基を持つことを証明。

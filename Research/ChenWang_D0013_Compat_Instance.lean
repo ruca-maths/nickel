@@ -8,6 +8,7 @@ import Mathlib.Algebra.Order.Field.Rat
 import Mathlib.Order.CountableDenseLinearOrder
 import Mathlib.Tactic.Linarith
 import Defs.D_0013
+import Defs.D_0024
 
 /-!
 # Vacuity of `Defs.D_0013.Compat` and Repaired Realization on `QTree`
@@ -741,5 +742,23 @@ theorem exists_ratIco_tree2_compatRepaired :
   obtain ⟨e⟩ := nonempty_qtree_orderIso_ratIco
   exact ⟨transportTree2 e qtreeTree2, qtreeEnum.trans e.toEquiv,
     transportCompatRepaired e qtreeEnum_compatRepaired⟩
+
+/-- `CompatRepaired` is definitionally equivalent to `Defs.D_0024.Compat2`. -/
+theorem compatRepaired_iff_compat2 {α : Type} [LinearOrder α] {q : ℕ ≃ α} {T : Tree2 α} :
+    CompatRepaired q T ↔ Defs.D_0024.Compat2 q T :=
+  ⟨fun h => ⟨h.num_child, h.idx_le_num, h.desc_of_mem, h.shrink⟩,
+   fun h => ⟨h.num_child, h.idx_le_num, h.desc_of_mem, h.shrink⟩⟩
+
+/-- Concrete realization of `Defs.D_0024.Compat2` on `QTree`. -/
+theorem exists_qtree_tree2_compat2 :
+    ∃ (T : Tree2 QTree) (q : ℕ ≃ QTree), Defs.D_0024.Compat2 q T :=
+  ⟨qtreeTree2, qtreeEnum, compatRepaired_iff_compat2.mp qtreeEnum_compatRepaired⟩
+
+/-- Concrete realization of `Defs.D_0024.Compat2` directly on `ℚ ∩ [0, 1)` (`RatIco`),
+fulfilling `architect-1`'s model existence obligation for `Defs.D_0024` / `Defs.D_0025`. -/
+theorem exists_ratIco_tree2_compat2 :
+    ∃ (T : Tree2 RatIco) (q : ℕ ≃ RatIco), Defs.D_0024.Compat2 q T := by
+  obtain ⟨T, q, hc⟩ := exists_ratIco_tree2_compatRepaired
+  exact ⟨T, q, compatRepaired_iff_compat2.mp hc⟩
 
 end Research.ChenWangCompat
