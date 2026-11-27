@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0032`）に向けた **Lean 4 カーネル検証済みモジュール 40 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0033`）に向けた **Lean 4 カーネル検証済みモジュール 41 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -200,3 +200,8 @@
 - **`rho_secondCountable` / `rho_t3Space` / `ptop_secondCountable` / `ptop_t3Space` / `ptop_metrizable` / `ptop_isStratifiable` / `ptop_node_isStratifiable`**: 任意の可算 `NoMaxOrder` 線形順序 $\alpha$（特に `Defs.D_0028.Node`）に対し、修正版積位相 `Defs.D_0029.ptop α` およびその任意の部分空間 $Y \subseteq \mathbb{N} \to \alpha$ が第 2 可算・$T_3$・距離化可能・層化可能であることを証明。
 - **`ptop_subtype_refinement_isStratifiable` / `ptop_subtype_refinement_L0031_and_not_Tinf`**: 任意の部分空間 $Y \subseteq \mathbb{N} \to \alpha$ 上の細分位相 $\tau \le \mathrm{ptop}_Y$（Chen–Wang §6–§7 の直接設定）において、`ptop`-境界分離 $g$-関数と `¬ HasCPOuterBase y₀` から `gfun q T (n+1) y₀` を介して `Specs.L_0031.stmt` および `¬ MSpace.Goals.Tinf_M3_imp_M1` を直接導出。
 - **`lnc_diff_cover_point` / `lnc_diff_iUnion_eq` / `lnc_diff_clopen_disjoint` / `prop_4_8_star_clopen`**: `Defs.D_0031.lnc`・`Defs.D_0032.prop_4_8` 上で、穿孔セル $g(m, y_0) \setminus H(n, x)$ が $\bigcup_{\ell \ge m} \bigcup \mathrm{lnc}(\ell, g(m, y_0) \setminus H(n, x))$ の厳密和となること（§5 の基盤）、および系 4.9 の星近傍が `ptop`-閉開であり全中心 $H(\ell, z) \subseteq H(n, x)$ を満たすことを完全証明。
+
+## 40. [ChenWang_Sec5_Oset_Properties.lean](ChenWang_Sec5_Oset_Properties.lean)（`Defs.D_0033` 直結：§5 `Oset` の開性・単調性・`lnc` 細分・稠密性定理群）
+- **`Oset_isOpen_p` / `Obad_inter_gfun_isClosed_p` / `Obad_inter_gfun_empty_interior_p`**: `Defs.D_0033.Oset q T m n x` が `ptop`-開であり、悪い軌跡 `Obad ∩ gfun` が `gfun` 内で `ptop`-閉かつ疎（内部が空）であることを証明。
+- **`Oset_mem_of_hidx_ge` / `Oset_mono_of_gfun_sub` / `Oset_mono_level`**: `prop_5_1` の一様上界 $c$ 以上の番号を持つ点が自動的に `Oset` に属すること、および `gfun` 包含に対する `Oset` の単調性を証明。
+- **`Oset_lnc_cover_ge` / `Oset_lnc_refine` / `Oset_lnc_refine_cover` / `Oset_contains_lnc_in_open`**: 任意の $k \ge m \ge 1$ に対する `lnc q T k (Oset)` の被覆・層状細分性、および `gfun` に交わる任意の `ptop`-開集合が `V ∩ Oset` の `lnc` セルを稠密に含むことを完全証明。
