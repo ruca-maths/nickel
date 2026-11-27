@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0028`）に向けた **Lean 4 カーネル検証済みモジュール 37 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0028`）に向けた **Lean 4 カーネル検証済みモジュール 38 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -184,3 +184,8 @@
 - **`hasCPOuterBase_of_stratifiable_sigma_closedDiscrete`**: 任意の $\sigma$-閉離散層化可能空間において、$\operatorname{Ind} X = 0$・離散閉開拡大・減少 stratification を組み合わせて、**すべての点** $x_0$ に単層 closure-preserving 閉開外基 `Defs.D_0001.HasCPOuterBase x₀` を構成。
 - **`isM1_of_stratifiable_sigma_closedDiscrete` / `isM1_of_stratifiable_sigma_discrete`**（Gruenhage 1978）: 任意の $\sigma$-離散層化可能空間（閉性を仮定しない離散部分空間の可算和 $X = \bigcup_n D_n$）が $F_\sigma$-還元を経て常に **`MSpace.IsM1 X`** であることを完全証明。
 - **`isM1_of_countable_stratifiable`**: 任意の**可算**層化可能空間は常に **`M₁` 空間**である（したがって `Tinf` / `L_0020` / `L_0030` / `L_0031` の反例は必ず非可算かつ非 $\sigma$-離散でなければならない）。
+
+## 37. [Borges1966_CompactMetrizable_And_Cosmic.lean](Borges1966_CompactMetrizable_And_Cosmic.lean)（Borges 1966 / Šneider 1945 / Michael 1966：コンパクト層化可能空間の距離化可能性と可分層化可能空間の cosmic 性）
+- **`countable_closed_network_of_compact_stratifiable`**: コンパクト層化可能空間では任意の離散閉族が有限となり、可算閉ネットワークを持つこと。
+- **`secondCountable_of_compact_stratifiable` / `metrizableSpace_of_compact_stratifiable` / `metrizableSpace_compact_subtype_of_isStratifiable`**（Borges 1966 / Šneider 1945）: 任意のコンパクト層化可能空間（および任意の層化可能空間の任意のコンパクト部分集合）が常に**第 2 可算**かつ**距離化可能**（`MetrizableSpace`）であることを完全証明。
+- **`countable_closed_network_of_separable_stratifiable` / `hereditarily_separable_of_separable_stratifiable` / `hereditarily_lindelof_of_separable_stratifiable`**（Borges 1966 / Michael 1966）: 任意の可分層化可能空間が可算閉ネットワークを持つ（cosmic 空間である）こと、およびその任意の部分空間が可分かつ Lindelöf（遺伝的可分・遺伝的 Lindelöf）であることを完全証明。
