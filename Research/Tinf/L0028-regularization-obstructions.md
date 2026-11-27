@@ -160,3 +160,60 @@ zero is (-2,0) ∪ (0,1), whose regular-open hull is (-2,1).
 Replacing every normalized level-zero element by its regular-open
 hull also leaves A, B_j and W_0 unchanged. This rules out fixing
 the boundary failure merely by these normalizations.
+
+## Mosaic route and the remaining open-neighborhood requirement
+
+Mizokami's 2003 survey, Lemma 1.2 (https://arxiv.org/pdf/math/0312457),
+gives a sigma-discrete closed cover subordinate to the membership
+patterns of any CP closed family in an M3 space, with open expansions
+V(F) such that V(F) meets a member K only if F is contained in K.
+Thus the cover detects every point of K, including the thin boundary
+points which a fixed dense set can miss.
+
+At each individual discrete layer, a CP open outer base for each F
+restricted to a locally finite open expansion would give a CP open
+family when the chosen pieces are unioned: near any point only finitely
+many cells contribute, and within each cell its outer base is CP.
+Even decreasing countable outer bases of the cells would suffice for
+this part, since any subfamily of a decreasing sequence has a largest
+member. The distinction is that a stratification of F only separates
+individual exterior points. Its countable sequence need not refine
+every open superset of F. For example, in the metric disjoint sum
+N × R with F = N × {0}, for any sequence U_n of open supersets of F
+choose a nonzero t_n with (n,t_n) in U_n. The set of these points is
+closed and misses F, so its open complement contains none of the U_n.
+The mosaic theorem alone therefore does not supply the outer bases
+needed for this argument. The open expansion of each cell inside an
+arbitrary target, with closure preservation across targets, remains
+a separate obligation.
+
+## Monotone expansion away from a closed set
+
+A stratification gives a direct construction for the boundary estimate
+in Mizokami's survey Lemma 1.5 (https://arxiv.org/pdf/math/0312457).
+Let G_n(C) be a decreasing monotone stratification on closed inputs C.
+For a fixed closed M, put O_n = X minus cl G_n(M) and define
+
+    S_M(C) = union_n (O_n ∩ G_n(C)).
+
+Each O_n is open, its closure misses M (it is contained in the
+complement of G_n(M)), and the O_n cover X minus M. Thus S_M(C)
+is open in X, contains C minus M and misses M. The operator is
+monotone in C. For any CP closed family H, put C* = union H,
+which is closed by CP. Then
+
+    cl(union_{C ∈ H} S_M(C)) ∩ M ⊆ C* ∩ M.
+
+In fact the union of expansions is contained in S_M(C*). If y is
+in M minus C*, choose m with y outside cl G_m(C*). The tail of
+S_M(C*) is contained in G_m(C*). The first m pieces are contained
+in the finite union of the O_n for n < m, whose closure misses M.
+This proves the estimate by the finite union law for closures.
+
+For L_0028 this isolates what must be handled on M: all closure
+failures of these expansions on M can occur only at points of
+selected original closed members. If additionally every original
+member is contained in the closure of its own part outside M,
+each such point is captured by an individual expansion, so there
+is no CP failure on M. By itself this does not give control on
+X minus M or arbitrary containment in a prescribed open target.
