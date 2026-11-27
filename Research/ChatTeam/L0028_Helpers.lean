@@ -1125,4 +1125,293 @@ theorem regularOpenRefinementStep_of_singleInsert_aux
       rw [hEq']
       exact (hWspec j).2.2.2 S' T'_sub
 
+/-! ### 青: Mizokami (2003, arXiv:math/0312457) Lemma 1.2 全文 -/
+
+def IsDiscreteFamily {X ι : Type*} [TopologicalSpace X] (U : ι → Set X) : Prop :=
+  ∀ x : X, ∃ V : Set X, IsOpen V ∧ x ∈ V ∧ Set.Subsingleton {i : ι | (V ∩ U i).Nonempty}
+
+lemma IsDiscreteFamily.mono {X ι : Type*} [TopologicalSpace X] {F U : ι → Set X}
+    (hU : IsDiscreteFamily U) (hsub : ∀ i, F i ⊆ U i) : IsDiscreteFamily F := by
+  intro x
+  obtain ⟨V, hV_open, hxV, hsubsing⟩ := hU x
+  refine ⟨V, hV_open, hxV, fun i hi j hj => hsubsing ?_ ?_⟩
+  · exact hi.mono (inter_subset_inter_right V (hsub i))
+  · exact hj.mono (inter_subset_inter_right V (hsub j))
+
+lemma IsDiscreteFamily.isClosed_iUnion {X ι : Type*} [TopologicalSpace X] {F : ι → Set X}
+    (hF_closed : ∀ i, IsClosed (F i)) (hF_disc : IsDiscreteFamily F) : IsClosed (⋃ i, F i) := by
+  rw [← isOpen_compl_iff, isOpen_iff_mem_nhds]
+  intro x hx
+  obtain ⟨V, hV_open, hxV, hsubsing⟩ := hF_disc x
+  by_cases hne : ({i : ι | (V ∩ F i).Nonempty}).Nonempty
+  · obtain ⟨i₀, hi₀⟩ := hne
+    have hV'_open : IsOpen (V \ F i₀) := hV_open.sdiff (hF_closed i₀)
+    have hxV' : x ∈ V \ F i₀ := ⟨hxV, fun h => hx (mem_iUnion.mpr ⟨i₀, h⟩)⟩
+    have hsub : V \ F i₀ ⊆ (⋃ i, F i)ᶜ := by
+      intro y ⟨hyV, hynot⟩ hyU
+      obtain ⟨i, hyFi⟩ := mem_iUnion.mp hyU
+      have hi_eq : i = i₀ := hsubsing ⟨y, hyV, hyFi⟩ hi₀
+      subst hi_eq
+      exact hynot hyFi
+    exact Filter.mem_of_superset (hV'_open.mem_nhds hxV') hsub
+  · have hsub : V ⊆ (⋃ i, F i)ᶜ := by
+      intro y hyV hyU
+      obtain ⟨i, hyFi⟩ := mem_iUnion.mp hyU
+      exact hne ⟨i, y, hyV, hyFi⟩
+    exact Filter.mem_of_superset (hV_open.mem_nhds hxV) hsub
+
+lemma IsDiscreteFamily.finite_mem {X ι : Type*} [TopologicalSpace X] {U : ι → Set X}
+    (hU : IsDiscreteFamily U) (x : X) : Set.Finite {i : ι | x ∈ U i} := by
+  obtain ⟨V, _, hxV, hsubsing⟩ := hU x
+  refine hsubsing.finite.subset ?_
+  intro i hi
+  exact ⟨x, hxV, hi⟩
+
+lemma exists_closed_exhaustion_interior {X : Type*} [TopologicalSpace X] [NormalSpace X]
+    {G : Set X → ℕ → Set X}
+    (hG_open : ∀ H n, IsOpen (G H n))
+    (hG_sub : ∀ H, IsClosed H → ∀ n, H ⊆ G H n)
+    (hG_inter : ∀ H, IsClosed H → (⋂ n, closure (G H n)) = H)
+    {U : Set X} (hU : IsOpen U) :
+    ∃ K : ℕ → Set X, K 0 = ∅ ∧ (∀ k, IsClosed (K k)) ∧
+      (∀ k, K k ⊆ interior (K (k + 1))) ∧ (∀ k, K k ⊆ U) ∧ (⋃ k, K k) = U := by
+  let G' : Set X → ℕ → Set X := shrinkingStrat G
+  let D : ℕ → Set X := fun k => (G' Uᶜ k)ᶜ
+  have hD_closed : ∀ k, IsClosed (D k) := fun k => (isOpen_shrinkingStrat hG_open Uᶜ k).isClosed_compl
+  have hD_sub : ∀ k, D k ⊆ U := by
+    intro k y hy
+    by_contra hyU
+    exact hy (subset_shrinkingStrat hG_sub hU.isClosed_compl k hyU)
+  have hD_cover : (⋃ k, D k) = U := by
+    apply Subset.antisymm
+    · exact iUnion_subset hD_sub
+    · intro y hyU
+      have hU_eq : (⋂ k, closure (G' Uᶜ k)) = Uᶜ :=
+        iInter_closure_shrinkingStrat hG_sub hG_inter hU.isClosed_compl
+      have hnot : y ∉ ⋂ k, closure (G' Uᶜ k) := by
+        rw [hU_eq]
+        exact fun h => h hyU
+      rw [mem_iInter] at hnot
+      push Not at hnot
+      obtain ⟨k, hk⟩ := hnot
+      exact mem_iUnion.mpr ⟨k, fun hyG => hk (subset_closure hyG)⟩
+  have hstep_exists : ∀ (k : ℕ) (S : {A : Set X // IsClosed A ∧ A ⊆ U}),
+      ∃ W : Set X, IsOpen W ∧ (S.1 ∪ D k) ⊆ W ∧ closure W ⊆ U := by
+    intro k S
+    have hcl : IsClosed (S.1 ∪ D k) := S.2.1.union (hD_closed k)
+    have hsub : S.1 ∪ D k ⊆ U := union_subset S.2.2 (hD_sub k)
+    exact normal_exists_closure_subset hcl hU hsub
+  let recPair : ℕ → {A : Set X // IsClosed A ∧ A ⊆ U} :=
+    Nat.rec ⟨∅, isClosed_empty, empty_subset U⟩
+      (fun k S =>
+        let W := Classical.choose (hstep_exists k S)
+        have hW := Classical.choose_spec (hstep_exists k S)
+        ⟨closure W, isClosed_closure, hW.2.2⟩)
+  let K : ℕ → Set X := fun k => (recPair k).1
+  refine ⟨K, rfl, fun k => (recPair k).2.1, ?_, fun k => (recPair k).2.2, ?_⟩
+  · intro k
+    let S := recPair k
+    let W := Classical.choose (hstep_exists k S)
+    have hW := Classical.choose_spec (hstep_exists k S)
+    have hKsucc : K (k + 1) = closure W := rfl
+    rw [hKsucc]
+    have hKW : K k ⊆ W := subset_union_left.trans hW.2.1
+    exact hKW.trans (interior_maximal subset_closure hW.1)
+  · apply Subset.antisymm
+    · exact iUnion_subset (fun k => (recPair k).2.2)
+    · rw [← hD_cover]
+      refine iUnion_subset fun k => ?_
+      let S := recPair k
+      let W := Classical.choose (hstep_exists k S)
+      have hW := Classical.choose_spec (hstep_exists k S)
+      have hDK : D k ⊆ K (k + 1) := subset_union_right.trans (hW.2.1.trans subset_closure)
+      exact hDK.trans (subset_iUnion K (k + 1))
+
+lemma monotone_of_subset_interior_succ {X : Type*} [TopologicalSpace X] {K : ℕ → Set X}
+    (hstep : ∀ k, K k ⊆ interior (K (k + 1))) : ∀ {m n : ℕ}, m ≤ n → K m ⊆ K n := by
+  intro m n hmn
+  induction hmn with
+  | refl => exact Subset.rfl
+  | step _ ih => exact ih.trans ((hstep _).trans interior_subset)
+
+theorem mizokami_lemma_1_2 {X α : Type*} [TopologicalSpace X] [NormalSpace X]
+    {G : Set X → ℕ → Set X}
+    (hG_open : ∀ H n, IsOpen (G H n))
+    (hG_sub : ∀ H, IsClosed H → ∀ n, H ⊆ G H n)
+    (hG_inter : ∀ H, IsClosed H → (⋂ n, closure (G H n)) = H)
+    (hexp : ∀ (F : α → Set X), (∀ a, IsClosed (F a)) → IsDiscreteFamily F →
+      ∃ W : α → Set X, (∀ a, IsOpen (W a) ∧ F a ⊆ W a) ∧ IsDiscreteFamily W)
+    {𝓝 : ℕ → α → Set X}
+    (h𝓝_closed : ∀ n a, IsClosed (𝓝 n a))
+    (h𝓝_disc : ∀ n, IsDiscreteFamily (𝓝 n))
+    (h𝓝_net : ∀ (y : X) (U : Set X), IsOpen U → y ∈ U → ∃ n a, y ∈ 𝓝 n a ∧ 𝓝 n a ⊆ U)
+    {𝓑 : Set (Set X)} (h𝓑_closed : ∀ B ∈ 𝓑, IsClosed B) (h𝓑_cp : MSpace.ClosurePreserving 𝓑) :
+    ∃ (F V : ℕ → ℕ → α → Set X),
+      (∀ n k a, IsClosed (F n k a)) ∧
+      (∀ n k, IsDiscreteFamily (F n k)) ∧
+      (⋃ n, ⋃ k, ⋃ a, F n k a) = univ ∧
+      (∀ n k a, IsOpen (V n k a) ∧ F n k a ⊆ V n k a) ∧
+      (∀ n k, IsDiscreteFamily (V n k)) ∧
+      (∀ y : X, Set.Finite {p : ℕ × ℕ × α | y ∈ V p.1 p.2.1 p.2.2}) ∧
+      (∀ n k a, ∀ B ∈ 𝓑, (F n k a ∩ B).Nonempty → F n k a ⊆ B) ∧
+      (∀ n k a, ∀ B ∈ 𝓑, Disjoint (F n k a) B → Disjoint (V n k a) B) := by
+  let E : ℕ → α → Set X := fun n a => atomClosed 𝓑 (𝓝 n a)
+  have hE_closed : ∀ n a, IsClosed (E n a) := fun n a => isClosed_atomClosed h𝓑_closed (h𝓝_closed n a)
+  have hE_disc : ∀ n, IsDiscreteFamily (E n) :=
+    fun n => (h𝓝_disc n).mono (fun a => atomClosed_subset 𝓑 (𝓝 n a))
+  let E_layer : ℕ → Set X := fun n => ⋃ a, E n a
+  have hElayer_closed : ∀ n, IsClosed (E_layer n) :=
+    fun n => (hE_disc n).isClosed_iUnion (hE_closed n)
+  have hE_cover : ∀ y : X, ∃ n a, y ∈ E n a := by
+    intro y
+    let 𝓑_y : Set (Set X) := {B ∈ 𝓑 | y ∉ B}
+    have h𝓑y_closed : IsClosed (⋃₀ 𝓑_y) := by
+      have hcp := h𝓑_cp 𝓑_y (fun _ h => h.1)
+      have himg : ⋃₀ (closure '' 𝓑_y) = ⋃₀ 𝓑_y := by
+        ext z
+        constructor
+        · rintro ⟨_, ⟨B, hB, rfl⟩, hz⟩
+          rw [(h𝓑_closed B hB.1).closure_eq] at hz
+          exact ⟨B, hB, hz⟩
+        · rintro ⟨B, hB, hz⟩
+          exact ⟨closure B, ⟨B, hB, rfl⟩, subset_closure hz⟩
+      rw [himg] at hcp
+      rw [← hcp]
+      exact isClosed_closure
+    let Uy : Set X := (⋃₀ 𝓑_y)ᶜ
+    have hUy_open : IsOpen Uy := h𝓑y_closed.isOpen_compl
+    have hyUy : y ∈ Uy := by
+      rintro ⟨B, ⟨_, hynotB⟩, hyB⟩
+      exact hynotB hyB
+    obtain ⟨n, a, hyN, hNUy⟩ := h𝓝_net y Uy hUy_open hyUy
+    refine ⟨n, a, hyN, ?_⟩
+    simp only [mem_iInter]
+    intro B ⟨hB, z, hzN, hzB⟩
+    by_contra hynotB
+    exact hNUy hzN ⟨B, ⟨hB, hynotB⟩, hzB⟩
+  have hW_ex : ∀ n, ∃ W : α → Set X, (∀ a, IsOpen (W a) ∧ E n a ⊆ W a) ∧ IsDiscreteFamily W :=
+    fun n => hexp (E n) (hE_closed n) (hE_disc n)
+  let W : ℕ → α → Set X := fun n => Classical.choose (hW_ex n)
+  have hW_spec : ∀ n, (∀ a, IsOpen (W n a) ∧ E n a ⊆ W n a) ∧ IsDiscreteFamily (W n) :=
+    fun n => Classical.choose_spec (hW_ex n)
+  let V₀ : ℕ → α → Set X := fun n a => openAvoidingCP 𝓑 (E n a) (W n a)
+  let U : ℕ → Set X := fun n => (⋃ i ∈ Set.Iio n, E_layer i)ᶜ
+  have hU_open : ∀ n, IsOpen (U n) :=
+    fun n => ((Set.finite_Iio n).isClosed_biUnion (fun i _ => hElayer_closed i)).isOpen_compl
+  have hK_ex : ∀ n, ∃ K : ℕ → Set X, K 0 = ∅ ∧ (∀ k, IsClosed (K k)) ∧
+      (∀ k, K k ⊆ interior (K (k + 1))) ∧ (∀ k, K k ⊆ U n) ∧ (⋃ k, K k) = U n :=
+    fun n => exists_closed_exhaustion_interior hG_open hG_sub hG_inter (hU_open n)
+  let K : ℕ → ℕ → Set X := fun n => Classical.choose (hK_ex n)
+  have hK0 : ∀ n, K n 0 = ∅ := fun n => (Classical.choose_spec (hK_ex n)).1
+  have hK_closed : ∀ n k, IsClosed (K n k) := fun n => (Classical.choose_spec (hK_ex n)).2.1
+  have hK_step : ∀ n k, K n k ⊆ interior (K n (k + 1)) :=
+    fun n => (Classical.choose_spec (hK_ex n)).2.2.1
+  have hK_sub : ∀ n k, K n k ⊆ U n := fun n => (Classical.choose_spec (hK_ex n)).2.2.2.1
+  have hK_cover : ∀ n, (⋃ k, K n k) = U n := fun n => (Classical.choose_spec (hK_ex n)).2.2.2.2
+  let F : ℕ → ℕ → α → Set X := fun n k a => E n a ∩ (K n (k + 1) \ interior (K n k))
+  let V : ℕ → ℕ → α → Set X := fun n k a => openAvoidingCP 𝓑 (F n k a) ((V₀ n a ∩ U n) \ K n (k - 1))
+  have hF_sub_E : ∀ n k a, F n k a ⊆ E n a := fun _ _ _ => inter_subset_left
+  have hV_sub_W : ∀ n k a, V n k a ⊆ W n a := by
+    intro n k a z hz
+    exact hz.1.1.1.1
+  refine ⟨F, V, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · intro n k a
+    exact (hE_closed n a).inter ((hK_closed n (k + 1)).sdiff isOpen_interior)
+  · intro n k
+    exact (hE_disc n).mono (hF_sub_E n k)
+  · ext y
+    simp only [mem_univ, iff_true]
+    classical
+    have hex_n : ∃ n, y ∈ E_layer n := by
+      obtain ⟨n, a, hy⟩ := hE_cover y
+      exact ⟨n, mem_iUnion.mpr ⟨a, hy⟩⟩
+    let n₀ := Nat.find hex_n
+    have hn₀ : y ∈ E_layer n₀ := Nat.find_spec hex_n
+    obtain ⟨a₀, hya₀⟩ := mem_iUnion.mp hn₀
+    have hyU : y ∈ U n₀ := by
+      intro hmem
+      obtain ⟨i, hi, hyi⟩ := mem_iUnion₂.mp hmem
+      exact Nat.find_min hex_n (Set.mem_Iio.mp hi) hyi
+    have hex_m : ∃ m, y ∈ K n₀ m := by
+      rw [← hK_cover n₀] at hyU
+      exact mem_iUnion.mp hyU
+    let m₀ := Nat.find hex_m
+    have hm₀ : y ∈ K n₀ m₀ := Nat.find_spec hex_m
+    have hm₀_pos : m₀ ≠ 0 := by
+      intro h0
+      rw [h0, hK0 n₀] at hm₀
+      exact hm₀
+    obtain ⟨k₀, hk₀⟩ := Nat.exists_eq_succ_of_ne_zero hm₀_pos
+    have hynot : y ∉ interior (K n₀ k₀) := by
+      intro hint
+      have hyK : y ∈ K n₀ k₀ := interior_subset hint
+      have hlt : k₀ < m₀ := by rw [hk₀]; exact Nat.lt_succ_self k₀
+      exact Nat.find_min hex_m hlt hyK
+    refine mem_iUnion.mpr ⟨n₀, mem_iUnion.mpr ⟨k₀, mem_iUnion.mpr ⟨a₀, hya₀, ?_, hynot⟩⟩⟩
+    rw [Nat.succ_eq_add_one] at hk₀
+    rwa [← hk₀]
+  · intro n k a
+    have hV₀_open : IsOpen (V₀ n a) := isOpen_openAvoidingCP h𝓑_closed h𝓑_cp ((hW_spec n).1 a).1
+    have hbase_open : IsOpen ((V₀ n a ∩ U n) \ K n (k - 1)) :=
+      (hV₀_open.inter (hU_open n)).sdiff (hK_closed n (k - 1))
+    refine ⟨isOpen_openAvoidingCP h𝓑_closed h𝓑_cp hbase_open, subset_openAvoidingCP ?_⟩
+    intro z ⟨hzE, hzKsucc, hznotint⟩
+    refine ⟨⟨subset_openAvoidingCP ((hW_spec n).1 a).2 hzE, hK_sub n (k + 1) hzKsucc⟩, ?_⟩
+    cases k with
+    | zero =>
+      change z ∉ K n 0
+      rw [hK0 n]
+      exact Set.notMem_empty z
+    | succ m =>
+      change z ∉ K n m
+      intro hzm
+      exact hznotint (hK_step n m hzm)
+  · intro n k
+    exact (hW_spec n).2.mono (hV_sub_W n k)
+  · intro y
+    obtain ⟨n₀, a₀, hya₀⟩ := hE_cover y
+    have hyElayer : y ∈ E_layer n₀ := mem_iUnion.mpr ⟨a₀, hya₀⟩
+    have hsub : {p : ℕ × ℕ × α | y ∈ V p.1 p.2.1 p.2.2} ⊆
+        ⋃ n ∈ Set.Iic n₀, {p : ℕ × ℕ × α | p.1 = n ∧ y ∈ V n p.2.1 p.2.2} := by
+      intro p hp
+      have hn_le : p.1 ≤ n₀ := by
+        by_contra hgt
+        push Not at hgt
+        have hyUn : y ∈ U p.1 := hp.1.1.2
+        exact hyUn (mem_biUnion (Set.mem_Iio.mpr hgt) hyElayer)
+      exact mem_biUnion (Set.mem_Iic.mpr hn_le) ⟨rfl, hp⟩
+    refine ((Set.finite_Iic n₀).biUnion fun n _ => ?_).subset hsub
+    by_cases hyUn : y ∈ U n
+    · rw [← hK_cover n] at hyUn
+      obtain ⟨m, hym⟩ := mem_iUnion.mp hyUn
+      have hsub_k : {p : ℕ × ℕ × α | p.1 = n ∧ y ∈ V n p.2.1 p.2.2} ⊆
+          ⋃ k ∈ Set.Iic m, {p : ℕ × ℕ × α | p.1 = n ∧ p.2.1 = k ∧ y ∈ W n p.2.2} := by
+        intro p ⟨hp1, hpV⟩
+        have hk_le : p.2.1 ≤ m := by
+          by_contra hgt
+          push Not at hgt
+          have hle : m ≤ p.2.1 - 1 := Nat.le_sub_one_of_lt hgt
+          have hyKm : y ∈ K n (p.2.1 - 1) := monotone_of_subset_interior_succ (hK_step n) hle hym
+          exact hpV.1.2 hyKm
+        exact mem_biUnion (Set.mem_Iic.mpr hk_le) ⟨hp1, rfl, hV_sub_W n p.2.1 p.2.2 hpV⟩
+      refine ((Set.finite_Iic m).biUnion fun k _ => ?_).subset hsub_k
+      have hfin_a : Set.Finite {a : α | y ∈ W n a} := (hW_spec n).2.finite_mem y
+      have hbij : {p : ℕ × ℕ × α | p.1 = n ∧ p.2.1 = k ∧ y ∈ W n p.2.2} ⊆
+          (fun a => (n, k, a)) '' {a : α | y ∈ W n a} := by
+        rintro ⟨p1, p2, a⟩ ⟨rfl, rfl, ha⟩
+        exact ⟨a, ha, rfl⟩
+      exact (hfin_a.image _).subset hbij
+    · have hemp : {p : ℕ × ℕ × α | p.1 = n ∧ y ∈ V n p.2.1 p.2.2} = ∅ := by
+        ext p
+        simp only [mem_empty_iff_false, iff_false]
+        rintro ⟨_, hpV⟩
+        exact hyUn hpV.1.1.2
+      rw [hemp]
+      exact finite_empty
+  · intro n k a B hB hne
+    have hEne : (E n a ∩ B).Nonempty := hne.mono (inter_subset_inter_left B (hF_sub_E n k a))
+    exact (hF_sub_E n k a).trans (atomClosed_subset_of_inter_nonempty hB hEne)
+  · intro n k a B hB hdisj
+    exact disjoint_openAvoidingCP hB hdisj
+
 end Work.L0028Helpers

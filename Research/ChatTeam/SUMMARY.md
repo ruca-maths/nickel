@@ -16,6 +16,7 @@
 - `regularOpenDiscreteExpansionSeq_of_step`（かえる）: Mizokami (1985) Lemma 5（`RegularOpenRefinementStep_stmt`）から Lemma 6（`RegularOpenDiscreteExpansionSeq_stmt`）への完全帰納法。
 - `shrinkingStrat`, `mizokami_lemma_1_5`, `mizokami_lemma_1_5_singleton`（青）: Mizokami (2003, arXiv:math/0312457) Lemma 1.5（一般閉集合 $M$ および 1 点 $\{x\}$ 上で閉包が漏れない $X \setminus M$ の開膨張 $S(B)$）。
 - `atomClosed`, `openAvoidingCP` 関連補題群（青）: Mizokami (2003) Lemma 1.2 の原子閉細分 $E(N)$ および CP 避け開膨張のコア補題群。
+- `IsDiscreteFamily`, `exists_closed_exhaustion_interior`, `mizokami_lemma_1_2`（青）: Mizokami (2003, arXiv:math/0312457) Lemma 1.2 全文（2 段ずらし点有限化による $\sigma$-離散閉被覆と点有限・$\sigma$-離散開膨張）。
 - `exists_locallyFinite_refinement_with_closed_shrinking`, `regularOpenRefinementStep_of_singleInsert_aux`（カエル）: パラコンパクト $T_3$ 空間での Shrinking Lemma、極限ステップ還元、および `WellOrderingRel` 上の超限帰納法による「1 個追加補題 ⇒ `RegularOpenRefinementStep_stmt`」。
 
 ### `Research/ChatTeam/L0031_ClopenShell_Hereditary.lean`（金魚）
