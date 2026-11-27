@@ -29,6 +29,7 @@
 - `hasCPOuterBase_of_reverseWQO_shells`（定理 2A(2)）: 各殻に逆 WQO 族があり近傍フィルタを共終生成すれば `HasCPOuterBase y`。
 - `isStratifiable_iff_shells`（定理 1B）: clopen-$G_\delta$ 頂点空間の stratifiability を各殻の $T_1$ 性＋殻分離型 Heath $g$-関数系（`IsShellHeathSystem`）の存在と完全同値化（`L_0014`・`L_0017` 接続）。
 - `hasCPOuterBase_of_inducing_clopen_CP`（定理 2B(1)）: 終域に clopen CP 局所基があるとき、任意の位相的埋め込み（部分空間を含む）の始域も `HasCPOuterBase` を持つ。
+- `hasCPOuterBase_of_locallyFinite_clopen_shells`, `hasCPOuterBase_of_clopenPartition_shells`（定理 3・一般化版）: 各殻 $S_n$ 上の $g$-関数像族が clopen かつ局所有限（互いに素な分割を包含）ならば `HasSigmaCPLocalBase y` と `L_0032` により `HasCPOuterBase y` が成立。
 
 ## 2. 確定した文献裏取り・No-Go 知見
 

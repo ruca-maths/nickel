@@ -5,8 +5,10 @@ import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Order.Interval.Finset.Nat
 import Targets
 import Defs.D_0001
+import Defs.D_0010
 import Proofs.L_0014
 import Proofs.L_0017
+import Proofs.L_0032
 
 namespace Work.L0031Shell
 
@@ -402,5 +404,173 @@ theorem hasCPOuterBase_of_reverseWQO_shells
       rintro _ ⟨V, hV, rfl⟩
       exact (h𝓖 hV).2.2 n
     exact closurePreserving_of_finiteMaximalSubunion (hWQO n) _ hsub
+
+section ClopenPartitionNoGo
+
+open Defs.D_0010
+
+theorem hasCPOuterBase_of_locallyFinite_clopen_shells
+    {Y : Type} [TopologicalSpace Y]
+    {W : ℕ → Set Y} {y : Y}
+    (hW : ∀ n, IsOpen (W n) ∧ IsClosed (W n) ∧ y ∈ W n)
+    (hinter : (⋂ n, W n) = {y})
+    {g_shell : ℕ → ℕ → Y → Set Y}
+    (hsys : IsShellHeathSystem W y g_shell)
+    (hclosed : ∀ n k x, x ∈ shell W n → IsClosed (g_shell n k x))
+    (hlf : ∀ n k, ∀ x ∈ shell W n, ∃ O : Set Y, IsOpen O ∧ x ∈ O ∧
+      {P : Set Y | (∃ z ∈ shell W n, P = g_shell n k z) ∧ (O ∩ P).Nonempty}.Finite) :
+    HasCPOuterBase y := by
+  have hW' : ∀ n, IsOpen (W n) ∧ IsClosed (W n) := fun n => ⟨(hW n).1, (hW n).2.1⟩
+  let 𝓟 (n k : ℕ) : Set (Set Y) := {P | ∃ z ∈ shell W n, P = g_shell n k z}
+  let 𝓑 : ℕ → Set (Set Y) := fun k =>
+    {V | IsOpen V ∧ y ∈ V ∧ ∀ n, ∃ 𝓕 ⊆ 𝓟 n k, shell W n ∩ V = shell W n \ ⋃₀ 𝓕}
+  apply Proofs.L_0032.main Y y W hW hinter
+  refine ⟨𝓑, ?_, ?_, ?_⟩
+  · intro k V hV
+    exact ⟨hV.1, hV.2.1⟩
+  · intro k
+    rw [closurePreserving_iff_forall_shell (𝓥 := 𝓑 k) hW hinter (fun _ hV => hV.2.1)]
+    intro n 𝓖 h𝓖
+    apply Subset.antisymm
+    · intro x hx
+      have hSn := shell_isClopen hW' n
+      have hunion_sub : ⋃₀ ((fun V => shell W n ∩ V) '' 𝓖) ⊆ shell W n := by
+        rintro w ⟨_, ⟨V, _, rfl⟩, hw⟩
+        exact hw.1
+      have hxn : x ∈ shell W n := closure_minimal hunion_sub hSn.2 hx
+      have hxmem : x ∈ ⋃₀ ((fun V => shell W n ∩ V) '' 𝓖) := by
+        by_contra hxnot
+        obtain ⟨O, _, hxO, hOfin⟩ := hlf n k x hxn
+        let 𝒬 : Set (Set Y) := {P ∈ 𝓟 n k | x ∈ P}
+        have h𝒬_fin : 𝒬.Finite :=
+          hOfin.subset fun P hP => ⟨hP.1, ⟨x, hxO, hP.2⟩⟩
+        let Ux : Set Y := ⋂ P ∈ 𝒬, P
+        have hUxo : IsOpen Ux := h𝒬_fin.isOpen_biInter fun P hP => by
+          rcases hP.1 with ⟨z, hz, rfl⟩
+          exact (hsys.open_mem_sub n k z hz).1
+        have hxUx : x ∈ Ux := by
+          simp only [Ux, mem_iInter]
+          intro P hP
+          exact hP.2
+        obtain ⟨w, hwUx, hwU⟩ := mem_closure_iff.mp hx Ux hUxo hxUx
+        rcases hwU with ⟨_, ⟨V, hV, rfl⟩, hwV⟩
+        obtain ⟨𝓕, h𝓕sub, hVeq⟩ := (h𝓖 hV).2.2 n
+        have hxV : x ∉ shell W n ∩ V := fun h => hxnot ⟨shell W n ∩ V, ⟨V, hV, rfl⟩, h⟩
+        dsimp only at hwV
+        rw [hVeq] at hxV hwV
+        have hxF : x ∈ ⋃₀ 𝓕 := by
+          by_contra h
+          exact hxV ⟨hxn, h⟩
+        rcases hxF with ⟨P, hPF, hxP⟩
+        have hPQ : P ∈ 𝒬 := ⟨h𝓕sub hPF, hxP⟩
+        have hwP : w ∈ P := by
+          simp only [Ux, mem_iInter] at hwUx
+          exact hwUx P hPQ
+        exact hwV.2 ⟨P, hPF, hwP⟩
+      rcases hxmem with ⟨A, hA, hxA⟩
+      exact ⟨closure A, ⟨A, hA, rfl⟩, subset_closure hxA⟩
+    · rintro x ⟨_, ⟨A, hA, rfl⟩, hxA⟩
+      exact closure_mono (subset_sUnion_of_mem hA) hxA
+  · intro U hUo hyU
+    let H : Set Y := Uᶜ
+    have hHc : IsClosed H := hUo.isClosed_compl
+    have hyH : y ∉ H := fun h => h hyU
+    obtain ⟨k, hk⟩ := hsys.vertex_sep H hHc hyH
+    let E : Set Y := ⋃ n, ⋃ z ∈ H ∩ shell W n, g_shell n k z
+    have hE_shell : ∀ n,
+        shell W n ∩ E = ⋃₀ {P ∈ 𝓟 n k | ∃ z ∈ H ∩ shell W n, P = g_shell n k z} := by
+      intro n
+      ext w
+      constructor
+      · rintro ⟨hwn, hwE⟩
+        simp only [E, mem_iUnion] at hwE
+        rcases hwE with ⟨m, z, ⟨hzH, hzm⟩, hwz⟩
+        have hwm : w ∈ shell W m := (hsys.open_mem_sub m k z hzm).2.2 hwz
+        have hmn : m = n := by
+          by_contra hne
+          exact Set.disjoint_left.mp (shell_disjoint W hne) hwm hwn
+        subst hmn
+        exact ⟨g_shell m k z, ⟨⟨z, hzm, rfl⟩, ⟨z, ⟨hzH, hzm⟩, rfl⟩⟩, hwz⟩
+      · rintro ⟨P, ⟨_, ⟨z, ⟨hzH, hzn⟩, rfl⟩⟩, hwz⟩
+        refine ⟨(hsys.open_mem_sub n k z hzn).2.2 hwz, ?_⟩
+        simp only [E, mem_iUnion]
+        exact ⟨n, z, ⟨hzH, hzn⟩, hwz⟩
+    have hEc : IsClosed E := by
+      rw [← closure_subset_iff_isClosed]
+      intro x hxE
+      by_cases hxy : x = y
+      · subst hxy
+        exact False.elim (hk hxE)
+      · obtain ⟨n, hxn⟩ := exists_shell_of_ne hinter hxy
+        have hSn := shell_isClopen hW' n
+        have hxcl : x ∈ closure (shell W n ∩ E) := by
+          rw [← clopen_inter_closure hSn.1 hSn.2]
+          exact ⟨hxn, hxE⟩
+        let 𝓕 : Set (Set Y) := {P ∈ 𝓟 n k | ∃ z ∈ H ∩ shell W n, P = g_shell n k z}
+        rw [hE_shell n] at hxcl
+        have hxF : x ∈ ⋃₀ 𝓕 := by
+          by_contra hxnot
+          obtain ⟨O, hOo, hxO, hOfin⟩ := hlf n k x hxn
+          let 𝓕₀ : Set (Set Y) := {P ∈ 𝓕 | (O ∩ P).Nonempty}
+          have h𝓕₀_fin : 𝓕₀.Finite := hOfin.subset fun P hP => ⟨hP.1.1, hP.2⟩
+          let O' : Set Y := O ∩ ⋂ P ∈ 𝓕₀, Pᶜ
+          have hO'o : IsOpen O' := hOo.inter (h𝓕₀_fin.isOpen_biInter fun P hP => by
+            rcases hP.1.1 with ⟨z, hz, rfl⟩
+            exact (hclosed n k z hz).isOpen_compl)
+          have hxO' : x ∈ O' := by
+            refine ⟨hxO, ?_⟩
+            simp only [mem_iInter]
+            intro P hP hxP
+            exact hxnot ⟨P, hP.1, hxP⟩
+          obtain ⟨w, hwO', hwF⟩ := mem_closure_iff.mp hxcl O' hO'o hxO'
+          rcases hwF with ⟨P, hPF, hwP⟩
+          have hP0 : P ∈ 𝓕₀ := ⟨hPF, ⟨w, hwO'.1, hwP⟩⟩
+          have hwPc : w ∈ Pᶜ := by
+            have hmem := hwO'.2
+            simp only [mem_iInter] at hmem
+            exact hmem P hP0
+          exact hwPc hwP
+        have hxIE : x ∈ shell W n ∩ E := by rwa [hE_shell n]
+        exact hxIE.2
+    refine ⟨k, Eᶜ, ⟨hEc.isOpen_compl, fun hyE => hk (subset_closure hyE), ?_⟩, ?_⟩
+    · intro n
+      refine ⟨{P ∈ 𝓟 n k | ∃ z ∈ H ∩ shell W n, P = g_shell n k z}, fun _ hP => hP.1, ?_⟩
+      ext w
+      constructor
+      · rintro ⟨hwn, hwEc⟩
+        refine ⟨hwn, fun hwF => hwEc ?_⟩
+        have hwIE : w ∈ shell W n ∩ E := by rwa [hE_shell n]
+        exact hwIE.2
+      · rintro ⟨hwn, hwF⟩
+        refine ⟨hwn, fun hwE => hwF ?_⟩
+        have hwIE : w ∈ shell W n ∩ E := ⟨hwn, hwE⟩
+        rwa [hE_shell n] at hwIE
+    · intro w hwEc
+      by_contra hwU
+      have hwy : w ≠ y := fun h => hwU (h ▸ hyU)
+      obtain ⟨n, hwn⟩ := exists_shell_of_ne hinter hwy
+      apply hwEc
+      simp only [E, mem_iUnion]
+      exact ⟨n, w, ⟨hwU, hwn⟩, (hsys.open_mem_sub n k w hwn).2.1⟩
+
+theorem hasCPOuterBase_of_clopenPartition_shells
+    {Y : Type} [TopologicalSpace Y]
+    {W : ℕ → Set Y} {y : Y}
+    (hW : ∀ n, IsOpen (W n) ∧ IsClosed (W n) ∧ y ∈ W n)
+    (hinter : (⋂ n, W n) = {y})
+    {g_shell : ℕ → ℕ → Y → Set Y}
+    (hsys : IsShellHeathSystem W y g_shell)
+    (hclosed : ∀ n k x, x ∈ shell W n → IsClosed (g_shell n k x))
+    (hpart : ∀ n k, ∀ x ∈ shell W n, ∀ z ∈ shell W n,
+      (g_shell n k x ∩ g_shell n k z).Nonempty → g_shell n k z = g_shell n k x) :
+    HasCPOuterBase y := by
+  refine hasCPOuterBase_of_locallyFinite_clopen_shells hW hinter hsys hclosed ?_
+  intro n k x hxn
+  refine ⟨g_shell n k x, (hsys.open_mem_sub n k x hxn).1, (hsys.open_mem_sub n k x hxn).2.1, ?_⟩
+  refine (Set.finite_singleton (g_shell n k x)).subset ?_
+  rintro P ⟨⟨z, hzn, rfl⟩, hne⟩
+  exact mem_singleton_iff.mpr (hpart n k x hxn z hzn hne)
+
+end ClopenPartitionNoGo
 
 end Work.L0031Shell
