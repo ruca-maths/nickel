@@ -388,3 +388,55 @@ each wall: if all accumulations on it are absorbed by the selected
 anchors, preservation on the complement is sufficient for global CP.
 Source for the finite-prefix composition: Tamano 2008, proof of
 Lemma 1, https://topology.nipissingu.ca/tp/reprints/v32/tp32023.pdf .
+
+## The finite prefix restrictions are compatible with interpolation
+
+For closed A and M, A minus M and M minus A are separated:
+the first closure is contained in A and the second in M. Let
+D be a monotone normality operator on separated pairs. Suppose
+a sequence of partial repairs has increasing closed anchors A_i
+inside a common target U. At a new wall F_n with earlier wall
+F_{n-1}, the part to pad is A_last ∩ (F_n minus F_{n-1}).
+For each older wall M among F_0,...,F_{n-1}, require the part
+being padded to belong to every relevant earlier anchor A_i.
+Then the open bound D(A_i minus M, M minus A_i) contains the
+entire part being padded. Intersecting the finitely many such
+bounds with U and the relevant stratification bound still gives
+an open neighborhood of that part.
+
+Tamano's tree can use a weaker condition because the new repair
+is attached to the most
+recent *piece* and constraints associated with A_i have already
+been imposed on that piece, even when it need not belong to A_i.
+More generally, the invariant needed is containment of each
+piece in all inherited open bounds. For bounds introduced at the
+current prefix, the piece belongs to the current anchor and
+lies outside the previously processed walls. This verifies the
+availability of the open interpolation target from the invariant.
+
+On a fixed earlier wall M, if H is the closed union of a
+selected subfamily of anchors and p lies in M minus H, the open
+set D(M minus H, H minus M) minus H excludes all the
+corresponding additions. Indeed monotonicity puts every addition
+in D(H minus M, M minus H). This is the uniform separator used
+for all descendants of a prefix. The invariant does not itself
+supply the local regularization on the new wall. Mizokami's
+property (delta) is one published sufficient input for such a
+repair, but obtaining it from M1 hypotheses would require a
+separate argument.
+
+WallRepair.lean verifies a simultaneous step given CP local patches
+at an adapted sigma-closed-discrete trace. For each original K and
+each open U containing K, it gives W with K ⊆ W ⊆ U, with the same
+trace on M, and W ∩ M ⊆ cl(int W). All outputs together are CP.
+This supplies the layer operation for the wall route conditional on
+the existence of the patches and the discrete open layer expansions.
+
+Monotone normality ensures that each point p in the closure of A
+is in the closure of a discrete subset of A (Dow et al., Thm 3.10).
+That subset is discrete in its own topology. PuncturedPatches.lean
+requires slot neighborhoods locally finite on X minus {p}, which
+also forces the set of centers to be closed there. The published
+discrete-generation argument supplies pairwise disjoint open sets
+around the centers but does not give this stronger local finiteness.
+https://web.math.pmf.unizg.hr/glasnik/37.1/37%281%29-16.pdf
