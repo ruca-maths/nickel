@@ -23,6 +23,8 @@
 - `closurePreserving_iff_forall_shell`（定理 1A）: 頂点近傍族の CP 性と各殻 $S_n$ への制限の CP 性の完全同値性。
 - `closurePreserving_of_finiteMaximalSubunion`: 有限極大元和性質（逆 WQO）⇒ CP。
 - `hasCPOuterBase_of_discrete_shells`（定理 2A(1)）: 各殻が離散ならば `HasCPOuterBase y`。
+- `hasCPOuterBase_of_reverseWQO_shells`（定理 2A(2)）: 各殻に逆 WQO 族があり近傍フィルタを共終生成すれば `HasCPOuterBase y`。
+- `isStratifiable_iff_shells`（定理 1B）: clopen-$G_\delta$ 頂点空間の stratifiability を各殻の $T_1$ 性＋殻分離型 Heath $g$-関数系（`IsShellHeathSystem`）の存在と完全同値化（`L_0014`・`L_0017` 接続）。
 - `hasCPOuterBase_of_inducing_clopen_CP`（定理 2B(1)）: 終域に clopen CP 局所基があるとき、任意の位相的埋め込み（部分空間を含む）の始域も `HasCPOuterBase` を持つ。
 
 ## 2. 確定した文献裏取り・No-Go 知見

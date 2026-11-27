@@ -1,9 +1,12 @@
 import Mathlib.Topology.Basic
 import Mathlib.Topology.Maps.Basic
+import Mathlib.Topology.Separation.Basic
 import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Order.Interval.Finset.Nat
 import Targets
 import Defs.D_0001
+import Proofs.L_0014
+import Proofs.L_0017
 
 namespace Work.L0031Shell
 
@@ -224,5 +227,180 @@ theorem hasCPOuterBase_of_inducing_clopen_CP
       exact ⟨closure (f ⁻¹' V), ⟨f ⁻¹' V, hVinG, rfl⟩, subset_closure hfaV⟩
     · rintro a ⟨_, ⟨A, hA, rfl⟩, haA⟩
       exact closure_mono (subset_sUnion_of_mem hA) haA
+
+section ShellStratifiable
+
+variable {Y : Type*} [TopologicalSpace Y]
+
+omit [TopologicalSpace Y] in
+private lemma antitone_of_succ {α : Type*} {f : ℕ → Set α}
+    (hf : ∀ k, f (k + 1) ⊆ f k) {a b : ℕ} (hab : a ≤ b) : f b ⊆ f a := by
+  induction hab with
+  | refl => exact Subset.rfl
+  | @step m _ ih => exact (hf m).trans ih
+
+omit [TopologicalSpace Y] in
+lemma decClopen_mem {W : ℕ → Set Y} {y : Y} (hy : ∀ n, y ∈ W n) (n : ℕ) :
+    y ∈ decClopen W n := by
+  cases n with
+  | zero => exact mem_univ y
+  | succ m =>
+    simp only [decClopen, mem_iInter]
+    intro i _
+    exact hy i
+
+omit [TopologicalSpace Y] in
+lemma shell_disjoint (W : ℕ → Set Y) {m n : ℕ} (hmn : m ≠ n) :
+    Disjoint (shell W m) (shell W n) := by
+  rw [Set.disjoint_left]
+  intro x hxm hxn
+  rcases lt_or_gt_of_ne hmn with hlt | hgt
+  · exact hxm.2 (decClopen_antitone W (Nat.succ_le_of_lt hlt) hxn.1)
+  · exact hxn.2 (decClopen_antitone W (Nat.succ_le_of_lt hgt) hxm.1)
+
+structure IsShellHeathSystem (W : ℕ → Set Y) (y : Y)
+    (g_shell : ℕ → ℕ → Y → Set Y) : Prop where
+  open_mem_sub : ∀ n k x, x ∈ shell W n →
+    IsOpen (g_shell n k x) ∧ x ∈ g_shell n k x ∧ g_shell n k x ⊆ shell W n
+  mono : ∀ n k x, x ∈ shell W n → g_shell n (k + 1) x ⊆ g_shell n k x
+  shell_sep : ∀ n (H : Set Y), IsClosed H → H ⊆ shell W n →
+    ∀ x ∈ shell W n, x ∉ H → ∃ k, x ∉ closure (⋃ z ∈ H, g_shell n k z)
+  vertex_sep : ∀ H : Set Y, IsClosed H → y ∉ H →
+    ∃ k, y ∉ closure (⋃ n, ⋃ z ∈ H ∩ shell W n, g_shell n k z)
+
+theorem isStratifiable_iff_shells {Y : Type} [TopologicalSpace Y]
+    {W : ℕ → Set Y} {y : Y}
+    (hW : ∀ n, IsOpen (W n) ∧ IsClosed (W n) ∧ y ∈ W n)
+    (hinter : (⋂ n, W n) = {y}) :
+    IsStratifiable Y ↔
+      (∀ n (x : Y), x ∈ shell W n → IsClosed ({x} : Set Y)) ∧
+      ∃ g_shell : ℕ → ℕ → Y → Set Y, IsShellHeathSystem W y g_shell := by
+  have hW' : ∀ n, IsOpen (W n) ∧ IsClosed (W n) := fun n => ⟨(hW n).1, (hW n).2.1⟩
+  constructor
+  · rintro ⟨hT1, hStrat⟩
+    refine ⟨?_, ?_⟩
+    · intro n x _
+      exact @isClosed_singleton Y _ hT1 x
+    · obtain ⟨g, hg_open, hg_mono, hg_sep⟩ := Proofs.L_0014.main Y hT1 hStrat
+      refine ⟨fun n k x => g k x ∩ shell W n, ?_⟩
+      refine ⟨?_, ?_, ?_, ?_⟩
+      · intro n k x hxn
+        exact ⟨(hg_open k x).1.inter (shell_isClopen hW' n).1,
+          ⟨(hg_open k x).2, hxn⟩, inter_subset_right⟩
+      · intro n k x _
+        exact inter_subset_inter_left _ (hg_mono k x)
+      · intro n H hH _ x _ hxH
+        obtain ⟨k, hk⟩ := hg_sep H hH x hxH
+        refine ⟨k, fun hxcl => hk (closure_mono ?_ hxcl)⟩
+        intro w hw
+        simp only [mem_iUnion] at hw ⊢
+        rcases hw with ⟨z, hzH, hwz⟩
+        exact ⟨z, hzH, hwz.1⟩
+      · intro H hH hyH
+        obtain ⟨k, hk⟩ := hg_sep H hH y hyH
+        refine ⟨k, fun hycl => hk (closure_mono ?_ hycl)⟩
+        intro w hw
+        simp only [mem_iUnion] at hw ⊢
+        rcases hw with ⟨n, z, hz, hwz⟩
+        exact ⟨z, hz.1, hwz.1⟩
+  · rintro ⟨hT1_shell, g_shell, hsys⟩
+    classical
+    have hT1 : T1Space Y := by
+      constructor
+      intro x
+      by_cases hxy : x = y
+      · subst hxy
+        rw [← hinter]
+        exact isClosed_iInter (fun n => (hW n).2.1)
+      · obtain ⟨n, hxn⟩ := exists_shell_of_ne hinter hxy
+        exact hT1_shell n x hxn
+    let shellIdx (x : Y) (hxy : x ≠ y) : ℕ :=
+      Classical.choose (exists_shell_of_ne hinter hxy)
+    have hshellIdx : ∀ (x : Y) (hxy : x ≠ y), x ∈ shell W (shellIdx x hxy) :=
+      fun x hxy => Classical.choose_spec (exists_shell_of_ne hinter hxy)
+    let g : ℕ → Y → Set Y := fun k x =>
+      if hxy : x = y then decClopen W k else g_shell (shellIdx x hxy) k x
+    have hg_open : ∀ k x, IsOpen (g k x) ∧ x ∈ g k x := by
+      intro k x
+      by_cases hxy : x = y
+      · simp only [g, hxy, ↓reduceDIte]
+        subst hxy
+        exact ⟨(decClopen_isClopen hW' k).1, decClopen_mem (fun i => (hW i).2.2) k⟩
+      · simp only [g, hxy, ↓reduceDIte]
+        have h := hsys.open_mem_sub (shellIdx x hxy) k x (hshellIdx x hxy)
+        exact ⟨h.1, h.2.1⟩
+    have hg_mono : ∀ k x, g (k + 1) x ⊆ g k x := by
+      intro k x
+      by_cases hxy : x = y
+      · simp only [g, hxy, ↓reduceDIte]
+        exact decClopen_antitone W (Nat.le_succ k)
+      · simp only [g, hxy, ↓reduceDIte]
+        exact hsys.mono (shellIdx x hxy) k x (hshellIdx x hxy)
+    have hg_sep : ∀ H : Set Y, IsClosed H → ∀ x, x ∉ H →
+        ∃ k, x ∉ closure (⋃ z ∈ H, g k z) := by
+      intro H hH x hxH
+      by_cases hxy : x = y
+      · subst hxy
+        obtain ⟨k, hk⟩ := hsys.vertex_sep H hH hxH
+        refine ⟨k, fun hycl => hk (closure_mono ?_ hycl)⟩
+        intro w hw
+        simp only [mem_iUnion] at hw ⊢
+        rcases hw with ⟨z, hzH, hwz⟩
+        have hzy : z ≠ x := fun h => hxH (h ▸ hzH)
+        simp only [g, hzy, ↓reduceDIte] at hwz
+        exact ⟨shellIdx z hzy, z, ⟨hzH, hshellIdx z hzy⟩, hwz⟩
+      · let n := shellIdx x hxy
+        have hxn : x ∈ shell W n := hshellIdx x hxy
+        have hSn := shell_isClopen hW' n
+        obtain ⟨k₁, hk₁⟩ :=
+          hsys.shell_sep n (H ∩ shell W n) (hH.inter hSn.2) inter_subset_right x hxn (fun h => hxH h.1)
+        let k := max (n + 1) k₁
+        refine ⟨k, fun hxcl => ?_⟩
+        have hxcl' : x ∈ closure (shell W n ∩ ⋃ z ∈ H, g k z) := by
+          rw [← clopen_inter_closure hSn.1 hSn.2]
+          exact ⟨hxn, hxcl⟩
+        have hsub : shell W n ∩ (⋃ z ∈ H, g k z) ⊆ ⋃ z ∈ H ∩ shell W n, g_shell n k₁ z := by
+          rintro w ⟨hwn, hw⟩
+          simp only [mem_iUnion] at hw ⊢
+          rcases hw with ⟨z, hzH, hwz⟩
+          by_cases hzy : z = y
+          · simp only [g, hzy, ↓reduceDIte] at hwz
+            exact False.elim (hwn.2 (decClopen_antitone W (le_max_left (n + 1) k₁) hwz))
+          · simp only [g, hzy, ↓reduceDIte] at hwz
+            have hzm : z ∈ shell W (shellIdx z hzy) := hshellIdx z hzy
+            have hwm : w ∈ shell W (shellIdx z hzy) :=
+              (hsys.open_mem_sub (shellIdx z hzy) k z hzm).2.2 hwz
+            have hmn : shellIdx z hzy = n := by
+              by_contra hne
+              exact Set.disjoint_left.mp (shell_disjoint W hne) hwm hwn
+            rw [hmn] at hzm hwz
+            have hstep := antitone_of_succ (f := fun j => g_shell n j z)
+              (fun j => hsys.mono n j z hzm) (le_max_right (n + 1) k₁)
+            exact ⟨z, ⟨hzH, hzm⟩, hstep hwz⟩
+        exact hk₁ (closure_mono hsub hxcl')
+    exact ⟨hT1, Proofs.L_0017.main Y ⟨g, hg_open, hg_mono, hg_sep⟩⟩
+
+end ShellStratifiable
+
+theorem hasCPOuterBase_of_reverseWQO_shells
+    {Y : Type*} [TopologicalSpace Y] {W : ℕ → Set Y} {y : Y}
+    (hW : ∀ n, IsOpen (W n) ∧ IsClosed (W n) ∧ y ∈ W n)
+    (hinter : (⋂ n, W n) = {y})
+    (𝓐 : ℕ → Set (Set Y))
+    (hWQO : ∀ n, HasFiniteMaximalSubunion (𝓐 n))
+    (hcofinal : ∀ U : Set Y, IsOpen U → y ∈ U →
+      ∃ V : Set Y, IsOpen V ∧ y ∈ V ∧ V ⊆ U ∧ ∀ n, shell W n ∩ V ∈ 𝓐 n) :
+    HasCPOuterBase y := by
+  let 𝓥 : Set (Set Y) := {V | IsOpen V ∧ y ∈ V ∧ ∀ n, shell W n ∩ V ∈ 𝓐 n}
+  refine ⟨𝓥, fun _ hV => ⟨hV.1, hV.2.1⟩, ?_, ?_⟩
+  · intro U hUo hyU
+    obtain ⟨V, hVo, hyV, hVU, hVA⟩ := hcofinal U hUo hyU
+    exact ⟨V, ⟨hVo, hyV, hVA⟩, hVU⟩
+  · rw [closurePreserving_iff_forall_shell (𝓥 := 𝓥) hW hinter (fun _ hV => hV.2.1)]
+    intro n 𝓖 h𝓖
+    have hsub : (fun V => shell W n ∩ V) '' 𝓖 ⊆ 𝓐 n := by
+      rintro _ ⟨V, hV, rfl⟩
+      exact (h𝓖 hV).2.2 n
+    exact closurePreserving_of_finiteMaximalSubunion (hWQO n) _ hsub
 
 end Work.L0031Shell
