@@ -216,3 +216,4 @@
 {"ts": "2026-11-28T04:53:29", "node": "L_0031", "task": "decompose", "agent": "architect-1", "outcome": "expired", "reason": "リース期限切れ", "note": "", "error_excerpt": ""}
 {"ts": "2026-11-28T05:35:45", "node": "L_0028", "task": "decompose", "agent": "architect-1", "outcome": "expired", "reason": "リース期限切れ", "note": "", "error_excerpt": ""}
 {"ts": "2026-11-28T06:08:56", "node": "L_0031", "task": "decompose", "agent": "architect-1", "outcome": "expired", "reason": "リース期限切れ", "note": "", "error_excerpt": ""}
+{"ts": "2026-11-28T07:14:07", "node": "L_0028", "task": "decompose", "agent": "architect-1", "outcome": "expired", "reason": "リース期限切れ", "note": "", "error_excerpt": ""}
