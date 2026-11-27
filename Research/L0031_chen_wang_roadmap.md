@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0028`）に向けた **Lean 4 カーネル検証済みモジュール 34 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0028`）に向けた **Lean 4 カーネル検証済みモジュール 35 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -170,3 +170,8 @@
 ## 33. [CollapseQuotient_Metric_IsM1.lean](CollapseQuotient_Metric_IsM1.lean)（距離空間の任意の閉縮約商 $X / F$ は $M_1$ 空間）
 - **`collapseQuot_t3Space`**: 任意の正規 $T_1$ 空間 $X$ と非空閉集合 $F \subseteq X$ に対し縮約商 $X/F$ は $T_3$。
 - **`collapseQuot_metric_isM1`**: 任意の距離空間 $X$ と任意の非空閉集合 $F \subseteq X$ に対し、Whitney 分解による単層 CP 開外基と距離殻 $H_k$ 上の局所有限開細分を結合することで、縮約商 $X/F$ が頂点 `none` に CP 開外基を持ち、かつ空間全体が常に **`M₁` 空間**であることを無条件に証明（$\mathbb{R}/\mathbb{Z}$、$\mathbb{R}^d/\mathbb{Z}^d$、$\ell^2/F$ 等の非第 1 可算・非局所コンパクト・非 $k_\omega$ 商空間をすべて包含）。
+
+## 34. [HCP_FrechetUrysohn_And_Lasnev_OuterBase.lean](HCP_FrechetUrysohn_And_Lasnev_OuterBase.lean)（HCP 補集合 CP 定理と任意の Lašnev 空間の全点 CP 開外基定理）
+- **`IsHCP` / `isHCP_image_of_locallyFinite_isClosedMap`**: 閉連続写像による局所有限族の像が遺伝的閉包保存（HCP）であることを証明。
+- **`closurePreserving_compl_sUnion_of_isHCP_frechetUrysohn`**（HCP 補集合 CP 定理）: 任意の $T_1$ Fréchet–Urysohn 空間において、任意の HCP 族 $\mathcal{H}$ の補集合族 $\{(\bigcup_{i \in S} H_i)^c \mid S\}$ が自動的に closure-preserving になることを証明。
+- **`lasnev_every_point_hasCPOuterBase`**: 任意の距離空間（完備性不要）の任意の閉連続像（Lašnev 空間）の**すべての点** $y_0$ が単層 CP 開外基 `Defs.D_0001.HasCPOuterBase y₀` を持つことを Whitney 分解＋HCP 補集合 CP 定理により完全証明（したがって Lašnev 空間は `L_0020` / `L_0030` / `L_0031` の反例になり得ない）。
