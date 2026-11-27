@@ -1,0 +1,141 @@
+# L_0028 — regularization can destroy closure preservation
+
+Use the real line, x = -3/2, I = [-2,-1], and n ≥ 2. Set
+K_n = I ∪ {0} ∪ [1/n,1]. Every nonempty finite subfamily has
+closed union. Every infinite subfamily has union I ∪ [0,1],
+since its indices are unbounded. Thus the K_n form a CP family.
+
+Adjoin J_n = [x-1/(4n), x+1/(4n)] for n ≥ 2. Each nonempty
+subfamily of the J_n has a largest member (least index), so
+these form a CP family. The union of the two families is CP
+by finite union of closed sets, and the J_n make it a closed
+neighborhood base at x. The real line meets the other L_0028
+hypotheses, with an enumeration of rationals giving singleton
+closed discrete levels whose union is dense.
+
+But cl(int K_n) = I ∪ [1/n,1]. These regularized members have
+union I ∪ (0,1], which is not closed. Adding the J_n cannot
+repair this failure because CP quantifies over all subfamilies.
+
+This is a counterexample to the pointwise operation on the
+given base, not to existence of a CP regular closed base.
+In this example the J_n alone already give such a base.
+
+## Completion by intersections
+
+For a CP family F of closed sets, its completion under arbitrary
+intersections is still CP. For a point y missed by a chosen union
+of intersections, each of the chosen intersections has at least
+one factor in F missing y. Their entire union is therefore inside
+the union of all factors in F missing y. This latter union is
+closed by CP and misses y. The empty intersection is the entire
+space and cannot occur in a union missing y.
+
+This allows imposing finite meet closure on the input neighborhood
+base while keeping its original cofinality and CP property. Arbitrary
+intersections need not remain neighborhoods. Finite meet closure
+alone does not fix the regularization example above, because the
+original bad subfamily is still present after completion.
+
+## Reduce the regularization test to thin points
+
+Write R(K) = cl(int K). For each y and a CP family F of closed
+sets, let A_y be the union of all K in F missing y. This is closed
+and misses y. On the open neighborhood X minus A_y, all K missing
+y disappear, as do their subsets R(K).
+
+By the pointwise CP criterion, R[F] is CP exactly when, for every y,
+y is outside the closure of the union of R(K) over members K with
+y in K minus R(K). Indeed, among all K whose R(K) misses y, the
+remaining class consists exactly of K missing y, and its union
+lies in A_y. Closure distributes over this two-way union.
+
+Thus any repair by thinning the input base only needs to control
+members with y in their non-regular part. In the real-line example
+the offending y is zero. This criterion does not assert existence
+of a cofinal subfamily satisfying it.
+
+## Canonical neighborhoods for the completed closed family
+
+For each point y, define V(y) to be the complement of the union of
+all original members missing y. Then V(y) is open, contains y, and
+z ∈ V(y) means that every original member containing z contains y.
+Consequently z ∈ V(y) implies V(z) ⊆ V(y), by transitivity.
+
+Call a set downward closed when z in the set and z ∈ V(y) imply
+that y is in the set. The original closed family consists of such
+sets. Every downward closed set S is closed in the original
+topology: if y is outside S, then V(y) is disjoint from S. The
+downward closed sets are stable under all unions and intersections.
+In particular the family obtained by allowing both operations,
+in any order, consists of closed sets and is CP.
+
+For L_0028, this gives an auxiliary topology with the V(y) as
+smallest open neighborhoods. Regularizing a closed member in the
+original topology need not produce a closed member of this auxiliary
+topology. Indeed, in the real-line example each positive z ≤ 1 is
+in V(0), while R(K_n) contains some such z and omits 0. A route via
+the auxiliary topology therefore needs an additional comparison
+between its order and the original interiors.
+
+## The supplied dense set need not capture the thin boundary
+
+In the same real-line example take D = Q minus {0}, enumerated as
+singleton levels. This D is dense, all its levels satisfy the closed
+discrete assumption, and all its points even have CP open local bases
+by first countability. For each K_n, however, zero is isolated in
+K_n and is absent from both int K_n and K_n ∩ D. Hence
+K_n ⊄ cl(int K_n ∪ (K_n ∩ D)). In particular, applying
+L0028_of_boundary_cp_trace from the parent research branch directly
+with the supplied K and D fails even in a metric space. A proof via
+that lemma must change the input family or construct a different
+trace. The J_n subfamily shows why this obstruction does not refute
+L_0028: a change of closed base can remove the thin point.
+
+## Isolating the obstruction for the specific L_0021 construction
+
+Use the notation of Proofs/L_0021.lean: W_n is the decreasing open
+neighborhood obtained by excluding the closed unions of closures
+missing x at levels at most n. Write B_n(x) for the members of level n
+containing x. Try the open local base
+V = { B ∩ W_n : B ∈ B_n(x), n ∈ N }.
+It is cofinal because each B can be chosen inside the target open
+neighborhood before intersecting. At a point y ≠ x, the localization in
+L_0021 gives a neighborhood missing cl W_n for all sufficiently large
+n. At x every member contains x. Thus this particular proposed V is CP
+if and only if every fixed-level family
+V_n = { B ∩ W_n : B ∈ B_n(x) } is CP: the forward implication is
+heredity, and for the reverse implication localization reduces the
+closure of any selected union at y ≠ x to finitely many levels.
+
+Inside W_n, CP for V_n follows from CP for the original level and
+openness of W_n. Outside cl W_n there is no accumulation. Consequently
+the remaining question for this construction is exactly the fixed-level
+boundary: whenever y ∈ cl W_n minus W_n and lies in the closure of a
+selected union of B ∩ W_n, some selected B ∩ W_n must already have y
+in its closure. This isolates where the proof of L_0021 for
+cl B ∩ cl W_n cannot pass through to its open analogue. The fixed-level
+CP condition here is for the specific W_n and original B_n(x);
+generic counterexamples for intersecting with arbitrary open masks do
+not decide it.
+
+### Counterexample with the actual level-zero mask
+
+On the real line let x = -3/2, A = (0,1), and
+B_j = (-2,-1/j) ∪ A for integers j ≥ 2. Use
+{A} ∪ {B_j : j ≥ 2} as level zero, and put an enumeration of the
+rational open intervals in later singleton levels. This is a
+sigma-CP open base: in level zero any finite subfamily is CP for
+the union identity, and any infinite subfamily contains B_j with
+unbounded j. Its union is (-2,0) ∪ (0,1), and both the closure of
+that union and the union of the individual closures equal [-2,1].
+The later levels are singleton families.
+
+A is the only member of level zero whose closure misses x.
+Therefore W_0 = R minus [0,1] by the actual L_0021 definition,
+and B_j ∩ W_0 = (-2,-1/j). The closure of their union contains
+zero, which is in none of their individual closures. By heredity,
+adding the other levels cannot make the proposed family CP.
+This rules out the unmodified open analogue for general input
+sigma-CP bases. It leaves L_0028 and the possibility of first
+choosing a different input basis open.
