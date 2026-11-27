@@ -296,3 +296,24 @@ sequences outside a closed set to produce regularization pieces.
 Its convergence hypothesis must be supplied separately; density
 alone provides closure membership, not such sequences.
 https://topology.nipissingu.ca/tp/reprints/v32/tp32023.pdf
+
+## A supplied dense set may fail on every cofinal subfamily
+
+Take X = R, x = 0, D = Q enumerated by singleton layers, and
+K_n = [-1/(4n),1/(4n)] ∪ {sqrt(2)/n} for n ≥ 1.
+The K_n form a closed neighborhood base at 0. Their intervals
+are decreasing, so the interval part of any nonempty selected
+union is the interval for the least selected index. The only
+possible accumulation point of the other part, the selected
+isolated points sqrt(2)/n, is 0, already in that interval.
+Thus every selected union is closed, proving CP.
+
+For every n its isolated point sqrt(2)/n is irrational and lies
+outside the interval. Both int K_n and K_n ∩ D lie in the closed
+interval, so their union does not approximate that isolated point.
+In particular no cofinal subfamily of this prescribed CP base
+satisfies the parent trace condition with the prescribed D.
+This strengthens the earlier real-line example, where throwing away
+the decorated sets and retaining the J_n did give a cofinal trace.
+The common mosaic construction can change the representative set
+and is unaffected by this counterexample.

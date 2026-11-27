@@ -60,4 +60,33 @@ theorem exists_good_defect_trace {X : Type} [TopologicalSpace X] [T1Space X]
       Or.inr ⟨hiK (hp n m a).1,
         mem_iUnion.mpr ⟨n, mem_iUnion.mpr ⟨m, mem_range_self a⟩⟩⟩⟩
 
+/-- For a compatible mosaic and a network, witness availability can be
+checked directly on the original closed sets. -/
+theorem available_iff_defects_accumulate_good {X : Type}
+    [TopologicalSpace X] {I J : Type}
+    (C : ℕ → I → Set X) (N : ℕ → J → Set X)
+    (F : Set (Set X)) (Good : X → Prop)
+    (hcover : ∀ z : X, ∃ n i, z ∈ C n i)
+    (hcompatible : ∀ K ∈ F, ∀ n i, (C n i ∩ K).Nonempty → C n i ⊆ K)
+    (hnetwork : ∀ (U : Set X), IsOpen U → ∀ z ∈ U,
+      ∃ m j, z ∈ N m j ∧ N m j ⊆ U) :
+    (∀ K ∈ F, ∀ x ∈ K, x ∉ closure (interior K) →
+      ∀ U : Set X, IsOpen U → x ∈ U →
+        ∃ n m i j, C n i ⊆ K ∧ N m j ⊆ U ∧
+          ∃ z ∈ C n i ∩ N m j, Good z) ↔
+    (∀ K ∈ F, K \ closure (interior K) ⊆ closure (K ∩ {z | Good z})) := by
+  constructor
+  · intro h K hK x hx
+    apply mem_closure_iff.mpr
+    intro U hU hxU
+    obtain ⟨n, m, i, j, hi, hj, z, hz, hgood⟩ := h K hK x hx.1 hx.2 U hU hxU
+    exact ⟨z, hj hz.2, hi hz.1, hgood⟩
+  · intro h K hK x hxK hxI U hU hxU
+    obtain ⟨z, hzU, hzK, hgood⟩ :=
+      mem_closure_iff.mp (h K hK ⟨hxK, hxI⟩) U hU hxU
+    obtain ⟨n, i, hzC⟩ := hcover z
+    obtain ⟨m, j, hzN, hNU⟩ := hnetwork U hU z hzU
+    exact ⟨n, m, i, j, hcompatible K hK n i ⟨z, hzC, hzK⟩,
+      hNU, z, ⟨hzC, hzN⟩, hgood⟩
+
 end ChildResearch.MosaicTrace
