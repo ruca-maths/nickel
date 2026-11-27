@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0028`）に向けた **Lean 4 カーネル検証済みモジュール 38 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0032`）に向けた **Lean 4 カーネル検証済みモジュール 39 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -189,3 +189,9 @@
 - **`countable_closed_network_of_compact_stratifiable`**: コンパクト層化可能空間では任意の離散閉族が有限となり、可算閉ネットワークを持つこと。
 - **`secondCountable_of_compact_stratifiable` / `metrizableSpace_of_compact_stratifiable` / `metrizableSpace_compact_subtype_of_isStratifiable`**（Borges 1966 / Šneider 1945）: 任意のコンパクト層化可能空間（および任意の層化可能空間の任意のコンパクト部分集合）が常に**第 2 可算**かつ**距離化可能**（`MetrizableSpace`）であることを完全証明。
 - **`countable_closed_network_of_separable_stratifiable` / `hereditarily_separable_of_separable_stratifiable` / `hereditarily_lindelof_of_separable_stratifiable`**（Borges 1966 / Michael 1966）: 任意の可分層化可能空間が可算閉ネットワークを持つ（cosmic 空間である）こと、およびその任意の部分空間が可分かつ Lindelöf（遺伝的可分・遺伝的 Lindelöf）であることを完全証明。
+
+## 38. [Gruenhage_ClosedOuterBase_SigmaDiscreteCompl.lean](Gruenhage_ClosedOuterBase_SigmaDiscreteCompl.lean)（一般化 Gruenhage 外基定理：補集合が $\sigma$-離散な閉集合の CP 閉開外基と第 2 可算／コンパクト核 $M_1$ 定理）
+- **`hasCPClopenOuterBase_of_sigma_closedDiscrete_compl` / `hasCPClopenOuterBase_of_sigma_discrete_compl`**: 任意の層化可能空間 $X$ において、補集合 $X \setminus A$ が $\sigma$-離散（特に可算）な**任意の閉集合** $A \subseteq X$ が単層 closure-preserving **閉開**外基を持つことを証明（$A$ や $X$ 自体の 0 次元性・$\sigma$-離散性不要）。
+- **`closurePreserving_inter_open_of_clopen`**: 閉開 CP 族と任意の部分集合 $D$ との交わりが常に CP 性を保存すること。
+- **`hasCPOuterBase_of_sigma_discrete_punctured_nhd`**: 層化可能空間で $U \setminus \{x_0\}$ が $\sigma$-離散な開近傍 $U$ を持つ任意の点 $x_0$ が `Defs.D_0001.HasCPOuterBase x₀` を満たすこと。
+- **`isM1_of_stratifiable_secondCountable_closed_sigma_discrete_compl`**: 補集合 $X \setminus A$ が $\sigma$-離散な第 2 可算閉部分空間 $A$（特に任意のコンパクト核や有限核）を持つ層化可能空間が常に **`MSpace.IsM1 X`** であることを完全証明。
