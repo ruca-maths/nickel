@@ -15,7 +15,7 @@ ICON = {"open": "⬜", "checked": "✅", "refuted": "❌", "proposed": "…", "v
 
 def build_graph(desk) -> dict:
     db = desk.db
-    mx = int(desk.lim("max_attempts_per_task", 5))
+    mx = desk.max_attempts()
     nodes = []
     for n in db.nodes():
         if n["status"] == "void":

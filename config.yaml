@@ -24,7 +24,7 @@ lean:
   build_slots: 1            # 同時ビルド上限（メモリ対策。16GB 以上なら 2 も可）
 
 limits:
-  max_attempts_per_task: 5          # 1補題×1種別あたりの最大試行回数
+  max_attempts_per_task: null       # 1補題×1種別あたりの最大試行回数（null = 上限なし。2026-11-27 ユーザーの指示で廃止）
   decompose_after_failures: 2       # 直接証明がこの回数失敗したら Architect に分解を依頼
   refute_after_failures: 2          # 同じく Red Team に反証を依頼
   max_nodes: 200                    # 補題グラフのノード総数上限
