@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-27 16:25:34",
+  "generated_at": "2026-11-27 16:28:55",
   "targets_hash": "198f3fa8f630b46d28aa23d1bba3194b216c79f4ca39920d47757a6f5efd6f89",
   "nodes": [
     {
@@ -388,7 +388,7 @@
       "informal": "部品(c)（難所、Mizokami 2004 Topology Appl. 141 の中核）: M1 空間で、σ-閉離散な稠密集合 D=⋃D_n と点 x の CP 閉近傍基 𝓚 があれば、x は正則閉集合（K = cl(int K)）からなる CP 閉近傍基を持つ。注意: (b) と合わせると L_0022 の結論と同値（逆に CP 開外基 𝓥 があれば closure '' 𝓥 が正則閉 CP 閉近傍基）なので、真偽は Mizokami の定理に依存する。単純に K ↦ cl(int K) は CP を保たない可能性がある。σ-CP 基 𝓑=⋃𝓑_n で固定した n なら {⋃{B∈𝓑_n | cl B ⊆ int K}} は CP になるが、n を K ごとに選ぶと σ-CP にしかならない。Ito の手法（K∩D_n の各点を 𝓑 で膨らませ、D_n の閉離散性で n 方向の局所有限性を得る）で n の一様性を確保するのが鍵。さらに分解が必要な可能性が高い。",
       "attempts": {
         "prove": 13,
-        "decompose": 9,
+        "decompose": 10,
         "refute": 8
       },
       "closed_by": null
@@ -651,6 +651,14 @@
       "node": null,
       "path": "Defs/D_0019.lean",
       "sha256": "0685fc24945b65f1d5574a5edb3ab0631a14f9da9184781a558585e67e1cef29",
+      "axioms": []
+    },
+    {
+      "module": "Defs.D_0024",
+      "kind": "defs",
+      "node": null,
+      "path": "Defs/D_0024.lean",
+      "sha256": "649fd33e4a4cf80fc96854a21d0d67b88535c361e41531d586742c80c90d6019",
       "axioms": []
     },
     {
