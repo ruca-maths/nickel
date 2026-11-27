@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0018`）に向けた **Lean 4 カーネル検証済みモジュール 19 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0018`）に向けた **Lean 4 カーネル検証済みモジュール 21 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -102,3 +102,12 @@
 - **`hasCPOuterBaseSet_sUnion_discrete` / `hasCPOuterBaseSet_of_closed_discrete`**: stratifiable 空間で離散閉集合族の和（および各点が CP 外基を持つ閉離散部分集合）が `HasCPOuterBaseSet` を保存すること。
 - **`hasCPOuterBaseSet_of_compact_with_compact_nhd`**: stratifiable 空間でコンパクト近傍を持つ任意のコンパクト集合が減少可算（したがって CP）開外基を持つこと。
 - **`isM1_of_stratifiable_sigma_closed_discrete` / `isM1_of_stratifiable_locallyCompact_compl`**: $\sigma$-閉離散な stratifiable 空間（各点 CP 外基あり）は $M_1$、および 1 点 $y_0$ を除いて局所コンパクトな stratifiable 空間は `HasCPOuterBase y₀ → IsM1 X`（対偶：非 $M_1$ ならば自動的に `¬ HasCPOuterBase y₀`）を満たすことを証明。
+
+## 19. [Borges_PerfectMap_And_ClosedSum.lean](Borges_PerfectMap_And_ClosedSum.lean)（Borges 1966：完全写像による像と局所有限閉被覆の層化可能性保存）
+- **`isStratifiable_of_perfectMap`**: stratifiable 空間からの完全連続全射（閉連続全射かつ各ファイバーがコンパクト）の $T_1$ 像は常に stratifiable。
+- **`isStratifiable_of_locallyFinite_closed_cover` / `isStratifiable_of_union_closed`**: 局所有限な閉 stratifiable 部分空間族で覆われる $T_1$ 空間（特に 2 つの閉 stratifiable 部分空間の和 $X = F_1 \cup F_2$）は常に stratifiable。
+
+## 20. [M1_OpenSubspace_And_LocallyM1.lean](M1_OpenSubspace_And_LocallyM1.lean)（$M_1$ の開部分空間遺伝性と局所 $M_1$ パラコンパクト／層化可能空間定理）
+- **`isM1_open_subspace`**: $M_1$ 空間の任意の開部分空間は $M_1$。
+- **`isM1_of_locallyFinite_shrunk_open_M1_cover` / `isM1_of_paracompact_locallyM1` / `isM1_of_stratifiable_locallyM1`**: 局所有限な収縮開 $M_1$ 被覆を持つ $T_3$ 空間、特に任意の局所 $M_1$ パラコンパクト $T_3$ 空間・局所 $M_1$ stratifiable 空間は常に $M_1$（`Proofs.L_0005` 結合）。
+- **`exists_point_no_M1_open_nhd_of_not_isM1`**: 対偶として、任意の非 $M_1$ stratifiable 空間には「いかなる開近傍も $M_1$ にならない点 $x_0$」が必ず存在する（`Tinf` の局所化定理）。
