@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0013`）に向けた **Lean 4 カーネル検証済みモジュール 18 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0018`）に向けた **Lean 4 カーネル検証済みモジュール 19 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -96,3 +96,9 @@
 - **`isM1_of_stratifiable_and_closed_hasCPOuterBase` / `isM1_of_stratifiable_and_network_hasCPOuterBase`**（Ito 1985 閉集合版・一般ネットワーク版）: stratifiable 空間で各閉集合（またはある $\sigma$-離散閉ネットワークの各元）が単層 CP 開外基を持てば $M_1$。
 - **`not_L0020_imp_Tinf`**: 縮約商 `CollapseQuot X F` と結合し、**`¬ Specs.L_0020.stmt → MSpace.Goals.Tinf_M3_imp_M1`** を証明。`ChenWang_BoxFan_Equiv.lean` の `L0020_imp_not_Tinf` と合わせて、Ceder の未解決問題 `Tinf` が **`Tinf ↔ ¬ L_0020 ↔ ¬ L_0030 ↔ ¬ L_0031`** と ZFC 内で厳密同値であることを確立。
 - **`stratifiable_has_sigma_closed_discrete_dense` / `isM1_of_stratifiable_locallyCompact` / `isM1_of_stratifiable_compact` / `isM1_of_countable_t3_hasCPOuterBase`**: stratifiable 空間の $\sigma$-閉離散稠密部分集合（`Proofs.L_0026` の $M_3$ への一般化）、局所コンパクト・コンパクト stratifiable 空間の $M_1$ 性、および可算 $T_3$ 空間での CP 外基 $\Rightarrow M_1$ を証明。
+
+## 18. [Ito1985_ClosedSet_Criteria.lean](Ito1985_ClosedSet_Criteria.lean)（閉集合 CP 外基の代数閉包性と構造的 $M_1$ 判定定理）
+- **`hasCPOuterBaseSet_singleton_iff` / `hasCPOuterBaseSet_union` / `hasCPOuterBaseSet_finset_biUnion`**: 任意の位相空間で `HasCPOuterBaseSet` が有限和で閉じ、1 点集合では `Defs.D_0001.HasCPOuterBase` と同値であること。
+- **`hasCPOuterBaseSet_sUnion_discrete` / `hasCPOuterBaseSet_of_closed_discrete`**: stratifiable 空間で離散閉集合族の和（および各点が CP 外基を持つ閉離散部分集合）が `HasCPOuterBaseSet` を保存すること。
+- **`hasCPOuterBaseSet_of_compact_with_compact_nhd`**: stratifiable 空間でコンパクト近傍を持つ任意のコンパクト集合が減少可算（したがって CP）開外基を持つこと。
+- **`isM1_of_stratifiable_sigma_closed_discrete` / `isM1_of_stratifiable_locallyCompact_compl`**: $\sigma$-閉離散な stratifiable 空間（各点 CP 外基あり）は $M_1$、および 1 点 $y_0$ を除いて局所コンパクトな stratifiable 空間は `HasCPOuterBase y₀ → IsM1 X`（対偶：非 $M_1$ ならば自動的に `¬ HasCPOuterBase y₀`）を満たすことを証明。
