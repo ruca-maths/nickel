@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0032`）に向けた **Lean 4 カーネル検証済みモジュール 39 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0032`）に向けた **Lean 4 カーネル検証済みモジュール 40 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -195,3 +195,8 @@
 - **`closurePreserving_inter_open_of_clopen`**: 閉開 CP 族と任意の部分集合 $D$ との交わりが常に CP 性を保存すること。
 - **`hasCPOuterBase_of_sigma_discrete_punctured_nhd`**: 層化可能空間で $U \setminus \{x_0\}$ が $\sigma$-離散な開近傍 $U$ を持つ任意の点 $x_0$ が `Defs.D_0001.HasCPOuterBase x₀` を満たすこと。
 - **`isM1_of_stratifiable_secondCountable_closed_sigma_discrete_compl`**: 補集合 $X \setminus A$ が $\sigma$-離散な第 2 可算閉部分空間 $A$（特に任意のコンパクト核や有限核）を持つ層化可能空間が常に **`MSpace.IsM1 X`** であることを完全証明。
+
+## 39. [ChenWang_Ptop_And_Sec5_LnCover.lean](ChenWang_Ptop_And_Sec5_LnCover.lean)（`Defs.D_0029`〜`D_0032` 直結：`ptop` 距離化・層化可能性、細分位相 `L_0031`/`¬ Tinf` 橋渡し、第 5 節穿孔 `lnc` 被覆）
+- **`rho_secondCountable` / `rho_t3Space` / `ptop_secondCountable` / `ptop_t3Space` / `ptop_metrizable` / `ptop_isStratifiable` / `ptop_node_isStratifiable`**: 任意の可算 `NoMaxOrder` 線形順序 $\alpha$（特に `Defs.D_0028.Node`）に対し、修正版積位相 `Defs.D_0029.ptop α` およびその任意の部分空間 $Y \subseteq \mathbb{N} \to \alpha$ が第 2 可算・$T_3$・距離化可能・層化可能であることを証明。
+- **`ptop_subtype_refinement_isStratifiable` / `ptop_subtype_refinement_L0031_and_not_Tinf`**: 任意の部分空間 $Y \subseteq \mathbb{N} \to \alpha$ 上の細分位相 $\tau \le \mathrm{ptop}_Y$（Chen–Wang §6–§7 の直接設定）において、`ptop`-境界分離 $g$-関数と `¬ HasCPOuterBase y₀` から `gfun q T (n+1) y₀` を介して `Specs.L_0031.stmt` および `¬ MSpace.Goals.Tinf_M3_imp_M1` を直接導出。
+- **`lnc_diff_cover_point` / `lnc_diff_iUnion_eq` / `lnc_diff_clopen_disjoint` / `prop_4_8_star_clopen`**: `Defs.D_0031.lnc`・`Defs.D_0032.prop_4_8` 上で、穿孔セル $g(m, y_0) \setminus H(n, x)$ が $\bigcup_{\ell \ge m} \bigcup \mathrm{lnc}(\ell, g(m, y_0) \setminus H(n, x))$ の厳密和となること（§5 の基盤）、および系 4.9 の星近傍が `ptop`-閉開であり全中心 $H(\ell, z) \subseteq H(n, x)$ を満たすことを完全証明。
