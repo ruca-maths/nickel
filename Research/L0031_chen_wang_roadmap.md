@@ -1,6 +1,6 @@
 # `L_0031`（Chen–Wang 反例トラック `R_0009` + `R_0010`）検証済み子補題群
 
-本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0028`）に向けた **Lean 4 カーネル検証済みモジュール 32 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
+本ディレクトリには、親機の新トラック（`R_0009` + `R_0010`: `L_0029` ✅・`L_0032` ✅・未解決リーフ `L_0031`、および `Defs/D_0001`〜`D_0028`）に向けた **Lean 4 カーネル検証済みモジュール 33 本** を収録している。すべて `sorry` なし・警告なし・標準公理（`propext`, `Classical.choice`, `Quot.sound`）のみで検証済みである。
 
 ## 1. [ChenWang_Tree2_Instance.lean](ChenWang_Tree2_Instance.lean)（第2〜3節の具体実現と多座標橋渡し）
 - **`QTree := List (OrderDual ℕ+)`** 上で `NoMaxOrder QTree`、`qtree_two_points`、`qtree_equiv_nat : Nonempty (ℕ ≃ QTree)` を構成。
@@ -163,3 +163,6 @@
 - **`frechetUrysohn_of_closedMap_from_metricSpace`**: 任意の距離空間の閉連続像は常に Fréchet–Urysohn 空間であることを証明。
 - **`hasDecreasingOpenBase_of_compact_frontier`**: 距離空間の閉連続像において、ファイバー境界 $\partial f^{-1}(\{y\})$ がコンパクトな点 $y$ は減少可算開局所基を持つことを証明。
 - **`lasnev_decomposition_completeMetric`**（Lašnev 1965）: 完備距離空間の任意の閉連続像 $Y$ が $Y = Y_0 \cup \bigcup_n D_n$ と分解され、各 $D_n$ は閉離散集合であり、かつ $Y_0$ のすべての点 $y$ がコンパクトファイバー境界・第 1 可算性・単層 CP 開外基 `Defs.D_0001.HasCPOuterBase y` を満たすことを完全証明。
+
+## 32. [Whitney_Metric_ClosedOuterBase.lean](Whitney_Metric_ClosedOuterBase.lean)（Whitney 分解定理：距離空間の任意の閉集合は CP 開外基を持つ）
+- **`metric_closed_hasCPOuterBase`**: 任意の距離空間 $X$ とその**任意の閉部分集合** $F \subseteq X$ に対し、補集合 $X \setminus F$ 上の Whitney 型局所有限開細分（$B(a, r_a)$ with $B(a, 3 r_a) \subseteq F^c$）を用いて、$F$ の単層 closure-preserving 開外基を直接構成。
