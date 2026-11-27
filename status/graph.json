@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-27 23:29:07",
+  "generated_at": "2026-11-27 23:30:51",
   "targets_hash": "198f3fa8f630b46d28aa23d1bba3194b216c79f4ca39920d47757a6f5efd6f89",
   "nodes": [
     {
@@ -867,6 +867,14 @@
       "node": null,
       "path": "Defs/D_0052.lean",
       "sha256": "e34cf004114f8452214e38b3f501c9725da4a873921a6335fbd0b769e7e695d9",
+      "axioms": []
+    },
+    {
+      "module": "Defs.D_0053",
+      "kind": "defs",
+      "node": null,
+      "path": "Defs/D_0053.lean",
+      "sha256": "749744c4d4b519d020b373680acdc59565c76bf7cd8ae2d5d9c971c3a71ce8a2",
       "axioms": []
     },
     {
