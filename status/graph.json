@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-28 07:20:41",
+  "generated_at": "2026-11-28 14:07:19",
   "targets_hash": "198f3fa8f630b46d28aa23d1bba3194b216c79f4ca39920d47757a6f5efd6f89",
   "nodes": [
     {
@@ -439,7 +439,7 @@
       "informal": "L_0020 の強化版（Chen–Wang の構成で同時に出る）: Chen–Wang (arXiv:1809.03763v2) の空間 (Y,τ) は stratifiable（Theorem 1.a）で、y ∈ H₀ は CP 開外基を持たない（命題 9.5 そのもの、σ 版は不要）。追加の主張: y は開閉集合の列 W n = g(m+n, y) を持ち ⋂ W n = {y}（Construction 7: Definition A.1 で g(l,x) は開閉、{x} = ⋂_{l≥m} g(l,x)）。L_0020 の human_hints（Y を Defs に置き、stratifiable 性と 9.5 を別の子にする）がそのまま使える。",
       "attempts": {
         "prove": 14,
-        "decompose": 15,
+        "decompose": 16,
         "refute": 10
       },
       "closed_by": null
@@ -1019,6 +1019,14 @@
       "node": null,
       "path": "Defs/D_0071.lean",
       "sha256": "e9e12b28216b6860e0f815d6b5e3eafae16a9d6b064b1542125e408a6bcd44ed",
+      "axioms": []
+    },
+    {
+      "module": "Defs.D_0072",
+      "kind": "defs",
+      "node": null,
+      "path": "Defs/D_0072.lean",
+      "sha256": "4c717d37ac0c10801f0cb61098ba58b8ad1f014c6bcc6d1d11644b4704144c8a",
       "axioms": []
     },
     {
