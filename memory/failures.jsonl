@@ -219,3 +219,4 @@
 {"ts": "2026-11-28T07:14:07", "node": "L_0028", "task": "decompose", "agent": "architect-1", "outcome": "expired", "reason": "リース期限切れ", "note": "", "error_excerpt": ""}
 {"ts": "2026-11-28T14:06:29", "node": "L_0031", "task": "decompose", "agent": "architect-1", "outcome": "expired", "reason": "リース期限切れ", "note": "", "error_excerpt": ""}
 {"ts": "2026-11-28T16:42:51", "node": "L_0028", "task": "decompose", "agent": "architect-1", "outcome": "expired", "reason": "リース期限切れ", "note": "", "error_excerpt": ""}
+{"ts": "2026-11-28T16:44:50", "node": "L_0031", "task": "decompose", "agent": "architect-1", "outcome": "gave_up", "reason": "direct-work", "note": "D_0075: Prop 8.3 は字義どおりの τ・任意の Δ-order で偽（Lean 確定）。Thm 1.b 自体は未確定のため分解は立てない", "error_excerpt": ""}
